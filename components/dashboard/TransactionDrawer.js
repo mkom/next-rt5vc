@@ -1,7 +1,7 @@
 // components/TransactionDrawer.js
 import { getSession, useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
-import { Drawer, Button, Input, FileInput, Textarea, Label, TextInput, Dropdown,Alert   } from 'flowbite-react';
+import { Drawer, Button, Input, FileInput, Textarea, Label, TextInput, Dropdown,Alert } from 'flowbite-react';
 import {FaCalendarAlt, FaMoneyBill, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa';
 import { FaExchangeAlt } from "react-icons/fa";
 import { AiOutlineLoading } from "react-icons/ai";
@@ -58,7 +58,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
     if (transactionType === 'ipl') {
       if(relatedMonths.length > 0 && houseName ) {
         const monthLabels = relatedMonths.map(option => moment(option.value, "YYYY-MM").format("MMMM YYYY")).join(', ');
-        const descriptionText = `IPL rumah ${houseName} periode ${monthLabels}`;
+        const descriptionText = `IPL Rumah ${houseName} periode ${monthLabels}`;
         setDescription(descriptionText);
       }
      
@@ -266,6 +266,15 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
           </div>
 
           <div className="mb-6 mt-3">
+            <Label htmlFor="payment_type" className="mb-2 block">Tipe Pembayaran</Label>
+            <Select id="payment_type" required>
+              <option>Transfer</option>
+              <option>Cash</option>
+            </Select>
+            {errors.amount && <div className="text-red-500 text-sm">{errors.amount}</div>}
+          </div>
+
+          <div className="mb-6 mt-3">
               <Label htmlFor="proofOfTransfer" className="mb-2 block">Lampiran</Label>
               <FileInput 
                 id="file" 
@@ -279,6 +288,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
                 value={proofOfTransfer}
                 onChange={(e) => setProofOfTransfer(e.target.value)}
                 placeholder="Masukkan URL lampiran"
+                className='hidden'
               />
               {errors.proofOfTransfer && <div className="text-red-500 text-sm">{errors.proofOfTransfer}</div>}
             </div>
@@ -294,7 +304,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
               selected={paymentDate}
               onChange={(date) => setPaymentDate(date)}
               dateFormat="dd MMMM yyyy"
-               calendarClassName="light-blue-stripes"
+              calendarClassName="light-blue-stripes"
               placeholderText="Pilih tanggal"
               className="block w-full pl-8 text-sm text-gray-900  border-gray-300 border-none rounded-md py-2 px-4 focus:ring-0 bg-gray-50"
             />

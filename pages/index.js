@@ -24,13 +24,15 @@ export default function Home() {
     >
       <div>
         <h1 className="max-w-md text-4xl font-extrabold leading-none text-gray-900 lg:text-5xl xl:text-6xl dark:text-white">
-        <span className="block">Test</span>
-        <span className="block text-cyan-700">05</span>
-        <span className="block">TEst</span>
+        <span className="inline">RT</span>
+        <span className="inline text-cyan-700">05</span>
+        <span className="block">VILLA CITAYAM</span>
         </h1>
         
       </div>
-      <p className="max-w-md text-lg leading-normal text-gray-500 lg:text-xl dark:text-gray-400">Flowbite React is an open-source UI component library built on top of Tailwind CSS with React components and based on the Flowbite Design System.</p>
+      <p className="max-w-md text-lg leading-normal text-gray-500 lg:text-xl dark:text-gray-400">
+        Platform pusat informasi RT05/RW11 Villa Citayam Susukan Bogor
+        </p>
       <Button
         onClick={() => signIn('google')}
        className="w-56 justify-start "

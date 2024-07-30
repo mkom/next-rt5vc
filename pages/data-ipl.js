@@ -2,22 +2,17 @@
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect,useState } from 'react';
-import { useRequireAuth } from '../../utils/authUtils'; 
+import { useRequireAuth } from '../utils/authUtils'; // Import fungsi utilitas
 
-import Header from '../../components/Header';
-import SideMenu from '../../components/dashboard/Sidebar'
-import Spinner from '../../components/Spinner';
+import Header from '../components/Header';
+import SideMenu from '../components/Sidebar'
+import IplReport from '../components/IplReport';
 
-import Report from '../../components/Report';
-
-
-const Dashboard = () => {
-  const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
+const Ipl = () => {
+  const { useAuthRedirect } = useRequireAuth(['admin', 'user', 'editor', 'superadmin','visitor']);
   useAuthRedirect();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -31,8 +26,8 @@ const Dashboard = () => {
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
         <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
-        <h1 className='text-xl mb-4 font-semibold text-gray-900 sm:text-2xl dark:text-white'>Dashboard</h1>
-        <Report/>
+          <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>DATA IPL RT 05 VILLA CITAYAM</h1>
+          <IplReport/>
         </section>
       </div>
       
@@ -42,4 +37,4 @@ const Dashboard = () => {
   );
 }
 
-export default Dashboard;
+export default Ipl;
