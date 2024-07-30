@@ -6,8 +6,9 @@ import { useRequireAuth } from '../utils/authUtils'; // Import fungsi utilitas
 
 import Header from '../components/Header';
 import SideMenu from '../components/Sidebar'
+import Report from '../components/Report';
 const Home = () => {
-  const { useAuthRedirect } = useRequireAuth(['admin', 'user', 'editor', 'superadmin']);
+  const { useAuthRedirect } = useRequireAuth(['admin', 'user', 'editor', 'superadmin','visitor']);
   useAuthRedirect();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -23,9 +24,9 @@ const Home = () => {
     <main className='max-w-screen-xl mx-auto'>
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
-        <section className='mt-14 py-5 px-8 sm:ml-64'>
-          <h1>Home</h1>
-          <button onClick={() => signOut()}>Sign out</button>
+        <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
+          <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>KAS RT 05 VILLA CITAYAM</h1>
+          <Report/>
         </section>
       </div>
       

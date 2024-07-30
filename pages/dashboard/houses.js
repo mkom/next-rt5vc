@@ -22,6 +22,7 @@ const ITEMS_PER_PAGE = 10;
 const Houses = ({ initialHouses }) => {
   const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
   useAuthRedirect();
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -133,7 +134,7 @@ const Houses = ({ initialHouses }) => {
     <main className='max-w-screen-xl mx-auto'>
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
-        <section className='mt-14 px-4 py-5 md:px-8 sm:ml-64'>
+        <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
           <h1 className='text-xl mb-4 flex font-semibold text-gray-900 sm:text-2xl dark:text-white'>
             <HiHome  className="mr-2 h-8 w-8" /> 
             <span>Data Rumah</span>

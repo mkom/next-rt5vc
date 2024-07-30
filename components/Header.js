@@ -34,8 +34,8 @@ const Header = ({ toggleSidebar }) => {
           <HiMenuAlt1 onClick={toggleSidebar} className="h-9 w-9 cursor-pointer mr-3 sm:hidden" />
           {/* <img src="https://flowbite.com/docs/images/logo.svg" className="h-8" alt="Flowbite Logo" /> */}
           
-          <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
-            <span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white">rt5vc.com</span>
+          <a href="/home" className="flex items-center space-x-3 rtl:space-x-reverse">
+            <span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white">rt5vc</span>
           </a>
           </div>
           <div className="flex md:order-2">
@@ -50,9 +50,8 @@ const Header = ({ toggleSidebar }) => {
                 <span className="block text-sm">{userName}</span>
                 <span className="block truncate text-sm font-medium">{userEmail}</span>
               </Dropdown.Header>
-              <Dropdown.Item>Dashboard</Dropdown.Item>
+              
               <Dropdown.Item>Settings</Dropdown.Item>
-              <Dropdown.Item>Earnings</Dropdown.Item>
               <Dropdown.Divider />
               <Dropdown.Item onClick={() => signOut({ callbackUrl: '/' })}>Sign out</Dropdown.Item>
             </Dropdown>

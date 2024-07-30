@@ -1,6 +1,5 @@
 // pages/home.js
 import { getSession, useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
 import { useEffect,useState } from 'react';
 import axios from 'axios';
 import { useRequireAuth } from '../../utils/authUtils'; 
@@ -12,12 +11,15 @@ import TransactionDrawer from '../../components/dashboard/TransactionDrawer';
 import Spinner from '../../components/Spinner';
 import { Card, Button,TextInput,Drawer,Select, Table,Dropdown, Alert  } from "flowbite-react";
 import { HiOutlineSearch } from "react-icons/hi";
-import { FaRegEdit, FaCheckCircle, FaTimesCircle, FaHourglassHalf } from 'react-icons/fa';
+import {  FaCheckCircle, FaTimesCircle, FaHourglassHalf } from 'react-icons/fa';
 import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
-import { FaMoneyBill } from "react-icons/fa";
 import { FaEllipsisH } from "react-icons/fa";
 import { FaExchangeAlt } from "react-icons/fa";
+import FilterTransactions from '../../components/FilterTransactions';
+import moment from 'moment';
+import 'moment/locale/id';
+moment.locale('id');
 
 const ITEMS_PER_PAGE = 15;
 
@@ -26,6 +28,7 @@ const Transaction = ({ initialTransaction }) =>  {
   const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
   useAuthRedirect();
   const [transactions, setTransactions] = useState([initialTransaction]);
+  const [reTransactions, setReTransactions] = useState([initialTransaction])
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { data: session, status } = useSession();
@@ -38,6 +41,8 @@ const Transaction = ({ initialTransaction }) =>  {
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState('success');
+  
+  
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -58,18 +63,20 @@ const Transaction = ({ initialTransaction }) =>  {
               Authorization: `Bearer ${session.accessToken}`,
             },
         });
-        setTransactions(res.data);
+        setTransactions(res.data.data);
+        setReTransactions(res.data.data);
         setLoading(false);
     } catch (error) {
         console.error('Error fetching houses data:', error);
         setLoading(false);
     }
-};
+ };
 
   useEffect(() => {
     if (session) {
         fetchTransactions();
     }
+
   }, [session, status]);
 
   const handleSearchChange = (event) => {
@@ -104,11 +111,11 @@ const Transaction = ({ initialTransaction }) =>  {
   const getTypeIcon = (type) => {
     switch (type) {
       case 'income':
-        return <FaRegArrowAltCircleDown  className="text-blue-700 h-10 w-10 md:h-6 md-w-6" />;
+        return <FaRegArrowAltCircleDown  className="text-blue-700 h-4 w-4 md:h-5 md:w-5 " />;
       case 'expense':
-        return <FaRegArrowAltCircleUp  className="text-red-700 h-10 w-10 md:h-6 md-w-6" />;
+        return <FaRegArrowAltCircleUp  className="text-red-700 h-4 w-4 md:h-5 md:w-5 " />;
       case 'ipl':
-        return <FaExchangeAlt  className="text-green-700 h-10 w-10 md:h-6 md-w-6" />;
+        return <FaExchangeAlt  className="text-green-700  h-3 w-3 md:h-4 md:w-4 " />;
       default:
         return null;
     }
@@ -185,7 +192,7 @@ const Transaction = ({ initialTransaction }) =>  {
     <main className='max-w-screen-xl mx-auto'>
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
-        <section className='mt-14 py-5 px-8 sm:ml-64'>
+        <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
         {showAlert && (
             <Alert className='' color={alertType === 'success' ? 'success' : 'failure'} onDismiss={handleAlertDismiss}>
                 <span className="font-medium">{alertMessage}</span>
@@ -219,50 +226,67 @@ const Transaction = ({ initialTransaction }) =>  {
             transactionType={currentTransactionType}
           />
 
-          <div className='relative'>
-            <Table hoverable className='min-w-full border'>
-                <Table.Head>
-                    <Table.HeadCell className='p-2 md:p-3'>No</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:p-3'>Keterangan</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:p-3'>Tanggal</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:p-3'>Nominal</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:p-3'>Status</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:p-3'>
-                        <span className="sr-only">Edit</span>
-                    </Table.HeadCell>
-                </Table.Head>
-                <Table.Body className="divide-y">
-                    {currentPageData.map((transaction, index) => (
-                        <Table.Row key={index} className=" dark:border-gray-700 dark:bg-gray-800">
-                            <Table.Cell  className="p-2 md:p-3 md:px- whitespace-nowrap font-medium text-gray-900 dark:text-white">
-                                {offset + index + 1}
-                            </Table.Cell>
-                            <Table.Cell className={`p-2 md:p-3 md:px- ${getTextColor(transaction.transaction_type)}`}>
-                              <span className='flex items-center'>
-                                {getTypeIcon(transaction.transaction_type)} 
-                                <span className="ml-2">{transaction.description}</span> 
-                              </span>
-                             
-                              </Table.Cell>
-                            <Table.Cell  className={`p-2 md:p-3 ${getTextColor(transaction.transaction_type)}`}>{transaction.date}</Table.Cell>
-                            <Table.Cell  className={`p-2 md:p-3 md:px- ${getTextColor(transaction.transaction_type)}`}>{formatCurrency(transaction.amount)}</Table.Cell>
-                            <Table.Cell  className={`p-2 md:p-3 md:px- ${getTextColor(transaction.transaction_type)}`}>
-                              <span className='flex items-center'>
-                                {getStatusIcon(transaction.status)} 
-                                <span className="ml-2">{transaction.status}</span>
-                              </span>
-                              
-                              </Table.Cell>
-                            <Table.Cell className='p-2 md:p-3 md:px-'>
-                              <Dropdown  className="relative z-10" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4" /></span>}>
-                                  <Dropdown.Item>Edit</Dropdown.Item>
-                                  <Dropdown.Item>View</Dropdown.Item>
-                                  <Dropdown.Item>Delete</Dropdown.Item>
-                                </Dropdown>
-                            </Table.Cell>
-                        </Table.Row>
-                    ))}
-                </Table.Body>
+          <div className="max-w-md mb-4 flex">
+
+            <TextInput 
+              name="name"
+              placeholder="Cari"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="mr-2 w-3/5"
+              icon={HiOutlineSearch} 
+            />
+
+            <FilterTransactions className="w-2/5" setTransactions={setTransactions} initialTransaction={reTransactions} />
+
+          </div>
+
+          <div className='overflow-x-auto'>
+            <Table hoverable>
+              <Table.Head>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 w-3/4'>Keterangan</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tanggal</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Nominal</Table.HeadCell>
+                {/* <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Status</Table.HeadCell> */}
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tipe</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>
+                    <span className="sr-only">Edit</span>
+                </Table.HeadCell>
+              </Table.Head>
+              <Table.Body className="divide-y">
+                
+                {currentPageData.map((transaction, index) => ( 
+                  <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                    <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 ${getTextColor(transaction.transaction_type)}`}>
+                      <span className='flex items-start content-start'>
+                        <span>{getTypeIcon(transaction.transaction_type)} </span>
+                        <span className="ml-2">{transaction.description}</span> 
+                      </span>
+                    </Table.Cell>
+                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{moment(transaction.date, 'DD MMM YYYY').format('DD/MM/YY')}</Table.Cell>
+                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatCurrency(transaction.amount)}</Table.Cell>
+                    {/* <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                      <span className='flex items-center'>
+                        {getStatusIcon(transaction.status)} 
+                      </span>
+                    </Table.Cell> */}
+                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                      <span className='flex items-center'>
+                        {getStatusIcon(transaction.payment_type)} 
+                      </span>
+                    </Table.Cell>
+                    <Table.Cell className='py-2 px-2 md:py-3 md:px-3 text-xs md:text-base'>
+                      <Dropdown  className="relative z-10" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4" /></span>}>
+                        <Dropdown.Item>Edit</Dropdown.Item>
+                        <Dropdown.Item>View</Dropdown.Item>
+                        <Dropdown.Item>Delete</Dropdown.Item>
+                      </Dropdown>
+
+                    </Table.Cell>
+                </Table.Row>
+
+                ))}
+              </Table.Body>
             </Table>
           </div>
           <nav className='py-6'>

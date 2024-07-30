@@ -24,10 +24,10 @@ const SideMenu = ({ isOpen }) => {
         <Sidebar  className={`fixed top-0  z-30 w-64 h-screen pt-14 transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} bg-white border-r border-gray-200 sm:translate-x-0 duration-300 ease-in-out dark:bg-gray-800 dark:border-gray-700`}>
         <Sidebar.Items >
             <Sidebar.ItemGroup>
-            <Sidebar.Item href="/dashboard" 
+            <Sidebar.Item href="/home" 
             icon={HiChartPie}
-            className={pathname === '/dashboard' ? 'text-gray-900 bg-gray-100' : ''}>
-                Dashboard
+            className={pathname === '/home' ? 'text-gray-900 bg-gray-100' : ''}>
+                Beranda
             </Sidebar.Item>
             <Sidebar.Item
              href="/dashboard/transactions" 
