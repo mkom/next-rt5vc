@@ -15,7 +15,8 @@ import 'moment/locale/id';
 import id from "date-fns/locale/id";
 moment.locale('id');
 
-const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
+const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transactionToEdit }) => {
+  
   const [houseId, setHouseId] = useState('');
   const [houseName, setHouseName] = useState('');
   const [amount, setAmount] = useState('');
@@ -31,6 +32,22 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
   const [uploadUrl, setUploadUrl] = useState('');
   const fileInputRef = useRef(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentType, setPaymentType] = useState('');
+
+  // Set nilai awal formulir jika ada transactionToEdit
+  useEffect(() => {
+    if (transactionToEdit) {
+      setHouseId(transactionToEdit.houseId || '');
+      setHouseName(transactionToEdit.houseName || '');
+      setAmount(transactionToEdit.amount || '');
+      setDescription(transactionToEdit.description || '');
+      setProofOfTransfer(transactionToEdit.proof_of_transfer || '');
+      setRelatedMonths(transactionToEdit.related_months || []);
+      setPaymentDate(transactionToEdit.paymentDate || new Date());
+      setStatus(transactionToEdit.status || 'berhasil');
+      setPaymentType(transactionToEdit.payment_type || '');
+    }
+  }, [transactionToEdit]);
 
   useEffect(() => {
     if (session) {
@@ -58,7 +75,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
     if (transactionType === 'ipl') {
       if(relatedMonths.length > 0 && houseName ) {
         const monthLabels = relatedMonths.map(option => moment(option.value, "YYYY-MM").format("MMMM YYYY")).join(', ');
-        const descriptionText = `IPL Rumah ${houseName} periode ${monthLabels}`;
+        const descriptionText = `IPL ${houseName} periode ${monthLabels}`;
         setDescription(descriptionText);
       }
      
@@ -89,7 +106,13 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
         //alert('Failed to upload file.');
         return null;
     }
- };
+  };
+
+  useEffect(() => {
+    if (transactionToEdit) {
+      setUploadUrl(transactionToEdit.proof_of_transfer);
+    }
+  }, [transactionToEdit]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,7 +124,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
     if (!paymentDate) newErrors.paymentDate = 'Payment date is required';
     if (!relatedMonths) newErrors.relatedMonths = 'Months is required';
     if (transactionType === 'ipl' && !houseId) newErrors.houseId = 'House ID is required';
-    if (transactionType === 'ipl' && !proofOfTransfer) newErrors.proofOfTransfer = 'Proof of transfer is required';
+    if (paymentType === 'transfer' && !proofOfTransfer) newErrors.proofOfTransfer = 'Proof of transfer is required';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -126,6 +149,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
     const dateString = relatedMonths.map(option => option.value).join(', ');
     const dateArray = convertStringToArray(dateString);
 
+
+
     //console.log(relatedMonths.map(option => option.value))
     const newTransaction = {
       transaction_type: transactionType,
@@ -133,6 +158,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
       description,
       proof_of_transfer: proofOfTransferUrl,
       houseId,
+      payment_type: paymentType.value,
       related_months: dateArray,
       //relatedMonths:relatedMonths.map(option => moment(option.value, "YYYY-MM")).join(', '),
       paymentDate,
@@ -150,9 +176,17 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
     setPaymentDate(new Date());
     setStatus('berhasil');
     fileInputRef.current.value = '';
+    setPaymentType('');
     setIsProcessing(false); // Stop processing
     onClose();
   };
+
+  useEffect(() => {
+    if (transactionToEdit) {
+      setHouseName(transactionToEdit.houseName);
+    }
+  }, [transactionToEdit]);
+
 
   const handleHouseChange = (newValue) => {
     setHouseId(newValue);
@@ -163,6 +197,13 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
     setHouseName(selectedHouse.label)
     //setDescription(`IPL rumah ${selectedHouse.value} periode ${relatedMonths.join(', ')}`);
   };
+  
+  useEffect(() => {
+    if (transactionToEdit) {
+      setRelatedMonths(transactionToEdit.related_months || []);
+    }
+  }, [transactionToEdit]);
+
 
   const handleMonthChange = (selectedOptions) => {
     setRelatedMonths(selectedOptions || []);
@@ -183,6 +224,21 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
     return options;
   };
 
+  const optionsType = [
+    { value: 'cash', label: 'Cash' },
+    { value: 'transfer', label: 'Transfer' },
+  ]
+
+  useEffect(() => {
+    if (transactionToEdit) {
+      setPaymentType(transactionToEdit.payment_type || '');
+    }
+  }, [transactionToEdit]);
+
+  const handleTypeChange = (e) => {
+    setPaymentType(e);
+  };
+
   const resetForm = () => {
     setHouseId('');
     setAmount('');
@@ -191,6 +247,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
     setRelatedMonths([]);
     setPaymentDate(new Date());
     setStatus('berhasil');
+    setPaymentType('');
     fileInputRef.current.value = '';
     setErrors({});
   };
@@ -205,7 +262,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
         onClose();
       }}
       position="right"
-      className="py-4 px-7 top-14 w-full md:w-2/4"
+      className="py-4 px-7 top-0 z-50 w-full md:w-2/4"
     >
       <Drawer.Header title={`Transaksi ${transactionType === 'ipl' ? 'IPL' : transactionType === 'income' ? 'Masuk' : 'Keluar'}`} titleIcon={FaExchangeAlt} />
       <Drawer.Items>
@@ -232,7 +289,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
                  value={relatedMonths}
                  onChange={handleMonthChange}
                  placeholder="Pilih bulan"
-                 className='bg-gray-50'
+                 className='bg-gray-50 text-sm'
                 />
                 {errors.relatedMonths && <div className="text-red-500 text-sm">{errors.relatedMonths}</div>}
               </div>
@@ -267,11 +324,15 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType }) => {
 
           <div className="mb-6 mt-3">
             <Label htmlFor="payment_type" className="mb-2 block">Tipe Pembayaran</Label>
-            <Select id="payment_type" required>
-              <option>Transfer</option>
-              <option>Cash</option>
-            </Select>
-            {errors.amount && <div className="text-red-500 text-sm">{errors.amount}</div>}
+              <Select
+                id="payment_type"
+                options={optionsType}
+                value={paymentType}
+                onChange={handleTypeChange}
+                placeholder="Cash atau Transfer"
+                className='bg-gray-50 text-sm'
+              />
+            {/* {errors.amount && <div className="text-red-500 text-sm">{errors.amount}</div>} */}
           </div>
 
           <div className="mb-6 mt-3">

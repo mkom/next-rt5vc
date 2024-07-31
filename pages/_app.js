@@ -30,7 +30,7 @@ export default function App({ Component, pageProps }) {
     <SessionProvider session={pageProps.session}>
       <Head>
         <title>RT5VC - Rt 05 Villa Citayam</title>
-        <meta name="description" content="Platform pusat informasi RT05/RW11 Villa Citayam Susukan Bogor" />
+        <meta name="description" content="Platform pusat informasi RT05/RW11 Villa Citayam Susukan Bojong gede Bogor" />
         <meta property="og:title" content="RT5VC" />
         <meta property="og:description" content="Platform pusat informasi RT05/RW11 Villa Citayam Susukan Bogor" />
         <meta property="og:image" content="" />

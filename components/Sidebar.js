@@ -39,9 +39,9 @@ const SideMenu = ({ isOpen }) => {
             className={pathname === '/data-ipl' ? 'text-gray-900 bg-gray-100' : ''}>
                 Data IPL
             </Sidebar.Item>
-            <Sidebar.Item href="#" icon={HiViewBoards}>
+            {/* <Sidebar.Item href="#" icon={HiViewBoards}>
                 Dokumen
-            </Sidebar.Item>
+            </Sidebar.Item> */}
 {/*             
             <Sidebar.Item href="#" icon={BiBuoy}>
                 Help
