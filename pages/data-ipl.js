@@ -9,9 +9,6 @@ import SideMenu from '../components/Sidebar'
 import IplReport from '../components/IplReport';
 
 const Ipl = () => {
-  const { useAuthRedirect } = useRequireAuth(['admin', 'user', 'editor', 'superadmin','visitor']);
-  useAuthRedirect();
-
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {

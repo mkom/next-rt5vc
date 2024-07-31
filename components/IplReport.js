@@ -22,8 +22,6 @@ moment.locale('id');
 import MonthOptions from './MonthOptions';
 
 const IplReport = ({ initialHousesPaid }) =>  {
-  const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin','user']);
-  useAuthRedirect();
   const [loading, setLoading] = useState(true);
   const { data: session, status } = useSession();
   const [selectedPeriod, setSelectedPeriod] = useState(moment().format('YYYY-MM')); // Format YYYY-MM moment().format('YYYY-MM')
@@ -32,6 +30,7 @@ const IplReport = ({ initialHousesPaid }) =>  {
   const [totalHouses, setTotalHouses] = useState(0);
   const [totalPaid, setTotalPaid] = useState(0);
   const [monthly ,setMonthly] = useState([]);
+  const [percentage, setPercentage] = useState(0);
 
   const offset = 0;
   const formatCurrency = (amount) => {
@@ -45,9 +44,7 @@ const IplReport = ({ initialHousesPaid }) =>  {
   const fetchMonthlyPaid = async () => {
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/fee`, {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
+          
           params: {
             period: selectedPeriod
         }
@@ -58,6 +55,7 @@ const IplReport = ({ initialHousesPaid }) =>  {
      setTotalHousesPaid(res.data.total_houses_paid);
      setTotalHouses(res.data.total);
      setMonthly(res.data.data);
+     setPercentage(res.data.percentage_paid);
 
      setLoading(false);
     } catch (error) {
@@ -69,9 +67,7 @@ const IplReport = ({ initialHousesPaid }) =>  {
   const fetchMonthly = async () => {
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/fee`, {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          }
+          
       });
    // console.log(res.data.data)
      setMonthly(res.data.data);
@@ -103,12 +99,10 @@ const IplReport = ({ initialHousesPaid }) =>  {
   }, []);
 
   useEffect(() => {
-    if (session) {
-        fetchMonthlyPaid();
-        fetchMonthly();
-    }
+    fetchMonthlyPaid();
+    fetchMonthly();
 
-  }, [session, status,selectedPeriod]);
+  }, [selectedPeriod]);
 
 
   const getTypeIcon = (status) => {
@@ -163,8 +157,14 @@ const IplReport = ({ initialHousesPaid }) =>  {
             <div className='flex gap-1 md:gap-4 justify-start flex-row mb-4'>
             
                 <Card className='bg-green-700 text-white w-1/2'>
-                <h3 className='font-bold text-sm md:text-xl flex items-start'><span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>IPL</span></h3>
-                <span className='font-semibold text-sm md:text-lg'>{`${totalHousesPaid} / ${totalHouses} Rumah`}</span>
+                <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
+                  <span className='flex'>
+                    <span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-1 lg:mr-2" /></span>
+                    <span>IPL</span>
+                  </span>
+                  <span className='text-xs lg:text-sm font-normal lg:ml-3'>{`${totalHousesPaid} / ${totalHouses} Rumah`}</span>
+                  </h3>
+                <span className='font-semibold text-sm md:text-lg'>{percentage}</span>
                 </Card>
                 <Card className='bg-blue-700 text-white w-1/2'>
                 <h3 className='font-bold text-sm md:text-xl flex items-start'><span><GrMoney className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Nominal</span></h3>

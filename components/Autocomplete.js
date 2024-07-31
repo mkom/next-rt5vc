@@ -31,6 +31,7 @@ const Autocomplete = ({ value, onChange, options, onSelect }) => {
         options={options}
         styles={customStyles}
         placeholder="Pilih"
+        className='text-sm'
       />
     </div>
   );

@@ -9,9 +9,10 @@ import Header from '../../components/Header';
 import SideMenu from '../../components/dashboard/Sidebar';
 import TransactionDrawer from '../../components/dashboard/TransactionDrawer';
 import Spinner from '../../components/Spinner';
-import { Card, Button,TextInput,Drawer,Select, Table,Dropdown, Alert  } from "flowbite-react";
+import { HiOutlineExclamationCircle } from "react-icons/hi";
+import { Card, Button,TextInput,Drawer,Select, Table,Dropdown, Alert,Modal } from "flowbite-react";
 import { HiOutlineSearch } from "react-icons/hi";
-import {  FaCheckCircle, FaTimesCircle, FaHourglassHalf } from 'react-icons/fa';
+import {  FaCheckCircle, FaTimesCircle, FaHourglassHalf,FaRegEdit,FaEye,FaRegTrashAlt } from 'react-icons/fa';
 import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
 import { FaEllipsisH } from "react-icons/fa";
@@ -42,7 +43,83 @@ const Transaction = ({ initialTransaction }) =>  {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState('success');
   
-  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [transactionIdToDelete, setTransactionIdToDelete] = useState(null);
+  const [transactionToEdit, setTransactionToEdit] = useState(null);
+
+  const handleDeleteTransaction = async (transactionId) => {
+    //console.log(transactionId)
+    setTransactionIdToDelete(transactionId);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      const response = await axios.delete(
+        `${process.env.NEXT_PUBLIC_API_URL}/transactions/delete/${transactionIdToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+        }
+      );
+      setAlertType('success');
+      setAlertMessage('Transaksi berhasil dihapus');
+      setShowAlert(true);
+      handleAlertTimeout(3000);
+      fetchTransactions();
+    } catch (error) {
+      setAlertType('failure');
+      setAlertMessage('Gagal menghapus transaksi');
+      setShowAlert(true);
+      handleAlertTimeout(3000);
+      console.error('Error deleting transaction:', error);
+    } finally {
+      setShowDeleteModal(false);
+    }
+  };
+
+  const handleEditTransaction = async (transactionId) => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/transactions/${transactionId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+        }
+      );
+      setTransactionToEdit(response.data);
+      setIsDrawerOpen(true);
+    } catch (error) {
+      console.error('Error fetching transaction data:', error);
+    }
+  };
+
+  const handleUpdateTransaction = async (transactionData) => {
+    try {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/transactions/update/${transactionToEdit._id}`,
+        transactionData,
+        {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+        }
+      );
+      setAlertType('success');
+      setAlertMessage('Transaksi berhasil diupdate');
+      setShowAlert(true);
+      handleAlertTimeout(3000);
+      fetchTransactions();
+    } catch (error) {
+      setAlertType('failure');
+      setAlertMessage('Gagal mengupdate transaksi');
+      setShowAlert(true);
+      handleAlertTimeout(3000);
+      console.error('Error updating transaction:', error);
+    }
+  };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -176,7 +253,13 @@ const Transaction = ({ initialTransaction }) =>  {
   };
   
   const handleAlertDismiss = () => {
-    setShowAlert(false);
+    handleAlertTimeout(0);
+  };
+
+  const handleAlertTimeout = (timeoutDuration) => {
+    setTimeout(() => {
+      setShowAlert(false);
+    }, timeoutDuration);
   };
 
   if (loading) {
@@ -222,8 +305,9 @@ const Transaction = ({ initialTransaction }) =>  {
           <TransactionDrawer
             isOpen={isDrawerOpen}
             onClose={() => setIsDrawerOpen(false)}
-            onSubmit={handleDrawerSubmit}
+            onSubmit={transactionToEdit ? handleUpdateTransaction : handleDrawerSubmit}
             transactionType={currentTransactionType}
+            transactionToEdit={transactionToEdit}
           />
 
           <div className="max-w-md mb-4 flex">
@@ -247,8 +331,8 @@ const Transaction = ({ initialTransaction }) =>  {
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 w-3/4'>Keterangan</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tanggal</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Nominal</Table.HeadCell>
-                {/* <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Status</Table.HeadCell> */}
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tipe</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Status</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>
                     <span className="sr-only">Edit</span>
                 </Table.HeadCell>
@@ -265,21 +349,22 @@ const Transaction = ({ initialTransaction }) =>  {
                     </Table.Cell>
                     <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{moment(transaction.date, 'DD MMM YYYY').format('DD/MM/YY')}</Table.Cell>
                     <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatCurrency(transaction.amount)}</Table.Cell>
-                    {/* <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                    
+                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                      <span className='flex items-center'>
+                        {transaction.payment_type} 
+                      </span>
+                    </Table.Cell>
+                    <Table.Cell className={`items-center flex justify-center content-center py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
                       <span className='flex items-center'>
                         {getStatusIcon(transaction.status)} 
                       </span>
-                    </Table.Cell> */}
-                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                      <span className='flex items-center'>
-                        {getStatusIcon(transaction.payment_type)} 
-                      </span>
                     </Table.Cell>
                     <Table.Cell className='py-2 px-2 md:py-3 md:px-3 text-xs md:text-base'>
-                      <Dropdown  className="relative z-10" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4" /></span>}>
-                        <Dropdown.Item>Edit</Dropdown.Item>
-                        <Dropdown.Item>View</Dropdown.Item>
-                        <Dropdown.Item>Delete</Dropdown.Item>
+                      <Dropdown  className="relative z-50 cursor-pointer" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4 cursor-pointer" /></span>}>
+                        <Dropdown.Item onClick={() => handleEditTransaction(transaction._id)}><FaRegEdit className='mr-1'/><span>Edit</span></Dropdown.Item>
+                        <Dropdown.Item><FaEye className='mr-1'/><span>View</span></Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleDeleteTransaction(transaction._id)} ><FaRegTrashAlt className='mr-1' /><span>Delete</span></Dropdown.Item>
                       </Dropdown>
 
                     </Table.Cell>
@@ -313,6 +398,32 @@ const Transaction = ({ initialTransaction }) =>  {
           </nav>
 
         </section>
+        
+        <Modal
+          show={showDeleteModal}
+          size="md"
+          popup
+          onClose={() => setShowDeleteModal(false)}
+        >
+          <Modal.Header />
+          <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
+            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
+            Apakah Anda yakin ingin menghapus transaksi ini?
+            </h3>
+            <div className="flex justify-center gap-4">
+              <Button color="failure" onClick={handleConfirmDelete}>
+                Hapus
+              </Button>
+              <Button color="gray" onClick={() => setShowDeleteModal(false)}>
+                Batal
+              </Button>
+            </div>
+          </div>
+          </Modal.Body>
+          
+        </Modal>         
 
       </div>
       

@@ -1,0 +1,22 @@
+{
+    "sourceFile": "pages/data-ipl.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1722343757682,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1722343764113,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,10 +8,8 @@\n import SideMenu from '../components/Sidebar'\n import IplReport from '../components/IplReport';\n \n const Ipl = () => {\n-\n-\n   const [isSidebarOpen, setIsSidebarOpen] = useState(false);\n \n   const toggleSidebar = () => {\n     setIsSidebarOpen(!isSidebarOpen);\n"
+                }
+            ],
+            "date": 1722343757682,
+            "name": "Commit-0",
+            "content": "// pages/home.js\nimport { signIn, signOut, useSession } from 'next-auth/react';\nimport { useRouter } from 'next/router';\nimport { useEffect,useState } from 'react';\nimport { useRequireAuth } from '../utils/authUtils'; // Import fungsi utilitas\n\nimport Header from '../components/Header';\nimport SideMenu from '../components/Sidebar'\nimport IplReport from '../components/IplReport';\n\nconst Ipl = () => {\n\n\n  const [isSidebarOpen, setIsSidebarOpen] = useState(false);\n\n  const toggleSidebar = () => {\n    setIsSidebarOpen(!isSidebarOpen);\n  };\n\n  return (\n    <>\n    \n    <Header toggleSidebar={toggleSidebar}/>\n    <main className='max-w-screen-xl mx-auto'>\n      <div className='w-full'>\n        <SideMenu isOpen={isSidebarOpen}/>\n        <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>\n          <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>DATA IPL RT 05 VILLA CITAYAM</h1>\n          <IplReport/>\n        </section>\n      </div>\n      \n      \n    </main>\n    </>\n  );\n}\n\nexport default Ipl;"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "components/Autocomplete.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1722399532139,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1722399532139,
+            "name": "Commit-0",
+            "content": "import React from 'react';\nimport Select from 'react-select';\nimport { TextInput } from 'flowbite-react';\n\n// Custom styles for react-select\nconst customStyles = {\n  control: (provided) => ({\n    ...provided,\n    border: '1px solid #D1D5DB',\n    boxShadow: 'none',\n    '&:hover': {\n      border: '1px solid #3B82F6',\n    },\n  }),\n  menu: (provided) => ({\n    ...provided,\n    zIndex: 9999,\n  }),\n};\n\nconst Autocomplete = ({ value, onChange, options, onSelect }) => {\n  const handleChange = (selectedOption) => {\n    onSelect(selectedOption);\n  };\n\n  return (\n    <div className=\"mt-1 block w-72\">\n      <Select\n        value={options.find(option => option.value === value)}\n        onChange={handleChange}\n        options={options}\n        styles={customStyles}\n        placeholder=\"Pilih\"\n        className='text-sm'\n      />\n    </div>\n  );\n};\n\nexport default Autocomplete;\n"
+        }
+    ]
+}

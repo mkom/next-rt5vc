@@ -1,15 +1,17 @@
 // pages/home.js
+import React from 'react';
 import {useSession ,getSession} from 'next-auth/react';
 import { useEffect,useState } from 'react';
+import _ from 'lodash';
 import axios from 'axios';
-import { useRequireAuth } from '../utils/authUtils'; 
 import Spinner from './Spinner';
 import CustomThemeProviderSecond from './CustomThemeSecond';
-import CustomThemeProvider from './CustomTheme';
-import { Card, Button, Table } from 'flowbite-react';
+import { Card, Button, Table, Accordion } from 'flowbite-react';
 import { GrMoney } from "react-icons/gr";
 import {FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa';
-import { GiReceiveMoney } from "react-icons/gi";
+import { IoChevronDownSharp } from "react-icons/io5";
+import { IoChevronUpSharp } from "react-icons/io5";
+
 import { HiHome } from "react-icons/hi";
 
 import Select from 'react-select';
@@ -20,8 +22,7 @@ moment.locale('id');
 import MonthOptions from './MonthOptions';
 
 const Report = ({ initialTransaction }) =>  {
-  const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
-  useAuthRedirect();
+  
   const [loading, setLoading] = useState(true);
   const { data: session, status } = useSession();
   const [transactions, setTransactions] = useState([initialTransaction]);
@@ -36,6 +37,8 @@ const Report = ({ initialTransaction }) =>  {
   const [totalHousesPaid, setTotalHousesPaid] = useState(0);
   const [totalHouses, setTotalHouses] = useState(0);
   const [lastUpdate, setLastUpdate] = useState();
+  const [percentage, setPercentage] = useState(0);
+  const [expandedRows, setExpandedRows] = useState(null);
 
   
   const formatCurrency = (amount) => {
@@ -49,9 +52,6 @@ const Report = ({ initialTransaction }) =>  {
   const fetchTransactions = async () => {
     try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-            },
             params: {
               period: selectedPeriod
           }
@@ -60,6 +60,7 @@ const Report = ({ initialTransaction }) =>  {
         setTransactions(res.data.data);
         setReTransactions(res.data.data);
         setLastUpdate(res.data.lastUpdate);
+        
         setLoading(false);
     } catch (error) {
         console.error('Error fetching houses data:', error);
@@ -70,9 +71,7 @@ const Report = ({ initialTransaction }) =>  {
   const fetchTotalBalance = async () => {
     try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/balance`, {
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-            },
+           
         });
        // console.log(response.data)
         setTotalBalance(response.data.totalBalance);
@@ -119,9 +118,7 @@ const Report = ({ initialTransaction }) =>  {
   const fetchMonthlyPaid = async () => {
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/fee`, {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
+         
           params: {
             period: selectedPeriod
         }
@@ -129,6 +126,7 @@ const Report = ({ initialTransaction }) =>  {
      // console.log(res.data)
       setTotalHousesPaid(res.data.total_houses_paid);
       setTotalHouses(res.data.total);
+      setPercentage(res.data.percentage_paid);
     } catch (error) {
         console.error('Error fetching houses data:', error);
         setLoading(false);
@@ -155,14 +153,12 @@ const Report = ({ initialTransaction }) =>  {
   }, []);
 
   useEffect(() => {
-    if (session) {
-        fetchTransactions();
-        fetchTotalBalance();
-        fetchMonthlyPaid();
-        fetchMonthlyBalances();
-    }
+    fetchTransactions();
+    fetchTotalBalance();
+    fetchMonthlyPaid();
+    fetchMonthlyBalances();
 
-  }, [session, status,selectedPeriod]);
+  }, [selectedPeriod]);
   
 
 
@@ -173,7 +169,7 @@ const Report = ({ initialTransaction }) =>  {
       case 'expense':
         return <FaRegArrowAltCircleUp  className="text-red-500 h-4 w-4 md:h-5 md:w-5 " />;
       case 'ipl':
-        return <FaRegArrowAltCircleDown  className="text-green-500  h-4 w-4 md:h-5 md:w-5 " />;
+        return <FaRegArrowAltCircleDown  className="text-green-700  h-4 w-4 md:h-5 md:w-5 " />;
       default:
         return null;
     }
@@ -186,13 +182,30 @@ const Report = ({ initialTransaction }) =>  {
       case 'expense':
         return "text-red-500";
       case 'ipl':
-        return "text-green-500";
+        return "text-green-700";
       default:
         return null;
     }
   };
 
-  
+  const groupedTransactions = _.groupBy(transactions, 'transaction_type');
+
+   //console.log(groupedTransactions)
+  // console.log()
+
+  const handleExpandRow = (index) => {
+    let currentExpandedRows = null;
+    const isRowExpanded = currentExpandedRows === index ? index : null;
+    const newExpandedRows = isRowExpanded
+      ? null
+      : (currentExpandedRows = index);
+    if (expandedRows !== index) {
+      setExpandedRows(newExpandedRows);
+    } else {
+      setExpandedRows(null);
+    }
+  };
+
 
   if (loading) {
     return <Spinner />;
@@ -200,45 +213,56 @@ const Report = ({ initialTransaction }) =>  {
 
   return (
     <>
-    <CustomThemeProvider>
-          <Card className='mb-5'>
+    <CustomThemeProviderSecond>
+          <Card className='mb-5 shadow-none'>
             <div className='flex flex-col lg:flex-row justify-between gap-3'>
-              <div className='flex gap-3 border p-3'>
-                <Button className='items-center'>
-                  <GrMoney className="h-7 w-7" />
-                </Button>
-                <div>
-                <h2 className='md:text-2xl text-lg font-bold '>{formatCurrency(totalBalance)}</h2>
-                <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Saldo Total</h3>
+              <div className='flex flex-col border-cyan-700 gap-3 border-2 p-3 rounded-md lg:w-1/2'>
+                <div className='flex items-center content-center gap-2  md:gap-3 '>
+                  <span className='items-center content-center'>
+                    <GrMoney className="h-7 w-7 lg:h-10 lg:w-10 text-cyan-700" />
+                  </span>
+                  <div>
+                    <h2 className='md:text-2xl text-xl font-bold text-cyan-700 '>{formatCurrency(totalBalance)}</h2>
+                    
+                  </div>
                 </div>
+                <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Saldo Akhir</h3>
+                
               </div>
-             <div className='flex lg:flex-row gap-4 justify-start'>
-                <div className='flex gap-3 border p-3'>
-                    <Button className='items-center hidden lg:block'>
-                      <GrMoney className="h-7 w-7" />
-                    </Button>
-                    <div>
-                    <h2 className='md:text-2xl text-lg font-bold text-green-500 '>{formatCurrency(totalIncome)}</h2>
+             <div className='flex lg:flex-row gap-2 lg:gap-4 justify-between lg:justify-start'>
+                <div className='flex flex-col items-center content-center  gap-2  md:gap-3 p-2 lg:p-3 border-green-500 border-2 rounded-md'>
+                    <div className='flex items-center content-center gap-2  md:gap-3 '>
+                      <span className=''>
+                        <FaRegArrowAltCircleDown className="h-7 w-7 lg:h-10 lg:w-10 text-green-500" />
+                      </span>
+                      <div>
+                        <h2 className='md:text-2xl text-md font-bold text-green-500 '>{formatCurrency(totalIncome)}</h2>
+                        {/* <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pemasukan</h3> */}
+                      </div>
+                    </div>
                     <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pemasukan</h3>
-                    </div>
                 </div>
-                <div className='flex gap-3 border p-3'>
-                    <Button className='items-center hidden lg:block'>
-                      <GrMoney className="h-7 w-7" />
-                    </Button>
+                <div className='flex flex-col items-center content-center gap-2  md:gap-3 border-2 border-red-500 p-2 lg:p-3 rounded-md'>
+                  <div className='flex items-center content-center gap-2  md:gap-3 '>
+                    <span className=''>
+                      <FaRegArrowAltCircleUp className="h-7 w-7 lg:h-10 lg:w-10 text-red-500" />
+                    </span>
                     <div>
-                    <h2 className='md:text-2xl text-lg font-bold text-red-500 '>{formatCurrency(totalExpense)}</h2>
-                    <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pengaluaran</h3>
+                      <h2 className='md:text-2xl text-md font-bold text-red-500 '>{formatCurrency(totalExpense)}</h2>
+                      {/* <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pengaluaran</h3> */}
                     </div>
+                  </div>
+                  <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pengaluaran</h3> 
+                   
                 </div>
 
              </div>
             </div>
           </Card>
-    </CustomThemeProvider>
+    </CustomThemeProviderSecond>
         
     <CustomThemeProviderSecond>
-        <Card>
+        <Card className='mb-11'>
             <div className='flex items-center justify-start gap-4 mb-4 mt-3 bg-cyan-700 rounded-md p-3 '>
                 <div>
                     <span className='font-semibold text-white'>PERIODE</span>
@@ -264,8 +288,14 @@ const Report = ({ initialTransaction }) =>  {
             <div className='flex gap-1 md:gap-4 justify-between flex-row mb-4'>
             
                 <Card className='bg-green-700 text-white w-1/3'>
-                <h3 className='font-bold text-sm md:text-xl flex items-start'><span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>IPL</span></h3>
-                <span className='font-semibold text-sm md:text-lg'>{`${totalHousesPaid} / ${totalHouses} Rumah`}</span>
+                <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
+                  <span className='flex'>
+                    <span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-1 lg:mr-2" /></span>
+                    <span>IPL</span>
+                  </span>
+                  <span className='text-xs lg:text-sm font-normal lg:ml-3'>{`${totalHousesPaid} / ${totalHouses} Rumah`}</span>
+                  </h3>
+                <span className='font-semibold text-sm md:text-lg'>{percentage}</span>
                 </Card>
                 <Card className='bg-green-500 text-white w-1/3'>
                 <h3 className='font-bold text-sm md:text-xl flex items-start'><span><FaRegArrowAltCircleDown className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Masuk</span></h3>
@@ -278,43 +308,95 @@ const Report = ({ initialTransaction }) =>  {
             
             </div>
             {/* <div>{`Last Update: ${moment(lastUpdate).format('DD MMM yyyy')}`}</div> */}
-            <div className="overflow-x-auto">
-                <Table striped>
-                    <Table.Head className='' >
-                        <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Keterangan</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '>Nominal</Table.HeadCell>
-                    </Table.Head>
-                    <Table.Body className="divide-y">
-                    {transactions && transactions.length > 0 && transactions[0] !== undefined ? (
-                        transactions.map((transaction, index) => (
-                            <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                               
-                                <Table.Cell className={`${getTextColor(transaction.transaction_type)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                    <span className='flex items-start'>
-                                    <span>{getTypeIcon(transaction.transaction_type)} </span>
-                                    <span className="ml-2">{transaction.description}</span>
-                                    </span>
-                                </Table.Cell>
-                                <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                    {moment(transaction.date, 'DD MMM YYYY').format('DD/MM/YY')}
-                                </Table.Cell>
-                                <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                    {formatCurrency(transaction.amount)}
-                                </Table.Cell>
-                            </Table.Row>
-                        ))
-                        ) : (
-                        <Table.Row>
-                            <Table.Cell colSpan="3" className="text-center">Data tidak tersedia</Table.Cell>
-                        </Table.Row>
-                    )}
+            <CustomThemeProviderSecond>
+              <div className="overflow-x-auto">
+                  <Table>
+                      <Table.Head className='' >
+                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2/3'>Keterangan</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '>Nominal</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '></Table.HeadCell>
+                      </Table.Head>
+                      <Table.Body className="divide-y">
+                        {transactions && transactions.length > 0 && transactions[0] !== undefined ? (
+                          <>
+                            {Object.keys(groupedTransactions).map((transactionType, index) => (
+                              <React.Fragment key={index}>
+                                {groupedTransactions[transactionType].length > 0 && (
+                                  <Table.Row 
+                                  className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
+                                  onClick={() => handleExpandRow(index)}>
+                                    <Table.Cell colSpan="2" className={`${getTextColor(transactionType)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
+                                      {transactionType === 'ipl' ? `Pemasukan IPL` : transactionType === 'income' ? 'Pemasukan Lainnya' : transactionType === 'expense' ? 'Pengeluaran' : ''}
+                                      </Table.Cell>
+                                    <Table.Cell className={`${getTextColor(transactionType)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>{formatCurrency(groupedTransactions[transactionType].reduce((acc, curr) => acc + curr.amount, 0))}</Table.Cell>
+                                    <Table.Cell className={`${getTextColor(transactionType)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
+                                      {expandedRows === index ? <IoChevronUpSharp /> : <IoChevronDownSharp />}
+                                      </Table.Cell>
+                                  </Table.Row>
+                                )}
 
-                    
-                    
-                    </Table.Body>
-                </Table>
-            </div>
+                                {expandedRows === index ? (
+                                  <>
+                                   {groupedTransactions[transactionType].map((transaction, subIndex) => (
+                                    <Table.Row key={subIndex} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === index? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                      <Table.Cell className={`${getTextColor(transaction.transaction_type)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                        <span className='flex items-start'>
+                                          <span>{getTypeIcon(transaction.transaction_type)} </span>
+                                          <span className="ml-2">{transaction.description}</span>
+                                        </span>
+                                      </Table.Cell>
+                                      <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                        {moment(transaction.date, 'DD MMM YYYY').format('DD/MM/YY')}
+                                      </Table.Cell>
+                                      <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                        {formatCurrency(transaction.amount)}
+                                      </Table.Cell>
+                                    </Table.Row>
+                                  ))}
+                                  </>
+                                ) : null}
+                              </React.Fragment>
+                            ))}
+                          </>
+                        ) : (
+                          <Table.Row>
+                          <Table.Cell colSpan="3" className="text-center">Data tidak tersedia</Table.Cell>
+                          </Table.Row>
+                        ) }
+                      
+                        
+                      {/* {transactions && transactions.length > 0 && transactions[0] !== undefined ? (
+                          transactions.map((transaction, index) => (
+                              <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                                  <Table.Cell className={`${getTextColor(transaction.transaction_type)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                      <span className='flex items-start'>
+                                      <span>{getTypeIcon(transaction.transaction_type)} </span>
+                                      <span className="ml-2">{transaction.description}</span>
+                                      </span>
+                                  </Table.Cell>
+                                  <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                      {moment(transaction.date, 'DD MMM YYYY').format('DD/MM/YY')}
+                                  </Table.Cell>
+                                  <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                      {formatCurrency(transaction.amount)}
+                                  </Table.Cell>
+                              </Table.Row>
+                          ))
+                          ) : (
+                          <Table.Row>
+                              <Table.Cell colSpan="3" className="text-center">Data tidak tersedia</Table.Cell>
+                          </Table.Row>
+                      )} */}
+
+                      
+                      
+                      </Table.Body>
+                  </Table>
+                  
+              </div>
+            </CustomThemeProviderSecond>
+            
         </Card>
     </CustomThemeProviderSecond>
     </>
@@ -324,20 +406,20 @@ const Report = ({ initialTransaction }) =>  {
 export const getServerSideProps = async (context) => {
     const session = await getSession(context);
     
-    if (!session) {
-        return {
-            redirect: {
-                destination: '/',
-                permanent: false,
-            },
-        };
-    }
+    // if (!session) {
+    //     return {
+    //         redirect: {
+    //             destination: '/',
+    //             permanent: false,
+    //         },
+    //     };
+    // }
   
     try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
-            headers: {
-                Authorization: `Bearer ${session.accessToken}`,
-            },
+            // headers: {
+            //     Authorization: `Bearer ${session.accessToken}`,
+            // },
         });
         return {
             props: {

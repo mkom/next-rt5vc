@@ -47,7 +47,7 @@ export default NextAuth({
     },
 
     async redirect({ url, baseUrl }) {
-      return `/home`; // Redirect ke halaman utama setelah login
+      return `/`; // Redirect ke halaman utama setelah login
   }
   },
   secret: process.env.NEXTAUTH_SECRET,

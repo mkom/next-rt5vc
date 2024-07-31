@@ -8,7 +8,7 @@ import ReactPaginate from 'react-paginate';
 
 import { Table } from "flowbite-react";
 import { Button } from "flowbite-react";
-import { Label, TextInput,Drawer,Select } from "flowbite-react";
+import { Label, TextInput,Drawer,Select,Dropdown,Alert } from "flowbite-react";
 import Header from '../../components/Header';
 import SideMenu from '../../components/dashboard/Sidebar'
 import Spinner from '../../components/Spinner';
@@ -16,6 +16,9 @@ import { HiPencilAlt } from "react-icons/hi";
 import { HiHome } from "react-icons/hi";
 import { HiMail } from "react-icons/hi";
 import { HiOutlineSearch } from "react-icons/hi";
+import {  FaCheckCircle, FaTimesCircle, FaHourglassHalf,FaRegEdit,FaEye,FaRegTrashAlt } from 'react-icons/fa';
+import { FaEllipsisH } from "react-icons/fa";
+import { FaExchangeAlt } from "react-icons/fa";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -37,6 +40,19 @@ const Houses = ({ initialHouses }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState('success');
+
+  const handleAlertDismiss = () => {
+    handleAlertTimeout(0);
+  };
+
+  const handleAlertTimeout = (timeoutDuration) => {
+    setTimeout(() => {
+      setShowAlert(false);
+    }, timeoutDuration);
+  };
 
   useEffect(() => {
     if (session) {
@@ -47,9 +63,18 @@ const Houses = ({ initialHouses }) => {
                       Authorization: `Bearer ${session.accessToken}`,
                     },
                 });
+                setAlertType('success');
+                setAlertMessage('Data berhasil diupdate');
+                setShowAlert(true);
+                handleAlertTimeout(3000);
+
                 setHouses(res.data);
                 setLoading(false);
             } catch (error) {
+              setAlertType('failure');
+              setAlertMessage('Gagal mengupdate rumah');
+              setShowAlert(true);
+              handleAlertTimeout(3000);
                 console.error('Error fetching houses data:', error);
                 setLoading(false);
             }
@@ -135,6 +160,11 @@ const Houses = ({ initialHouses }) => {
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
         <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
+        {showAlert && (
+            <Alert className='' color={alertType === 'success' ? 'success' : 'failure'} onDismiss={handleAlertDismiss}>
+                <span className="font-medium">{alertMessage}</span>
+            </Alert>
+        )}
           <h1 className='text-xl mb-4 flex font-semibold text-gray-900 sm:text-2xl dark:text-white'>
             <HiHome  className="mr-2 h-8 w-8" /> 
             <span>Data Rumah</span>
@@ -163,8 +193,9 @@ const Houses = ({ initialHouses }) => {
             <Table hoverable>
                 <Table.Head>
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>No</Table.HeadCell>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>No Rumah</Table.HeadCell>
+                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Rumah</Table.HeadCell>
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Nama</Table.HeadCell>
+                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>No. WA</Table.HeadCell>
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Status</Table.HeadCell>
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Tarif IPL</Table.HeadCell>
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>
@@ -179,13 +210,21 @@ const Houses = ({ initialHouses }) => {
                             </Table.Cell>
                             <Table.Cell className='py-2 px-4 md:py-3 md:px-'>{house.house_id}</Table.Cell>
                             <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.resident_name}</Table.Cell>
+                            <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.whatsapp_number}</Table.Cell>
                             <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.occupancy_status}</Table.Cell>
                             <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{formatCurrency(house.fee)}</Table.Cell>
                             <Table.Cell className='py-2 px-4 md:py-3 md:px-'>
-                                <Button size="sm" onClick={() => handleEditClick(house)}>
+                                {/* <Button size="sm" onClick={() => handleEditClick(house)}>
                                     <HiPencilAlt  className="md:mr-2 h-4 w-4" />
                                     <span className='hidden md:block'>Edit</span>
-                                </Button>
+                                </Button> */}
+
+                          <Dropdown  className="relative z-50 cursor-pointer" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4 cursor-pointer" /></span>}>
+                            <Dropdown.Item onClick={() => handleEditClick(house)}><FaRegEdit className='mr-1'/><span>Edit</span></Dropdown.Item>
+                            <Dropdown.Item><FaEye className='mr-1'/><span>View</span></Dropdown.Item>
+                            <Dropdown.Item  ><FaRegTrashAlt className='mr-1' /><span>Delete</span></Dropdown.Item>
+                          </Dropdown>
+
                             </Table.Cell>
                         </Table.Row>
                     ))}
@@ -226,6 +265,14 @@ const Houses = ({ initialHouses }) => {
                     <TextInput
                         name="resident_name"
                         value={editData?.resident_name || ''}
+                        onChange={handleInputChange}
+                        className="mb-4"
+                    />
+                    <label className="block mb-2 text-sm font-medium text-gray-700">No. Whatsapp</label>
+                    <TextInput
+                        name="whatsapp_number"
+                        type="number"
+                        value={editData?.whatsapp_number || ''}
                         onChange={handleInputChange}
                         className="mb-4"
                     />
