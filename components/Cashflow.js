@@ -8,7 +8,7 @@ import { TextInput,Table} from "flowbite-react";
 import { HiOutlineSearch } from "react-icons/hi";
 import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
-import { MdMotionPhotosPaused } from "react-icons/md";
+import { MdMotionPhotosPaused,MdNavigateNext } from "react-icons/md";
 import FilterCashflow from './FilterCashflow';
 import moment from 'moment';
 import 'moment/locale/id';
@@ -100,8 +100,9 @@ const AllCashflow = ({ initialTransaction }) =>  {
     const offset = currentPage * ITEMS_PER_PAGE;
     const currentPageData = filteredTransactions.slice(offset, offset + ITEMS_PER_PAGE);
   
+    
     const handlePageClick = (data) => {
-        const page = data.selected + 1;
+        const page = data.selected;
         const queryObj = { ...router.query };
         // delete queryObj.startDate;
         // delete queryObj.endDate;
@@ -144,18 +145,22 @@ const AllCashflow = ({ initialTransaction }) =>  {
   
    // console.log(transactions)
 
-   const totalAmount = filteredTransactions.reduce((acc, transaction) => {
-    if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
-      return acc + transaction.amount;
-    } else if (transaction.transaction_type === 'expense') {
-      return acc - transaction.amount;
-    }
-    return acc;
-   }, 0);
-  
+    const totalAmount = filteredTransactions.reduce((acc, transaction) => {
+        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
+        return acc + transaction.amount;
+        } else if (transaction.transaction_type === 'expense') {
+        return acc - transaction.amount;
+        }
+        return acc;
+    }, 0);
+
+    const currentPageNav = currentPage + 1;
+    const pageCount = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
+
+  //console.log(pageCount)
     return (
-      <>
-      
+        <>
+        
         <div className="max-w-md mb-4 flex justify-between content-center items-center gap-3">
             <CustomThemeProviderSecond>
             <TextInput 
@@ -180,8 +185,8 @@ const AllCashflow = ({ initialTransaction }) =>  {
                 initialEndDate={pEndDate}
             />
         </div>
-      
-       <div className='mb-4 flex justify-between content-center items-center'> 
+        
+        <div className='mb-4 flex justify-between content-center items-center'> 
         <span className='font-semibold'>{formatCurrency(totalAmount)}</span>
         <span className='text-xs'>Last Update: {lastUpdate}</span>
         </div>
@@ -227,14 +232,49 @@ const AllCashflow = ({ initialTransaction }) =>  {
                     {getStatusIcon(transaction.status)} 
                     </span>
                 </Table.Cell> */}
-               
+                
             </Table.Row>
 
             ))}
             </Table.Body>
         </Table>
         </div>
-        <nav className='py-6'>
+        <nav className="py-6">
+        <div className="flex justify-end items-center content-center">
+            <span className="text-sm mr-3">
+            {currentPageNav * ITEMS_PER_PAGE - ITEMS_PER_PAGE + 1} - {Math.min(currentPageNav * ITEMS_PER_PAGE, filteredTransactions.length)} of {filteredTransactions.length}
+            </span>
+            <ReactPaginate
+            previousLabel={
+            currentPageNav === 1 ? (
+                <span className="h-full" disabled>
+                <MdNavigateNext className='h-6 w-6 rotate-180' />
+                </span>
+            ) : (
+                <span><MdNavigateNext className='h-6 w-6 rotate-180' /></span>
+            )}
+            nextLabel={
+            currentPageNav === pageCount ? (
+                <span  disabled>
+                <MdNavigateNext className='h-6 w-6' />
+                </span>
+            ) : (
+                <span><MdNavigateNext className='h-6 w-6' /></span>
+            )}
+            breakLabel={''}
+            pageCount={pageCount}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+            onPageChange={handlePageClick}
+            containerClassName={'pagination flex justify-center -space-x-px text-sm'}
+            pageClassName={'hidden'}
+            previousClassName={'px-2 py-1 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+            nextClassName={'px-2 py-1 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+            />
+        </div>
+        </nav>
+
+        {/* <nav className='py-6'>
         <ReactPaginate
             previousLabel={'Previous'}
             nextLabel={'Next'}
@@ -255,9 +295,9 @@ const AllCashflow = ({ initialTransaction }) =>  {
             activeClassName={'active bg-gray-300'}
             activeLinkClassName={'bg-red-300'}
         />
-        </nav>
+        </nav> */}
 
-      </>
+        </>
     );
 }
 
