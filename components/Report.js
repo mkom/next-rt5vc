@@ -369,7 +369,7 @@ const Report = ({ initialTransaction }) =>  {
                           <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2/3'>Keterangan</Table.HeadCell>
                           <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
                           <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '>Nominal</Table.HeadCell>
-                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '></Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-4 '></Table.HeadCell>
                       </Table.Head>
                       <Table.Body className="divide-y">
                         {transactions && transactions.length > 0 && transactions[0] !== undefined ? (
@@ -391,7 +391,7 @@ const Report = ({ initialTransaction }) =>  {
                                        <span className='pr-1' >{transactionType === 'ipl' ? `+` : transactionType === 'income' ? '+' : transactionType === 'expense' ? '-' : ''}</span>
                                        <span>{formatCurrency(groupedTransactions[transactionType].reduce((acc, curr) => acc + curr.amount, 0))}</span>
                                     </Table.Cell>
-                                    <Table.Cell className={`${getTextColor(transactionType)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
+                                    <Table.Cell className={`${getTextColor(transactionType)}items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
                                       {expandedRows === index ? <IoChevronUpSharp /> : <IoChevronDownSharp />}
                                       </Table.Cell>
                                   </Table.Row>
