@@ -19,7 +19,7 @@ const DataOutstanding = () => {
     <main className='max-w-screen-xl mx-auto'>
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
-        <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
+        <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64 mb-11'>
           <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>OUTSTANDING IPL</h1>
           <Outstanding/>
         </section>
