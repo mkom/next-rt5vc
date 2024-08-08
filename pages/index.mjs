@@ -1,15 +1,8 @@
-import Image from "next/image";
-import { Button } from "flowbite-react";
 import { Inter } from "next/font/google";
-import { HiOutlineArrowRight } from "react-icons/hi";
-import { signIn, signOut, useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
-import { useEffect,useState } from 'react';
+import {useState } from 'react';
 import Header from '../components/Header';
 import SideMenu from '../components/Sidebar';
 import Report from '../components/Report';
-
-const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

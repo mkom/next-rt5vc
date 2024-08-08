@@ -1,6 +1,6 @@
 import {useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { useState,useEffect} from 'react';
+import { useState} from 'react';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -9,38 +9,23 @@ import 'moment/locale/id';
 import id from "date-fns/locale/id";
 moment.locale('id');
 
-const FilterTransactions = ({ setTransactions, initialTransaction,initialStartDate,initialEndDate }) => {
+const FilterTransactions = ({ setTransactions, initialTransaction }) => {
     //const { data: session } = useSession();
     // const [startDate, setStartDate] = useState('');
     // const [endDate, setEndDate] = useState('');
-    const [dateRange, setDateRange] = useState([initialStartDate, initialEndDate]);
+    const [dateRange, setDateRange] = useState([null, null]);
     const [startDate, endDate] = dateRange;
     const router = useRouter();
-
-
-
+    
     const handleDataRange = (update) => {
         setDateRange(update)
 
         if(update[0] === null && update[1] === null) {
             //console.log(initialTransaction)
             setTransactions(initialTransaction);
-            const query = { ...router.query };
-            delete query.startDate;
-            delete query.endDate;
-            router.push({
-                pathname: '/transactions',
-                query: query,
-            });
-            
         } else {
+           
             handleFilter(update[0], update[1]);
-            const startDate = moment(update[0]).format('YYYY-MM-DD');
-            const endDate = moment(update[1]).format('YYYY-MM-DD');
-            router.push({
-                pathname: '/transactions',
-                query: { ...router.query, startDate: `${startDate}`, endDate:`${endDate}` },
-            });
         }
     } 
 
@@ -67,12 +52,6 @@ const FilterTransactions = ({ setTransactions, initialTransaction,initialStartDa
             console.error('Error fetching filtered transactions:', error);
         }
     };
-
-    useEffect(() => {
-        if(router.query.startDate && router.query.endDate) {
-            handleDataRange(dateRange);
-        }
-    }, [router.query.startDate, router.query.endDate]);
 
     return (
         <DatePicker

@@ -1,8 +1,8 @@
-// pages/home.js
+
 import { getSession, useSession } from 'next-auth/react';
-import { useEffect,useState } from 'react';
+import { useCallback, useEffect,useState } from 'react';
 import axios from 'axios';
-import { useRequireAuth } from '../../utils/authUtils'; 
+import { useRequireAuth } from '../../utils/authUtils.js'; 
 import ReactPaginate from 'react-paginate';
 
 import Header from '../../components/Header';
@@ -28,6 +28,7 @@ const ITEMS_PER_PAGE = 15;
 const Transaction = ({ initialTransaction }) =>  {
   const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
   useAuthRedirect();
+  
   const [transactions, setTransactions] = useState([initialTransaction]);
   const [reTransactions, setReTransactions] = useState([initialTransaction])
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -133,13 +134,24 @@ const Transaction = ({ initialTransaction }) =>  {
     }).format(amount);
   };
 
-  const fetchTransactions = async () => {
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+  
+    // Extract day, month, and year
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = String(date.getFullYear()).slice(-2); // Get last two digits of the year
+  
+    // Format the date as DD/MM/YY
+    return `${day}/${month}/${year}`;
+  };
+
+  const fetchTransactions = useCallback( async () => {
     try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-            },
+
         });
+
         setTransactions(res.data.data);
         setReTransactions(res.data.data);
         setLoading(false);
@@ -147,14 +159,14 @@ const Transaction = ({ initialTransaction }) =>  {
         console.error('Error fetching houses data:', error);
         setLoading(false);
     }
- };
+  },[]);
 
   useEffect(() => {
     if (session) {
         fetchTransactions();
     }
 
-  }, [session, status]);
+  }, [session, status,fetchTransactions]);
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
@@ -328,6 +340,7 @@ const Transaction = ({ initialTransaction }) =>  {
           <div className='overflow-x-auto'>
             <Table hoverable>
               <Table.Head>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3  w-8'>No</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 w-3/4'>Keterangan</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tanggal</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Nominal</Table.HeadCell>
@@ -340,14 +353,18 @@ const Transaction = ({ initialTransaction }) =>  {
               <Table.Body className="divide-y">
                 
                 {currentPageData.map((transaction, index) => ( 
-                  <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                    <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 ${getTextColor(transaction.transaction_type)}`}>
+                  <Table.Row key={index} className="py-2 px-2 md:py-3 md:px-3 text-xs md:text-base">
+                    <Table.Cell className={`flex items-start content-start`}>
+                    {offset + index + 1}
+                    </Table.Cell>
+
+                    <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
                       <span className='flex items-start content-start'>
                         <span>{getTypeIcon(transaction.transaction_type)} </span>
                         <span className="ml-2">{transaction.description}</span> 
                       </span>
                     </Table.Cell>
-                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{moment(transaction.date, 'DD MMM YYYY').format('DD/MM/YY')}</Table.Cell>
+                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatDate(transaction.date)}</Table.Cell>
                     <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatCurrency(transaction.amount)}</Table.Cell>
                     
                     <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
@@ -385,15 +402,15 @@ const Transaction = ({ initialTransaction }) =>  {
                 onPageChange={handlePageClick}
                 containerClassName={'pagination flex justify-center -space-x-px text-sm'}
                 pageClassName={'page-item'}
-                pageLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+                pageLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
                 previousClassName={'page-item'}
-                previousLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+                previousLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
                 nextClassName={'page-item'}
-                nextLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+                nextLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
                 breakClassName={'page-item'}
-                breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                activeClassName={'active'}
-                activeLinkClassName={'bg-gray-300'}
+                breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+                activeClassName={'active bg-gray-300'}
+                activeLinkClassName={'bg-red-300'}
             />
           </nav>
 
@@ -436,14 +453,14 @@ const Transaction = ({ initialTransaction }) =>  {
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
   
-  if (!session) {
-      return {
-          redirect: {
-              destination: '/',
-              permanent: false,
-          },
-      };
-  }
+  // if (!session) {
+  //     return {
+  //         redirect: {
+  //             destination: '/',
+  //             permanent: false,
+  //         },
+  //     };
+  // }
 
   try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {

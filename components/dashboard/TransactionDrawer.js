@@ -80,7 +80,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
       }
      
     }
-  }, [houseId, relatedMonths, transactionType]);
+  }, [houseId, relatedMonths, transactionType,houseName]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -99,8 +99,9 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
                 'Content-Type': 'multipart/form-data',
             },
         });
-        setUploadUrl(response.data.url);
-        return response.data.url;
+        //console.log(response.data.fileUrl);
+        setUploadUrl(response.data.fileUrl);
+        return response.data.fileUrl;
     } catch (error) {
         //console.error('Error uploading file:', error);
         //alert('Failed to upload file.');
@@ -250,6 +251,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
     setPaymentType('');
     fileInputRef.current.value = '';
     setErrors({});
+    setIsProcessing(false);
   };
 
  
@@ -340,7 +342,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
               <FileInput 
                 id="file" 
                 onChange={handleFileChange} 
-                accept=".jpg,.png,.pdf"
+                accept=".jpg,.png,.pdf,.jpeg"
                 ref={fileInputRef}
               />
               <TextInput

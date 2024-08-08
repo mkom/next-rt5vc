@@ -1,9 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 import flowbite from "flowbite-react/tailwind";
 export const content = [
-  "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-  "./components/**/*.{js,ts,jsx,tsx,mdx}",
-  "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  "./pages/**/*.{mjs,js,ts,jsx,tsx,mdx}",
+  "./components/**/*.{mjs,js,ts,jsx,tsx,mdx}",
+  "./app/**/*.{mjs,js,ts,jsx,tsx,mdx}",
   "./node_modules/flowbite/**/*.js",
   flowbite.content(),
 ];

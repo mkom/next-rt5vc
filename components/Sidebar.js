@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+
 import { useRouter } from 'next/router';
 import { Sidebar } from "flowbite-react";
-import { BiBuoy } from "react-icons/bi";
-import { HiArrowSmRight, HiChartPie, HiInbox, HiShoppingBag, HiTable, HiUser, HiViewBoards } from "react-icons/hi";
 import { useSession } from 'next-auth/react';
 import { IoIosHome } from "react-icons/io";
+import { HiChartPie,HiDocumentReport,HiUser, HiViewBoards } from "react-icons/hi";
 
 const SideMenu = ({ isOpen }) => {
     const { data: session } = useSession();
@@ -22,30 +21,30 @@ const SideMenu = ({ isOpen }) => {
         <Sidebar  className={`fixed top-0  z-40 w-64 h-screen pt-14 transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} bg-white border-r border-gray-200 sm:translate-x-0 duration-300 ease-in-out dark:bg-gray-800 dark:border-gray-700`}>
         <Sidebar.Items >
 
-            {hasRole(['admin', 'editor', 'superadmin','user']) && (
-                <Sidebar.ItemGroup>
-                <Sidebar.Item href="/home" icon={IoIosHome}>
-                    Beranda
-                </Sidebar.Item>
-                </Sidebar.ItemGroup>
-            )}
-
             <Sidebar.ItemGroup>
-            {/* <Sidebar.Item href="#" icon={HiChartPie}>
-                Upgrade to Pro
-            </Sidebar.Item> */}
-            <Sidebar.Item href="/data-ipl" 
-            icon={HiChartPie}
-            className={pathname === '/data-ipl' ? 'text-gray-900 bg-gray-100' : ''}>
-                Data IPL
+            <Sidebar.Item href="/home" icon={IoIosHome}>
+                Beranda
             </Sidebar.Item>
-            {/* <Sidebar.Item href="#" icon={HiViewBoards}>
-                Dokumen
-            </Sidebar.Item> */}
-{/*             
-            <Sidebar.Item href="#" icon={BiBuoy}>
-                Help
-            </Sidebar.Item> */}
+            <Sidebar.Item href="/transactions" icon={HiViewBoards}>
+                Transaksi
+            </Sidebar.Item>
+            </Sidebar.ItemGroup>
+            <Sidebar.ItemGroup>
+            <Sidebar.Collapse 
+                className={pathname === '/data-ipl' || pathname === '/outstanding' ? 'text-gray-900 bg-gray-100' : ''}
+                icon={HiDocumentReport} 
+                label="IPL">
+                    <Sidebar.Item 
+                    className={pathname === '/data-ipl' ? 'text-gray-900 bg-gray-100' : ''}
+                    href="/data-ipl">Data IPL</Sidebar.Item>
+                    <Sidebar.Item
+                    className={pathname === '/outstanding' ? 'text-gray-900 bg-gray-100' : ''}
+                    href="/outstanding">IPL Outstanding</Sidebar.Item>
+                    <Sidebar.Item
+                    className={pathname === '/tbd-ipl' ? 'text-gray-900 bg-gray-100' : ''}
+                    href="/tbd-ipl">IPL TBD</Sidebar.Item>
+            </Sidebar.Collapse>
+              
             </Sidebar.ItemGroup>
 
             
