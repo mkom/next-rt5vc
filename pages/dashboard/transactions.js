@@ -17,7 +17,7 @@ import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
 import { FaEllipsisH } from "react-icons/fa";
 import { FaExchangeAlt } from "react-icons/fa";
-import FilterTransactions from '../../components/FilterTransactions';
+import FilterTransactions from '../../components//dashboard/FilterTransactions';
 import moment from 'moment';
 import 'moment/locale/id';
 moment.locale('id');

@@ -25,8 +25,8 @@ const SideMenu = ({ isOpen }) => {
             <Sidebar.Item href="/home" icon={IoIosHome}>
                 Beranda
             </Sidebar.Item>
-            <Sidebar.Item href="/transactions" icon={HiViewBoards}>
-                Transaksi
+            <Sidebar.Item href="/cashflow" icon={HiViewBoards}>
+                Arus Kas
             </Sidebar.Item>
             </Sidebar.ItemGroup>
             <Sidebar.ItemGroup>

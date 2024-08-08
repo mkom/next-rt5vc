@@ -98,6 +98,8 @@ const IplReport = ({ initialHousesPaid }) =>  {
   
   const handleMonthChange = (selectedOption) => {
     setSelectedPeriod(selectedOption.value);
+    setTotalHousesPaid(0);
+    setPercentage(0);
   };
 
  
@@ -141,96 +143,94 @@ const IplReport = ({ initialHousesPaid }) =>  {
   return (
     <>
     <CustomThemeProviderSecond>
-        <Card>
-            <div className='flex items-center justify-start gap-4 mb-2 mt-3 bg-cyan-700 rounded-md p-3 '>
-                <div>
-                    <span className='font-semibold text-white'>PERIODE</span>
-                </div>
-                <Select
-                    id="relatedMonths"
-                    options={MonthOptions(monthly)}
-                    value={MonthOptions(monthly).find(option => option.value === selectedPeriod)}
-                    onChange={handleMonthChange}
-                    placeholder="Pilih bulan"
-                    className='bg-gray-50 rounded w-full md:w-1/3'
-                    styles={{
-                      control: (baseStyles, state) => ({
-                        ...baseStyles,
-                        backgroundColor: '#0e7490',
-                      }),
-                      input: (styles) => ({ ...styles, color: '#fff' }),
-                      placeholder: (styles) => ({ ...styles, color: '#fff' }),
-                      singleValue: (styles, { data }) => ({ ...styles, color: '#fff' }),
-                    }}
-                />
-            </div>
+      <div className='flex items-center justify-start gap-4 mb-2 mt-3 bg-cyan-700 rounded-md p-3 '>
+          <div>
+              <span className='font-semibold text-white'>PERIODE</span>
+          </div>
+          <Select
+              id="relatedMonths"
+              options={MonthOptions(monthly)}
+              value={MonthOptions(monthly).find(option => option.value === selectedPeriod)}
+              onChange={handleMonthChange}
+              placeholder="Pilih bulan"
+              className='bg-gray-50 rounded w-full md:w-1/3'
+              styles={{
+                control: (baseStyles, state) => ({
+                  ...baseStyles,
+                  backgroundColor: '#0e7490',
+                }),
+                input: (styles) => ({ ...styles, color: '#fff' }),
+                placeholder: (styles) => ({ ...styles, color: '#fff' }),
+                singleValue: (styles, { data }) => ({ ...styles, color: '#fff' }),
+              }}
+          />
+      </div>
 
-            <div className='flex gap-1 md:gap-4 justify-start flex-row mb-4'>
-            
-                <Card className='bg-green-700 text-white w-1/2'>
-                <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
-                  <span className='flex '>
-                    <span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-1 lg:mr-2" /></span>
-                    <span>IPL</span>
-                    <span className='ml-1 text-xs lg:text-sm font-normal lg:ml-3 flex items-center'>{`${totalHousesPaid} / ${totalHouses} Rumah`}</span>
-                  </span>
-                  
-                  </h3>
-                <span className='font-semibold text-sm md:text-lg'>{percentage}</span>
-                </Card>
-                <Card className='bg-blue-700 text-white w-1/2'>
-                <h3 className='font-bold text-sm md:text-xl flex items-start'><span><GrMoney className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Nominal</span></h3>
-                <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalPaid)}</span>
-                </Card>
-              
-            </div>
-           
-            <div className="overflow-x-auto">
-                <Table striped>
-                    <Table.Head className='' >
-                        <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2'>No</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>No Rumah</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Ket.</Table.HeadCell>
-                    </Table.Head>
-                    <Table.Body className="divide-y">
-                    {monthlyPaid && monthlyPaid.length > 0 && monthlyPaid[0] !== undefined ? (
-                        monthlyPaid.map((monthly, index) => (
-                            <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                               <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                               {offset + index + 1}
-                                </Table.Cell>
-
-                                <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                  <span className="">{monthly.house_id}</span>
-                                </Table.Cell>
-                                <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                  <span>{getTypeIcon(monthly.monthly_fees[0].status)} </span>
-                                </Table.Cell>
-
-                                <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                  {(monthly.monthly_fees[0].transaction_date ? formatDate(monthly.monthly_fees[0].transaction_date): '-')}
-                                </Table.Cell>
-
-                                <Table.Cell className={`py-2 px-2 md:py-3 md:px-3text-xs md:text-base`}>
-                                 {(monthly.monthly_fees[0].status === 'TBD' ? 'TBD': '')}
-                                </Table.Cell>
-                                
-                            </Table.Row>
-                        ))
-                        ) : (
-                        <Table.Row>
-                            <Table.Cell colSpan="4" className="text-center">Data tidak tersedia</Table.Cell>
-                        </Table.Row>
-                    )}
-
-                    
-                    
-                    </Table.Body>
-                </Table>
-            </div>
+      <div className='flex gap-1 md:gap-4 justify-start flex-row mb-4'>
+      
+        <Card className='bg-green-700 text-white w-1/2'>
+        <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
+          <span className='flex '>
+            <span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-1 lg:mr-2" /></span>
+            <span>IPL</span>
+            <span className='ml-1 text-xs lg:text-sm font-normal lg:ml-3 flex items-center'>{`${totalHousesPaid} / ${totalHouses} Rumah`}</span>
+          </span>
+          
+          </h3>
+        <span className='font-semibold text-sm md:text-lg'>{percentage}</span>
         </Card>
+        <Card className='bg-blue-700 text-white w-1/2'>
+        <h3 className='font-bold text-sm md:text-xl flex items-start'><span><GrMoney className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Nominal</span></h3>
+        <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalPaid)}</span>
+        </Card>
+        
+      </div>
+      
+      <div className="overflow-x-auto">
+        <Table striped>
+            <Table.Head className='' >
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2'>No</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>No Rumah</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Ket.</Table.HeadCell>
+            </Table.Head>
+            <Table.Body className="divide-y">
+            {monthlyPaid && monthlyPaid.length > 0 && monthlyPaid[0] !== undefined ? (
+                monthlyPaid.map((monthly, index) => (
+                    <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                        <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                        {offset + index + 1}
+                        </Table.Cell>
+
+                        <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                          <span className="">{monthly.house_id}</span>
+                        </Table.Cell>
+                        <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                          <span>{getTypeIcon(monthly.monthly_fees[0].status)} </span>
+                        </Table.Cell>
+
+                        <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                          {(monthly.monthly_fees[0].transaction_date ? formatDate(monthly.monthly_fees[0].transaction_date): '-')}
+                        </Table.Cell>
+
+                        <Table.Cell className={`py-2 px-2 md:py-3 md:px-3text-xs md:text-base`}>
+                          {(monthly.monthly_fees[0].status === 'TBD' ? 'TBD': '')}
+                        </Table.Cell>
+                        
+                    </Table.Row>
+                ))
+                ) : (
+                <Table.Row>
+                    <Table.Cell colSpan="4" className="text-center">Data tidak tersedia</Table.Cell>
+                </Table.Row>
+            )}
+
+            
+            
+            </Table.Body>
+        </Table>
+      </div>
     </CustomThemeProviderSecond>
     </>
   );

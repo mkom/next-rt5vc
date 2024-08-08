@@ -10,7 +10,7 @@ import { GrMoney } from "react-icons/gr";
 import {FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa';
 import { GrFormNextLink } from "react-icons/gr";
 import { MdMotionPhotosPaused } from "react-icons/md";
-
+import { IoChevronDownSharp,IoChevronUpSharp } from "react-icons/io5";
 import { HiEye, HiInformationCircle } from "react-icons/hi";
 
 import { HiHome } from "react-icons/hi";
@@ -67,9 +67,9 @@ const Report = ({ initialTransaction }) =>  {
   const fetchTransactions = useCallback( async () => {
     try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
-          //   params: {
-          //     period: selectedPeriod
-          // }
+            params: {
+              period: selectedPeriod
+          }
         });
         //console.log(res.data)
         setTransactions(res.data.data);
@@ -82,7 +82,7 @@ const Report = ({ initialTransaction }) =>  {
         console.error('Error fetching Transaction data:', error);
         setLoading(false);
     }
-  },[]);
+  },[selectedPeriod]);
 
   const fetchTotalBalance = useCallback( async () => {
     try {
@@ -170,6 +170,8 @@ const Report = ({ initialTransaction }) =>  {
   
   const handleMonthChange = (selectedOption) => {
     setSelectedPeriod(selectedOption.value);
+    setTotalHousesPaid(0);
+    setPercentage(0);
   };
 
 
@@ -246,10 +248,10 @@ const Report = ({ initialTransaction }) =>  {
   function ExampleAdditionalContent() {
     return (
       <>
-        <div className="mb-4 mt-2 text-xs text-cyan-700 dark:text-cyan-800">
+        <div className="mb-4 mt-2 text-md text-cyan-700 dark:text-cyan-800">
         <List>
-          <List.Item><span className='font-medium'>Dana IPL Januari - Juni 2024 (IPL Paguyuban)</span> yang masuk ke rekening RT 05 (BCA 4210541557, a.n. Hamka) sebesar <span className='text-red-700 font-bold'>{formatCurrency(totalIplPaguyuban)}</span>. Selanjutnya statusnya dibekukan, detail <Link href='/transactions?s=%23IPLPaguyuban' className='text-red-700 font-bold'>disini</Link>.</List.Item>
-          <List.Item><span className='font-medium'>Dana IPL Juli - Desember 2024 (IPL RT 05)</span> yang masuk ke rekening Paguyuban (BCA 1671854662, a.n. Agus T.N.) sebesar <span className='text-red-700 font-bold'>{formatCurrency(totalIplTbd)}</span>. Dana masih belum bisa ditarik ke kas RT 05, detail <Link href='/tbd-ipl' className='text-red-700 font-bold'>disini</Link>.</List.Item>
+          <List.Item><span className='font-medium'>Dana IPL Januari - Juni 2024 (IPL Paguyuban)</span> yang masuk ke rekening RT 05 (BCA 4210541557, a.n. Hamka) sebesar <span className='text-red-700 font-bold '>{formatCurrency(totalIplPaguyuban)}</span>. Selanjutnya statusnya dibekukan, detail <Link href='/cashflow?s=%23IPLPaguyuban' className='text-blue-700 font-bold bg-blue-300 px-2 py-1  rounded-md'>disini</Link>.</List.Item>
+          <List.Item><span className='font-medium'>Dana IPL Juli - Desember 2024 (IPL RT 05)</span> yang masuk ke rekening Paguyuban (BCA 1671854662, a.n. Agus T.N.) sebesar <span className='text-red-700 font-bold'>{formatCurrency(totalIplTbd)}</span>. Dana masih belum bisa ditarik ke kas RT 05, detail <Link href='/tbd-ipl' className='text-blue-700 font-bold bg-blue-300 px-2 py-1  rounded-md'>disini</Link>.</List.Item>
         </List>
         
         </div>
@@ -314,7 +316,7 @@ const Report = ({ initialTransaction }) =>  {
     </CustomThemeProviderSecond>
         
     <CustomThemeProviderSecond>
-        <Card className='mb-5'>
+        <Card className='mb-11'>
             <div className='flex items-center justify-start gap-4 mb-4 mt-3 bg-cyan-700 rounded-md p-3 '>
                 <div>
                     <span className='font-semibold text-white'>PERIODE</span>
@@ -360,9 +362,9 @@ const Report = ({ initialTransaction }) =>  {
             
             </div>
             {/* <div>{`Last Update: ${moment(lastUpdate).format('DD MMM yyyy')}`}</div> */}
-            {/* <CustomThemeProviderSecond>
+            <CustomThemeProviderSecond>
               <div className="overflow-x-auto">
-                  <Table>
+                  <Table striped>
                       <Table.Head className='' >
                           <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2/3'>Keterangan</Table.HeadCell>
                           <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
@@ -372,16 +374,23 @@ const Report = ({ initialTransaction }) =>  {
                       <Table.Body className="divide-y">
                         {transactions && transactions.length > 0 && transactions[0] !== undefined ? (
                           <>
-                            {Object.keys(groupedTransactions).map((transactionType, index) => (
+                            {Object.keys(groupedTransactions).sort((a, b) => {
+                              if (a === 'ipl') return -1;
+                              if (b === 'ipl') return 1;
+                              return 0;
+                            }).map((transactionType, index) => (
                               <React.Fragment key={index}>
                                 {groupedTransactions[transactionType].length > 0 && (
                                   <Table.Row 
                                   className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
                                   onClick={() => handleExpandRow(index)}>
                                     <Table.Cell colSpan="2" className={`${getTextColor(transactionType)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
-                                      {transactionType === 'ipl' ? `Pemasukan IPL` : transactionType === 'income' ? 'Pemasukan Lainnya' : transactionType === 'expense' ? 'Pengeluaran' : ''}
+                                      {transactionType === 'ipl' ? `Pembayaran IPL` : transactionType === 'income' ? 'Pemasukan' : transactionType === 'expense' ? 'Pengeluaran' : ''}
                                       </Table.Cell>
-                                    <Table.Cell className={`${getTextColor(transactionType)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>{formatCurrency(groupedTransactions[transactionType].reduce((acc, curr) => acc + curr.amount, 0))}</Table.Cell>
+                                    <Table.Cell className={`${getTextColor(transactionType)} flex items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
+                                       <span className='pr-1' >{transactionType === 'ipl' ? `+` : transactionType === 'income' ? '+' : transactionType === 'expense' ? '-' : ''}</span>
+                                       <span>{formatCurrency(groupedTransactions[transactionType].reduce((acc, curr) => acc + curr.amount, 0))}</span>
+                                    </Table.Cell>
                                     <Table.Cell className={`${getTextColor(transactionType)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
                                       {expandedRows === index ? <IoChevronUpSharp /> : <IoChevronDownSharp />}
                                       </Table.Cell>
@@ -396,6 +405,7 @@ const Report = ({ initialTransaction }) =>  {
                                         <span className='flex items-start'>
                                           <span>{getTypeIcon(transaction.transaction_type)} </span>
                                           <span className="ml-2">{transaction.description}</span>
+                                          {transaction.description.includes('#IPLPaguyuban') && <span className="ml-2 text-red-500"><MdMotionPhotosPaused className='text-red-600 h-4 w-4 md:h-5 md:w-5' /></span>}
                                         </span>
                                       </Table.Cell>
                                       <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
@@ -417,62 +427,17 @@ const Report = ({ initialTransaction }) =>  {
                           </Table.Row>
                         ) }
                       
-                        
-                      
-                      
-                      
                       </Table.Body>
                   </Table>
                   
               </div>
-            </CustomThemeProviderSecond> */}
-
-            
-
-            
+              <div className='flex justify-end items-center content-center mt-4 mb-3'>
+                <Button size='xs' as={Link} href="/cashflow" className=''>Lihat semua arus kas<GrFormNextLink  className='w-4 h-4'/></Button>
+              </div>
+            </CustomThemeProviderSecond>
         </Card>
-        <div className='flex mb-3 justify-between align-middle content-center items-center'>
-          <h3 className='text-xl sm:text-2xl font-semibold'>Transaksi</h3>
-          <Button size='xs' as={Link} href="/transactions" className=''>Semua Transaksi<GrFormNextLink  className='w-4 h-4'/></Button>
-        </div>
-        <Card className='mb-11'>
-        <div className="overflow-x-auto">
-          <Table>
-            <Table.Head className='' >
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2/3'>Keterangan</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '>Nominal</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '></Table.HeadCell>
-            </Table.Head>
-            <Table.Body className="divide-y">
-              {transactions && transactions.length > 0 && transactions[0] !== undefined ? (
-                transactions.slice(0,5).map((transaction, index) => (
-                    <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell className={`${getTextColor(transaction.transaction_type)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                            <span className='flex items-start'>
-                            <span>{getTypeIcon(transaction.transaction_type)} </span>
-                            <span className={`ml-2 `}>{transaction.description}</span>
-                            {transaction.description.includes('#IPLPaguyuban') && <span className="ml-2 text-red-500"><MdMotionPhotosPaused className='text-red-600 h-4 w-4 md:h-5 md:w-5' /></span>}
-                            </span>
-                        </Table.Cell>
-                        <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                        {formatDate(transaction.date)}
-                        </Table.Cell>
-                        <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                            {formatCurrency(transaction.amount)}
-                        </Table.Cell>
-                    </Table.Row>
-                ))
-              ) : (
-                    <Table.Row>
-                        <Table.Cell colSpan="3" className="text-center">Data tidak tersedia</Table.Cell>
-                    </Table.Row>
-              )}
-            </Table.Body>
-          </Table>
-        </div>
-          
-        </Card>
+        
+       
     </CustomThemeProviderSecond>
     
     </>
