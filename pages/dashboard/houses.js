@@ -1,24 +1,22 @@
 // pages/home.js
 import { getSession, useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
 import { useEffect,useState } from 'react';
 import axios from 'axios';
-import { useRequireAuth } from '../../utils/authUtils'; 
+import { useRequireAuth } from '../../utils/authUtils.js'; 
 import ReactPaginate from 'react-paginate';
 
 import { Table } from "flowbite-react";
 import { Button } from "flowbite-react";
-import { Label, TextInput,Drawer,Select,Dropdown,Alert } from "flowbite-react";
+import {TextInput,Drawer,Select,Dropdown,Alert } from "flowbite-react";
 import Header from '../../components/Header';
 import SideMenu from '../../components/dashboard/Sidebar'
 import Spinner from '../../components/Spinner';
-import { HiPencilAlt } from "react-icons/hi";
 import { HiHome } from "react-icons/hi";
-import { HiMail } from "react-icons/hi";
 import { HiOutlineSearch } from "react-icons/hi";
-import {  FaCheckCircle, FaTimesCircle, FaHourglassHalf,FaRegEdit,FaEye,FaRegTrashAlt } from 'react-icons/fa';
+import {FaRegEdit,FaEye,FaRegTrashAlt } from 'react-icons/fa';
 import { FaEllipsisH } from "react-icons/fa";
-import { FaExchangeAlt } from "react-icons/fa";
+import { IoCloseCircle } from "react-icons/io5";
+import { IoCheckmarkDoneCircleSharp } from "react-icons/io5";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -44,15 +42,7 @@ const Houses = ({ initialHouses }) => {
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState('success');
 
-  const handleAlertDismiss = () => {
-    handleAlertTimeout(0);
-  };
-
-  const handleAlertTimeout = (timeoutDuration) => {
-    setTimeout(() => {
-      setShowAlert(false);
-    }, timeoutDuration);
-  };
+  
 
   useEffect(() => {
     if (session) {
@@ -63,20 +53,20 @@ const Houses = ({ initialHouses }) => {
                       Authorization: `Bearer ${session.accessToken}`,
                     },
                 });
-                setAlertType('success');
-                setAlertMessage('Data berhasil diupdate');
-                setShowAlert(true);
+                //setAlertType('success');
+                //setAlertMessage('Data berhasil diupdate');
+                //setShowAlert(true);
                 handleAlertTimeout(3000);
 
                 setHouses(res.data);
                 setLoading(false);
             } catch (error) {
-              setAlertType('failure');
-              setAlertMessage('Gagal mengupdate rumah');
-              setShowAlert(true);
+              //setAlertType('failure');
+              //setAlertMessage('Gagal mengupdate rumah');
+              //setShowAlert(true);
               handleAlertTimeout(3000);
-                console.error('Error fetching houses data:', error);
-                setLoading(false);
+              console.error('Error fetching houses data:', error);
+              setLoading(false);
             }
         };
 
@@ -125,16 +115,24 @@ const Houses = ({ initialHouses }) => {
                 Authorization: `Bearer ${session.accessToken}`,
             },
         });
-        setHouses(houses.map(house => house._id === editData._id ? res.data : house));
+        setHouses(houses.map(house => house._id === editData._id ? {...house,...res.data}  : house));
         setIsDrawerOpen(false);
+        setAlertType('success');
+        setAlertMessage('Data berhasil diupdate');
+        setShowAlert(true);
     } catch (error) {
+        setAlertType('failure');
+        setAlertMessage('Gagal mengupdate rumah');
+        setShowAlert(true);
         console.error('Error updating house data:', error);
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditData({ ...editData, [name]: value });
+    setEditData({...editData, [name]: value });
+    //console.log(value)
+    
   };
 
   // Calculate house status counts
@@ -146,6 +144,36 @@ const Houses = ({ initialHouses }) => {
     acc[status]++;
     return acc;
   }, {});
+
+  const mandatoryFeeCounts = houses.reduce((acc, house) => {
+    if (house.mandatory_fee) {
+      acc.true++;
+    } else {
+      acc.false++;
+    }
+    return acc;
+  }, { true: 0, false: 0 });
+
+  const getTypeIcon = (status) => {
+    switch (status) {
+      case true:
+        return <IoCheckmarkDoneCircleSharp  className="text-green-700 h-6 w-6 " />;
+      case false:
+        return <IoCloseCircle  className="text-red-700 h-6 w-6 " />;
+      default:
+        return null;
+    }
+  };
+
+  const handleAlertDismiss = () => {
+    handleAlertTimeout(0);
+  };
+
+  const handleAlertTimeout = (timeoutDuration) => {
+    setTimeout(() => {
+      setShowAlert(false);
+    }, timeoutDuration);
+  };
 
 
   if (loading) {
@@ -170,12 +198,15 @@ const Houses = ({ initialHouses }) => {
             <span>Data Rumah</span>
           </h1>
           
-          <div className="mb-4">
+          <div className="mb-1">
               <ul className='flex gap-4'>
                   {Object.entries(statusCounts).map(([status, count]) => (
                       <li key={count}>{`${status}: ${count} Rumah`}</li>
                   ))}
               </ul>
+          </div>
+          <div className="mb-4">
+          <p>Wajib IPL: {`${mandatoryFeeCounts.true} Rumah`} </p>
           </div>
 
           <div className="max-w-sm mb-4">
@@ -197,7 +228,7 @@ const Houses = ({ initialHouses }) => {
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Nama</Table.HeadCell>
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>No. WA</Table.HeadCell>
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Status</Table.HeadCell>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Tarif IPL</Table.HeadCell>
+                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>IPL</Table.HeadCell>
                     <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>
                         <span className="sr-only">Edit</span>
                     </Table.HeadCell>
@@ -212,7 +243,7 @@ const Houses = ({ initialHouses }) => {
                             <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.resident_name}</Table.Cell>
                             <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.whatsapp_number}</Table.Cell>
                             <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.occupancy_status}</Table.Cell>
-                            <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{formatCurrency(house.fee)}</Table.Cell>
+                            <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{getTypeIcon(house.mandatory_fee)}</Table.Cell>
                             <Table.Cell className='py-2 px-4 md:py-3 md:px-'>
                                 {/* <Button size="sm" onClick={() => handleEditClick(house)}>
                                     <HiPencilAlt  className="md:mr-2 h-4 w-4" />
@@ -250,8 +281,8 @@ const Houses = ({ initialHouses }) => {
                 nextLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
                 breakClassName={'page-item'}
                 breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                activeClassName={'active'}
-                activeLinkClassName={'bg-gray-300'}
+                activeClassName={'active bg-gray-300'}
+                activeLinkClassName={'bg-green-300'}
             />
           </nav>
         </section>
@@ -289,6 +320,17 @@ const Houses = ({ initialHouses }) => {
                           <option value="Weekend">Weekend</option>
                           <option value="Tidak ada kontak">Tidak ada kontak</option>
                       </Select>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Wajib IPL</label>
+                     <Select
+                        id="mandatory_fee"
+                        name="mandatory_fee"
+                        value={editData.mandatory_fee.toString()}
+                        onChange={handleInputChange}
+                        className="mb-4"
+                      >
+                          <option value="true">Ya</option>
+                          <option value="false">Tidak</option>
+                      </Select>  
                     <label className="block mb-2 text-sm font-medium text-gray-700">Tarif IPL</label>
                     <TextInput
                         name="fee"
@@ -318,14 +360,14 @@ const Houses = ({ initialHouses }) => {
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
   
-  if (!session) {
-      return {
-          redirect: {
-              destination: '/',
-              permanent: false,
-          },
-      };
-  }
+  // if (!session) {
+  //     return {
+  //         redirect: {
+  //             destination: '/',
+  //             permanent: false,
+  //         },
+  //     };
+  // }
 
   try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {

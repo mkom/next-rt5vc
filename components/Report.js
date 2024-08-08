@@ -1,16 +1,17 @@
 // pages/home.js
-import React from 'react';
-import {useSession ,getSession} from 'next-auth/react';
+import React, { useCallback } from 'react';
 import { useEffect,useState } from 'react';
 import _ from 'lodash';
 import axios from 'axios';
 import Spinner from './Spinner';
 import CustomThemeProviderSecond from './CustomThemeSecond';
-import { Card, Button, Table, Accordion } from 'flowbite-react';
+import { Card, Button, Table, Accordion, Alert,List } from 'flowbite-react';
 import { GrMoney } from "react-icons/gr";
 import {FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa';
-import { IoChevronDownSharp } from "react-icons/io5";
-import { IoChevronUpSharp } from "react-icons/io5";
+import { GrFormNextLink } from "react-icons/gr";
+import { MdMotionPhotosPaused } from "react-icons/md";
+
+import { HiEye, HiInformationCircle } from "react-icons/hi";
 
 import { HiHome } from "react-icons/hi";
 
@@ -20,16 +21,18 @@ import moment from 'moment';
 import 'moment/locale/id';
 moment.locale('id');
 import MonthOptions from './MonthOptions';
+import Link from 'next/link';
 
 const Report = ({ initialTransaction }) =>  {
   
   const [loading, setLoading] = useState(true);
-  const { data: session, status } = useSession();
   const [transactions, setTransactions] = useState([initialTransaction]);
   const [reTransactions, setReTransactions] = useState([initialTransaction]);
   const [totalBalance, setTotalBalance] = useState(null);
   const [totalIncome, setTotalIncome] = useState(null);
   const [totalExpense, setTotalExpense] = useState(null);
+  const [totalIplPaguyuban, setTotalIplPaguyuban] = useState(0);
+  const [totalIplTbd, setTotalIplTbd] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState(moment().format('YYYY-MM')); // Format YYYY-MM moment().format('YYYY-MM')
   const [monthlyBalances, setMonthlyBalances] = useState([]);
   const [totalIncomePeriod, setTotalIncomePeriod] = useState(0);
@@ -49,26 +52,39 @@ const Report = ({ initialTransaction }) =>  {
     }).format(amount);
   };
 
-  const fetchTransactions = async () => {
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+  
+    // Extract day, month, and year
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = String(date.getFullYear()).slice(-2); // Get last two digits of the year
+  
+    // Format the date as DD/MM/YY
+    return `${day}/${month}/${year}`;
+  };
+
+  const fetchTransactions = useCallback( async () => {
     try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
-            params: {
-              period: selectedPeriod
-          }
+          //   params: {
+          //     period: selectedPeriod
+          // }
         });
         //console.log(res.data)
         setTransactions(res.data.data);
         setReTransactions(res.data.data);
         setLastUpdate(res.data.lastUpdate);
+       
         
         setLoading(false);
     } catch (error) {
-        console.error('Error fetching houses data:', error);
+        console.error('Error fetching Transaction data:', error);
         setLoading(false);
     }
-  };
+  },[]);
 
-  const fetchTotalBalance = async () => {
+  const fetchTotalBalance = useCallback( async () => {
     try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/balance`, {
            
@@ -77,14 +93,15 @@ const Report = ({ initialTransaction }) =>  {
         setTotalBalance(response.data.totalBalance);
         setTotalIncome(response.data.totalIncome);
         setTotalExpense(response.data.totalExpense);
+        setTotalIplPaguyuban(response.data.totalIPlPaguyuban);
         setLoading(false);
     } catch (error) {
         console.error('Error fetching total balance:', error);
         setLoading(false);
     }
-  };
+  },[]);
 
-  const fetchMonthlyBalances = async () => {
+  const fetchMonthlyBalances = useCallback( async () => {
     //console.log(selectedPeriod)
     try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/balance-monthly`, {
@@ -113,9 +130,10 @@ const Report = ({ initialTransaction }) =>  {
         setTotalIncomePeriod(0);
         setTotalExpensePeriod(0);
     }
-  };
+  },[selectedPeriod]);
 
-  const fetchMonthlyPaid = async () => {
+  const fetchMonthlyPaid = useCallback( async () => {
+    
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/fee`, {
          
@@ -123,7 +141,7 @@ const Report = ({ initialTransaction }) =>  {
             period: selectedPeriod
         }
       });
-     // console.log(res.data)
+      //console.log(res.data)
       setTotalHousesPaid(res.data.total_houses_paid);
       setTotalHouses(res.data.total);
       setPercentage(res.data.percentage_paid);
@@ -131,7 +149,18 @@ const Report = ({ initialTransaction }) =>  {
         console.error('Error fetching houses data:', error);
         setLoading(false);
     }
-  };
+  },[selectedPeriod]);
+
+  const fetchTbd = useCallback (async()=>{
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/fee`, {
+      });
+      //console.log(res.data.total_tbd)
+      setTotalIplTbd(res.data.total_tbd);
+    } catch (error) {
+        console.error('Error fetching houses data:', error);
+    }
+  },[]);
 
 
   const [relatedMonths, setRelatedMonths] = useState({
@@ -157,8 +186,9 @@ const Report = ({ initialTransaction }) =>  {
     fetchTotalBalance();
     fetchMonthlyPaid();
     fetchMonthlyBalances();
+    fetchTbd();
 
-  }, [selectedPeriod]);
+  }, [selectedPeriod,fetchTransactions,fetchTotalBalance,fetchMonthlyPaid,fetchMonthlyBalances,fetchTbd]);
   
 
 
@@ -211,8 +241,28 @@ const Report = ({ initialTransaction }) =>  {
     return <Spinner />;
   }
 
+  //console.log(totalIplPaguyuban)
+
+  function ExampleAdditionalContent() {
+    return (
+      <>
+        <div className="mb-4 mt-2 text-xs text-cyan-700 dark:text-cyan-800">
+        <List>
+          <List.Item><span className='font-medium'>Dana IPL Januari - Juni 2024 (IPL Paguyuban)</span> yang masuk ke rekening RT 05 (BCA 4210541557, a.n. Hamka) sebesar <span className='text-red-700 font-bold'>{formatCurrency(totalIplPaguyuban)}</span>. Selanjutnya statusnya dibekukan, detail <Link href='/transactions?s=%23IPLPaguyuban' className='text-red-700 font-bold'>disini</Link>.</List.Item>
+          <List.Item><span className='font-medium'>Dana IPL Juli - Desember 2024 (IPL RT 05)</span> yang masuk ke rekening Paguyuban (BCA 1671854662, a.n. Agus T.N.) sebesar <span className='text-red-700 font-bold'>{formatCurrency(totalIplTbd)}</span>. Dana masih belum bisa ditarik ke kas RT 05, detail <Link href='/tbd-ipl' className='text-red-700 font-bold'>disini</Link>.</List.Item>
+        </List>
+        
+        </div>
+        
+      </>
+    );
+  }
+
   return (
     <>
+     <Alert className='mb-5' additionalContent={<ExampleAdditionalContent />} color="warning" icon={HiInformationCircle}>
+        <span className="font-medium">Info !</span> Beberapa Penyesuaian.
+      </Alert>
     <CustomThemeProviderSecond>
           <Card className='mb-5 shadow-none'>
             <div className='flex flex-col lg:flex-row justify-between gap-3'>
@@ -222,27 +272,27 @@ const Report = ({ initialTransaction }) =>  {
                     <GrMoney className="h-7 w-7 lg:h-10 lg:w-10 text-cyan-700" />
                   </span>
                   <div>
-                    <h2 className='md:text-2xl text-xl font-bold text-cyan-700 '>{formatCurrency(totalBalance)}</h2>
+                    <h2 className='md:text-2xl text-xl font-bold text-cyan-700 '>{formatCurrency(totalBalance-totalIplPaguyuban)}</h2>
                     
                   </div>
                 </div>
                 <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Saldo Akhir</h3>
                 
               </div>
-             <div className='flex lg:flex-row gap-2 lg:gap-4 justify-between lg:justify-start'>
-                <div className='flex flex-col items-center content-center  gap-2  md:gap-3 p-2 lg:p-3 border-green-500 border-2 rounded-md'>
+             <div className='flex  gap-2 lg:gap-4 '>
+                <div className='flex flex-col items-start content-start  gap-2  md:gap-3 p-2 lg:p-3 border-green-500 border-2 rounded-md w-1/2'>
                     <div className='flex items-center content-center gap-2  md:gap-3 '>
                       <span className=''>
                         <FaRegArrowAltCircleDown className="h-7 w-7 lg:h-10 lg:w-10 text-green-500" />
                       </span>
                       <div>
-                        <h2 className='md:text-2xl text-md font-bold text-green-500 '>{formatCurrency(totalIncome)}</h2>
+                        <h2 className='md:text-2xl text-md font-bold text-green-500 '>{formatCurrency(totalIncome-totalIplPaguyuban)}</h2>
                         {/* <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pemasukan</h3> */}
                       </div>
                     </div>
                     <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pemasukan</h3>
                 </div>
-                <div className='flex flex-col items-center content-center gap-2  md:gap-3 border-2 border-red-500 p-2 lg:p-3 rounded-md'>
+                <div className='flex flex-col items-start content-start gap-2  md:gap-3 border-2 border-red-500 p-2 lg:p-3 rounded-md w-1/2'>
                   <div className='flex items-center content-center gap-2  md:gap-3 '>
                     <span className=''>
                       <FaRegArrowAltCircleUp className="h-7 w-7 lg:h-10 lg:w-10 text-red-500" />
@@ -252,17 +302,19 @@ const Report = ({ initialTransaction }) =>  {
                       {/* <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pengaluaran</h3> */}
                     </div>
                   </div>
-                  <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pengaluaran</h3> 
+                  <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pengeluaran</h3> 
                    
                 </div>
 
              </div>
             </div>
           </Card>
+         
+
     </CustomThemeProviderSecond>
         
     <CustomThemeProviderSecond>
-        <Card className='mb-11'>
+        <Card className='mb-5'>
             <div className='flex items-center justify-start gap-4 mb-4 mt-3 bg-cyan-700 rounded-md p-3 '>
                 <div>
                     <span className='font-semibold text-white'>PERIODE</span>
@@ -308,7 +360,7 @@ const Report = ({ initialTransaction }) =>  {
             
             </div>
             {/* <div>{`Last Update: ${moment(lastUpdate).format('DD MMM yyyy')}`}</div> */}
-            <CustomThemeProviderSecond>
+            {/* <CustomThemeProviderSecond>
               <div className="overflow-x-auto">
                   <Table>
                       <Table.Head className='' >
@@ -347,7 +399,7 @@ const Report = ({ initialTransaction }) =>  {
                                         </span>
                                       </Table.Cell>
                                       <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                        {moment(transaction.date, 'DD MMM YYYY').format('DD/MM/YY')}
+                                        {formatDate(transaction.date)}
                                       </Table.Cell>
                                       <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
                                         {formatCurrency(transaction.amount)}
@@ -366,45 +418,69 @@ const Report = ({ initialTransaction }) =>  {
                         ) }
                       
                         
-                      {/* {transactions && transactions.length > 0 && transactions[0] !== undefined ? (
-                          transactions.map((transaction, index) => (
-                              <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                                  <Table.Cell className={`${getTextColor(transaction.transaction_type)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                      <span className='flex items-start'>
-                                      <span>{getTypeIcon(transaction.transaction_type)} </span>
-                                      <span className="ml-2">{transaction.description}</span>
-                                      </span>
-                                  </Table.Cell>
-                                  <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                      {moment(transaction.date, 'DD MMM YYYY').format('DD/MM/YY')}
-                                  </Table.Cell>
-                                  <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                      {formatCurrency(transaction.amount)}
-                                  </Table.Cell>
-                              </Table.Row>
-                          ))
-                          ) : (
-                          <Table.Row>
-                              <Table.Cell colSpan="3" className="text-center">Data tidak tersedia</Table.Cell>
-                          </Table.Row>
-                      )} */}
-
+                      
                       
                       
                       </Table.Body>
                   </Table>
                   
               </div>
-            </CustomThemeProviderSecond>
+            </CustomThemeProviderSecond> */}
+
+            
+
             
         </Card>
+        <div className='flex mb-3 justify-between align-middle content-center items-center'>
+          <h3 className='text-xl sm:text-2xl font-semibold'>Transaksi</h3>
+          <Button size='xs' as={Link} href="/transactions" className=''>Semua Transaksi<GrFormNextLink  className='w-4 h-4'/></Button>
+        </div>
+        <Card className='mb-11'>
+        <div className="overflow-x-auto">
+          <Table>
+            <Table.Head className='' >
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2/3'>Keterangan</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '>Nominal</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '></Table.HeadCell>
+            </Table.Head>
+            <Table.Body className="divide-y">
+              {transactions && transactions.length > 0 && transactions[0] !== undefined ? (
+                transactions.slice(0,5).map((transaction, index) => (
+                    <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                        <Table.Cell className={`${getTextColor(transaction.transaction_type)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                            <span className='flex items-start'>
+                            <span>{getTypeIcon(transaction.transaction_type)} </span>
+                            <span className={`ml-2 `}>{transaction.description}</span>
+                            {transaction.description.includes('#IPLPaguyuban') && <span className="ml-2 text-red-500"><MdMotionPhotosPaused className='text-red-600 h-4 w-4 md:h-5 md:w-5' /></span>}
+                            </span>
+                        </Table.Cell>
+                        <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                        {formatDate(transaction.date)}
+                        </Table.Cell>
+                        <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                            {formatCurrency(transaction.amount)}
+                        </Table.Cell>
+                    </Table.Row>
+                ))
+              ) : (
+                    <Table.Row>
+                        <Table.Cell colSpan="3" className="text-center">Data tidak tersedia</Table.Cell>
+                    </Table.Row>
+              )}
+            </Table.Body>
+          </Table>
+        </div>
+          
+        </Card>
     </CustomThemeProviderSecond>
+    
     </>
   );
 }
 
 export const getServerSideProps = async (context) => {
-    const session = await getSession(context);
+   // const session = await getSession(context);
     
     // if (!session) {
     //     return {

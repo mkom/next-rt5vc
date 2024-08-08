@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Sidebar } from "flowbite-react";
 import { BiBuoy } from "react-icons/bi";
-import { HiArrowSmRight, HiChartPie, HiInbox,HiDocumentReport , HiShoppingBag, HiTable, HiUser, HiViewBoards } from "react-icons/hi";
+import { HiChartPie,HiDocumentReport,HiUser, HiViewBoards } from "react-icons/hi";
 import { GrTransaction } from "react-icons/gr";
-import { TbReport } from "react-icons/tb";
 import { IoIosHome } from "react-icons/io";
 import { useSession } from 'next-auth/react';
 
@@ -36,10 +34,16 @@ const SideMenu = ({ isOpen }) => {
              >
                 Transaksi
             </Sidebar.Item>
-            <Sidebar.Collapse icon={HiDocumentReport} label="Laporan">
-                <Sidebar.Item href="#">Rekap</Sidebar.Item>
-                <Sidebar.Item href="#">Data IPL</Sidebar.Item>
-                <Sidebar.Item href="#">Outstanding</Sidebar.Item>
+            <Sidebar.Collapse 
+            className={pathname === '/dashboard/data-ipl' || pathname === '/dashboard/outstanding' ? 'text-gray-900 bg-gray-100' : ''}
+            icon={HiDocumentReport} 
+            label="IPL">
+                <Sidebar.Item 
+                className={pathname === '/dashboard/data-ipl' ? 'text-gray-900 bg-gray-100' : ''}
+                href="/dashboard/data-ipl">Data IPL</Sidebar.Item>
+                <Sidebar.Item
+                 className={pathname === '/dashboard/outstanding' ? 'text-gray-900 bg-gray-100' : ''}
+                href="/dashboard/outstanding">Outstanding</Sidebar.Item>
             </Sidebar.Collapse>
             <Sidebar.Item 
             href="/dashboard/houses" 

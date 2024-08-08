@@ -1,10 +1,11 @@
+// pages/home.js
 import {useState } from 'react';
 
 import Header from '../components/Header.js';
 import SideMenu from '../components/Sidebar.js'
-import IplReport from '../components/IplReport.js';
+import Tbd from '../components/IplTbd.js';
 
-const Ipl = () => {
+const DataTbd = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -19,8 +20,8 @@ const Ipl = () => {
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
         <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
-          <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>DATA IPL RT 05 VILLA CITAYAM</h1>
-          <IplReport/>
+          <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>TBD IPL <span className='font-normal text-sm'>(data ipl masih di rek. Paguyuban)</span></h1>
+          <Tbd/>
         </section>
       </div>
       
@@ -30,4 +31,4 @@ const Ipl = () => {
   );
 }
 
-export default Ipl;
+export default DataTbd;

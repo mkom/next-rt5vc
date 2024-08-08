@@ -30,8 +30,9 @@ const Header = ({ toggleSidebar }) => {
         <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-4 py-2">
           <div className="flex justify-center flex-wrap items-center">
           <HiMenuAlt1 onClick={toggleSidebar} className="h-9 w-9 cursor-pointer mr-3 sm:hidden" />
-          <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+          <a href="/" className="flex items-center space-x-2">
             <span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white">rt5vc</span>
+            <span className="text-xs">Demo</span>
           </a>
           </div>
           <div className="flex md:order-2">
