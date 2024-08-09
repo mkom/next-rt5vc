@@ -67,9 +67,8 @@ const Tbd = ({ initialHousesPaid }) =>  {
               <span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-1 lg:mr-2" /></span>
               <span>Rumah</span>
             </span>
-            <span className='font-semibold text-sm md:text-lg flex items-center'>{totalHouses} Unit</span>
           </h3>
-          
+          <span className='font-semibold text-sm md:text-lg flex items-center'>{totalHouses} Unit</span>
         </div>
         <div className='bg-blue-700 text-white w-1/2 py-2 px-4 flex flex-col gap-1 rounded-md shadow-md'>
           <h3 className='font-bold text-sm md:text-xl flex items-start'>
@@ -83,10 +82,10 @@ const Tbd = ({ initialHousesPaid }) =>  {
       <div className="overflow-x-auto">
           <Table striped>
               <Table.Head className='' >
-                  <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-4'>No</Table.HeadCell>
-                  <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-7'>No Rumah</Table.HeadCell>
-                  <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Periode</Table.HeadCell>
-                  <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Total</Table.HeadCell>
+                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4'>No</Table.HeadCell>
+                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-7 md:w-32'>No Rumah</Table.HeadCell>
+                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Periode</Table.HeadCell>
+                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Total</Table.HeadCell>
               </Table.Head>
               <Table.Body className="divide-y">
               {dataOutStanding && dataOutStanding.length > 0 && dataOutStanding[0] !== undefined ? (

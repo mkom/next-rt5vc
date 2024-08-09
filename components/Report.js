@@ -260,11 +260,21 @@ const Report = ({ initialTransaction }) =>  {
     );
   }
 
+  const [showAlert, setShowAlert] = useState(true);
+
   return (
     <>
-     <Alert className='mb-5' additionalContent={<ExampleAdditionalContent />} color="warning" icon={HiInformationCircle}>
-        <span className="font-medium">Info !</span> Beberapa Penyesuaian.
-      </Alert>
+     {showAlert && (
+          <Alert
+            className="mb-5"
+            additionalContent={<ExampleAdditionalContent />}
+            color="warning"
+            icon={HiInformationCircle}
+            onDismiss={() => setShowAlert(false)}
+          >
+            <span className="font-medium">Info !</span> Beberapa Penyesuaian.
+          </Alert>
+        )}
     <CustomThemeProviderSecond>
           <Card className='mb-5 shadow-none'>
             <div className='flex flex-col lg:flex-row justify-between gap-3'>
@@ -366,10 +376,10 @@ const Report = ({ initialTransaction }) =>  {
               <div className="overflow-x-auto">
                   <Table striped>
                       <Table.Head className='' >
-                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2/3'>Keterangan</Table.HeadCell>
-                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white '>Nominal</Table.HeadCell>
-                          <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-4 '></Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-2/3'>Keterangan</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white '>Nominal</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4 '></Table.HeadCell>
                       </Table.Head>
                       <Table.Body className="divide-y">
                         {transactions && transactions.length > 0 && transactions[0] !== undefined ? (

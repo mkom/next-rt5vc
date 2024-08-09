@@ -82,10 +82,10 @@ const Outstanding = ({ initialHousesPaid }) =>  {
       <div className="overflow-x-auto">
         <Table striped>
             <Table.Head className='' >
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-4'>No</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-7'>No Rumah</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Periode</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-4'>Total</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4'>No</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-7 md:w-32'>No Rumah</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Periode</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4'>Total</Table.HeadCell>
             </Table.Head>
             <Table.Body className="divide-y">
             {dataOutStanding && dataOutStanding.length > 0 && dataOutStanding[0] !== undefined ? (

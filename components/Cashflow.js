@@ -194,10 +194,10 @@ const AllCashflow = ({ initialTransaction }) =>  {
         <div className='overflow-x-auto'>
         <Table striped>
             <Table.Head>
-            <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white  w-8'>No</Table.HeadCell>
-            <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-3/4'>Keterangan</Table.HeadCell>
-            <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-            <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Nominal</Table.HeadCell>
+            <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white  w-8'>No</Table.HeadCell>
+            <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-3/4'>Keterangan</Table.HeadCell>
+            <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+            <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Nominal</Table.HeadCell>
             {/* <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tipe</Table.HeadCell> */}
             {/* <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell> */}
             </Table.Head>

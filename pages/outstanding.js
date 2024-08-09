@@ -1,6 +1,5 @@
-// pages/home.js
+import Head from 'next/head';
 import {useState } from 'react';
-
 import Header from '../components/Header.js';
 import SideMenu from '../components/Sidebar.js'
 import Outstanding from '../components/IplOutstanding.js';
@@ -14,7 +13,15 @@ const DataOutstanding = () => {
 
   return (
     <>
-    
+    <Head>
+        <title>RT5VC - Laporan IPL outstanding Rt 05 Villa Citayam</title>
+        <meta name="description" content="Laporan IPL outstanding RT05/RW11 Villa Citayam Susukan Bojong gede Bogor" />
+        <meta property="og:title" content="RT5VC" />
+        <meta property="og:description" content="Laporan IPL outstanding RT05/RW11 Villa Citayam Susukan Bogor" />
+        <meta property="og:image" content="" />
+        <meta property="og:url" content="" />
+    </Head>
+
     <Header toggleSidebar={toggleSidebar}/>
     <main className='max-w-screen-xl mx-auto'>
       <div className='w-full'>
