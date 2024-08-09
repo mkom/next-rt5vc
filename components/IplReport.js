@@ -189,11 +189,11 @@ const IplReport = ({ initialHousesPaid }) =>  {
       <div className="overflow-x-auto">
         <Table striped>
             <Table.Head className='' >
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white w-2'>No</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>No Rumah</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 bg-cyan-600 text-white'>Ket.</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-2'>No</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>No Rumah</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Ket.</Table.HeadCell>
             </Table.Head>
             <Table.Body className="divide-y">
             {monthlyPaid && monthlyPaid.length > 0 && monthlyPaid[0] !== undefined ? (
@@ -215,7 +215,7 @@ const IplReport = ({ initialHousesPaid }) =>  {
                         </Table.Cell>
 
                         <Table.Cell className={`py-2 px-2 md:py-3 md:px-3text-xs md:text-base`}>
-                          {(monthly.monthly_fees[0].status === 'TBD' ? 'TBD': '')}
+                          {(monthly.monthly_fees[0].status === 'TBD' ? 'Dana di Paguyuban': '')}
                         </Table.Cell>
                         
                     </Table.Row>
