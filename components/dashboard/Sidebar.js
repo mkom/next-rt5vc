@@ -34,17 +34,7 @@ const SideMenu = ({ isOpen }) => {
              >
                 Transaksi
             </Sidebar.Item>
-            <Sidebar.Collapse 
-            className={pathname === '/dashboard/data-ipl' || pathname === '/dashboard/outstanding' ? 'text-gray-900 bg-gray-100' : ''}
-            icon={HiDocumentReport} 
-            label="IPL">
-                <Sidebar.Item 
-                className={pathname === '/dashboard/data-ipl' ? 'text-gray-900 bg-gray-100' : ''}
-                href="/dashboard/data-ipl">Data IPL</Sidebar.Item>
-                <Sidebar.Item
-                 className={pathname === '/dashboard/outstanding' ? 'text-gray-900 bg-gray-100' : ''}
-                href="/dashboard/outstanding">Outstanding</Sidebar.Item>
-            </Sidebar.Collapse>
+    
             <Sidebar.Item 
             href="/dashboard/houses" 
             icon={IoIosHome}
