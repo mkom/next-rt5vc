@@ -42,7 +42,7 @@ const Report = ({ initialTransaction }) =>  {
   const [lastUpdate, setLastUpdate] = useState();
   const [percentage, setPercentage] = useState(0);
   const [expandedRows, setExpandedRows] = useState(null);
-
+  const [showAlert, setShowAlert] = useState(true);
   
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', {
@@ -260,7 +260,6 @@ const Report = ({ initialTransaction }) =>  {
     );
   }
 
-  const [showAlert, setShowAlert] = useState(true);
 
   return (
     <>
@@ -274,7 +273,7 @@ const Report = ({ initialTransaction }) =>  {
           >
             <span className="font-medium">Info !</span> Beberapa Penyesuaian.
           </Alert>
-        )}
+      )}
     <CustomThemeProviderSecond>
           <Card className='mb-5 shadow-none'>
             <div className='flex flex-col lg:flex-row justify-between gap-3'>

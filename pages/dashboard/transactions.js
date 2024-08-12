@@ -17,7 +17,7 @@ import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
 import { FaEllipsisH } from "react-icons/fa";
 import { FaExchangeAlt } from "react-icons/fa";
-import FilterTransactions from '../../components//dashboard/FilterTransactions';
+import FilterTransactions from '../../components/dashboard/FilterTransactions';
 import moment from 'moment';
 import 'moment/locale/id';
 moment.locale('id');
@@ -90,6 +90,7 @@ const Transaction = ({ initialTransaction }) =>  {
           },
         }
       );
+
       setTransactionToEdit(response.data);
       setIsDrawerOpen(true);
     } catch (error) {
@@ -316,7 +317,7 @@ const Transaction = ({ initialTransaction }) =>  {
 
           <TransactionDrawer
             isOpen={isDrawerOpen}
-            onClose={() => setIsDrawerOpen(false)}
+            onClose={() => (setIsDrawerOpen(false),setCurrentTransactionType(''))}
             onSubmit={transactionToEdit ? handleUpdateTransaction : handleDrawerSubmit}
             transactionType={currentTransactionType}
             transactionToEdit={transactionToEdit}
@@ -379,7 +380,10 @@ const Transaction = ({ initialTransaction }) =>  {
                     </Table.Cell>
                     <Table.Cell className='py-2 px-2 md:py-3 md:px-3 text-xs md:text-base'>
                       <Dropdown  className="relative z-50 cursor-pointer" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4 cursor-pointer" /></span>}>
-                        <Dropdown.Item onClick={() => handleEditTransaction(transaction._id)}><FaRegEdit className='mr-1'/><span>Edit</span></Dropdown.Item>
+                        <Dropdown.Item onClick={() => {
+                          handleEditTransaction(transaction._id);
+                          setCurrentTransactionType(transaction.transaction_type);
+                        } }><FaRegEdit className='mr-1'/><span>Edit</span></Dropdown.Item>
                         <Dropdown.Item><FaEye className='mr-1'/><span>View</span></Dropdown.Item>
                         <Dropdown.Item onClick={() => handleDeleteTransaction(transaction._id)} ><FaRegTrashAlt className='mr-1' /><span>Delete</span></Dropdown.Item>
                       </Dropdown>

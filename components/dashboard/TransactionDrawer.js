@@ -1,6 +1,7 @@
 // components/TransactionDrawer.js
 import { getSession, useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
+import Image from "next/image";
 import { Drawer, Button, Input, FileInput, Textarea, Label, TextInput, Dropdown,Alert } from 'flowbite-react';
 import {FaCalendarAlt, FaMoneyBill, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa';
 import { FaExchangeAlt } from "react-icons/fa";
@@ -13,9 +14,10 @@ import Select from 'react-select';
 import moment from 'moment';
 import 'moment/locale/id';
 import id from "date-fns/locale/id";
+import { NEXT_CACHE_REVALIDATE_TAG_TOKEN_HEADER } from 'next/dist/lib/constants';
 moment.locale('id');
 
-const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transactionToEdit }) => {
+const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transactionToEdit }) => {
   
   const [houseId, setHouseId] = useState('');
   const [houseName, setHouseName] = useState('');
@@ -33,21 +35,44 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
   const fileInputRef = useRef(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentType, setPaymentType] = useState('');
+  const [selectedImage, setSelectedImage] = useState();
+  const [formattedMonths, setFormattedMonths] =useState([]);
 
   // Set nilai awal formulir jika ada transactionToEdit
+
+  
   useEffect(() => {
     if (transactionToEdit) {
-      setHouseId(transactionToEdit.houseId || '');
-      setHouseName(transactionToEdit.houseName || '');
+      //console.log(transactionToEdit.house_id.house_id)
+      //console.log(transactionToEdit)
+      
+
+      if(transactionToEdit.related_months) {
+        const formattedMonth = transactionToEdit.related_months.map((month) => {
+          const date = new Date(month + '-01'); // add '-01' to create a valid date string
+          const label = moment(date).format('MMMM YYYY');
+          return { value: month, label };
+        });
+
+        setFormattedMonths(formattedMonth)
+        //console.log(formattedMonths)
+      }
+
+      setHouseId(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
+      setHouseName(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setAmount(transactionToEdit.amount || '');
       setDescription(transactionToEdit.description || '');
       setProofOfTransfer(transactionToEdit.proof_of_transfer || '');
-      setRelatedMonths(transactionToEdit.related_months || []);
-      setPaymentDate(transactionToEdit.paymentDate || new Date());
+      setRelatedMonths(transactionToEdit.related_months ? formattedMonths : []);
+      setPaymentDate(transactionToEdit.date ? transactionToEdit.date : new Date());
       setStatus(transactionToEdit.status || 'berhasil');
-      setPaymentType(transactionToEdit.payment_type || '');
+      setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
     }
   }, [transactionToEdit]);
+
+  //console.log(paymentType)
+
+  //console.log(transactionToEdit.paymentDate)
 
   useEffect(() => {
     if (session) {
@@ -71,8 +96,10 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
     }
   }, [session]);
 
+ // console.log(transactionType)
   useEffect(() => {
     if (transactionType === 'ipl') {
+      //console.log(relatedMonths)
       if(relatedMonths.length > 0 && houseName ) {
         const monthLabels = relatedMonths.map(option => moment(option.value, "YYYY-MM").format("MMMM YYYY")).join(', ');
         const descriptionText = `IPL ${houseName} periode ${monthLabels}`;
@@ -86,7 +113,11 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
     const file = e.target.files[0];
     if (file) {
         setProofOfTransfer(file); // Set file for upload
+        setSelectedImage(e.target.files[0]);
     }
+    
+    //console.log( selectedImage)
+    //console.log(proofOfTransfer)
   };
 
   const handleFileUpload = async (file) => {
@@ -182,12 +213,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
     onClose();
   };
 
-  useEffect(() => {
-    if (transactionToEdit) {
-      setHouseName(transactionToEdit.houseName);
-    }
-  }, [transactionToEdit]);
-
 
   const handleHouseChange = (newValue) => {
     setHouseId(newValue);
@@ -199,12 +224,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
     //setDescription(`IPL rumah ${selectedHouse.value} periode ${relatedMonths.join(', ')}`);
   };
   
-  useEffect(() => {
-    if (transactionToEdit) {
-      setRelatedMonths(transactionToEdit.related_months || []);
-    }
-  }, [transactionToEdit]);
-
 
   const handleMonthChange = (selectedOptions) => {
     setRelatedMonths(selectedOptions || []);
@@ -230,13 +249,9 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
     { value: 'transfer', label: 'Transfer' },
   ]
 
-  useEffect(() => {
-    if (transactionToEdit) {
-      setPaymentType(transactionToEdit.payment_type || '');
-    }
-  }, [transactionToEdit]);
 
   const handleTypeChange = (e) => {
+    console.log(e)
     setPaymentType(e);
   };
 
@@ -252,10 +267,10 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
     fileInputRef.current.value = '';
     setErrors({});
     setIsProcessing(false);
+    setSelectedImage(null)
   };
 
  
-
   return (
     <Drawer
       open={isOpen}
@@ -269,7 +284,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
       <Drawer.Header title={`Transaksi ${transactionType === 'ipl' ? 'IPL' : transactionType === 'income' ? 'Masuk' : 'Keluar'}`} titleIcon={FaExchangeAlt} />
       <Drawer.Items>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {transactionType === 'ipl' && (
+          {transactionType !== 'expense' && (
             <>
               <div className="mb-6 mt-3">
                 <Label htmlFor="houseId" className="mb-2 block">No Rumah</Label>
@@ -282,20 +297,23 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
                 {errors.houseId && <div className="text-red-500 text-sm">{errors.houseId}</div>}
               </div>
 
-              <div className="mb-6 mt-3">
-                <Label htmlFor="relatedMonths" className="mb-2 block">Periode</Label>
-                <Select
-                 id="relatedMonths"
-                 isMulti
-                 options={generateMonthsOptions()}
-                 value={relatedMonths}
-                 onChange={handleMonthChange}
-                 placeholder="Pilih bulan"
-                 className='bg-gray-50 text-sm'
-                />
-                {errors.relatedMonths && <div className="text-red-500 text-sm">{errors.relatedMonths}</div>}
-              </div>
             </>
+          )}
+
+          {transactionType === 'ipl' && (
+             <div className="mb-6 mt-3">
+             <Label htmlFor="relatedMonths" className="mb-2 block">Periode</Label>
+             <Select
+              id="relatedMonths"
+              isMulti
+              options={generateMonthsOptions()}
+              value={relatedMonths}
+              onChange={handleMonthChange}
+              placeholder="Pilih bulan"
+              className='bg-gray-50 text-sm'
+             />
+             {errors.relatedMonths && <div className="text-red-500 text-sm">{errors.relatedMonths}</div>}
+             </div>
           )}
 
           <div className="mb-6 mt-3">
@@ -345,6 +363,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
                 accept=".jpg,.png,.pdf,.jpeg"
                 ref={fileInputRef}
               />
+              
               <TextInput
                 id="proofOfTransfer"
                 name="proofOfTransfer"
@@ -353,7 +372,19 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType,transact
                 placeholder="Masukkan URL lampiran"
                 className='hidden'
               />
+              {selectedImage && (
+              <Image
+                src={URL.createObjectURL(selectedImage)}
+                alt="Preview"
+                width={250}
+                height={250}
+                className="p-8"
+              />
+            )}
               {errors.proofOfTransfer && <div className="text-red-500 text-sm">{errors.proofOfTransfer}</div>}
+              {proofOfTransfer && !selectedImage &&
+                <Image className='p-8' width={250} height={250} src={transactionToEdit.proof_of_transfer}  alt="image 1" /> 
+              }
             </div>
 
           <div className="mb-6 mt-3">
