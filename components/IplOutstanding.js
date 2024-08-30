@@ -36,7 +36,7 @@ const Tbd = ({ initialHousesPaid }) =>  {
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
       });
-      //console.log(res.data)
+      console.log(res.data)
      setDataOutStanding(res.data.data);
      setTotalHouses(res.data.total);
      setTotalAmount(res.data.total_amount)
@@ -85,7 +85,8 @@ const Tbd = ({ initialHousesPaid }) =>  {
                   <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4'>No</Table.HeadCell>
                   <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-7 md:w-32'>No Rumah</Table.HeadCell>
                   <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Periode</Table.HeadCell>
-                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Total</Table.HeadCell>
+                  {/* <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell> */}
+                  {/* <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Total</Table.HeadCell> */}
               </Table.Head>
               <Table.Body className="divide-y">
               {dataOutStanding && dataOutStanding.length > 0 && dataOutStanding[0] !== undefined ? (
@@ -108,10 +109,13 @@ const Tbd = ({ initialHousesPaid }) =>  {
                               ))}
                             </span>
                           </Table.Cell>
+                          {/* <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base `}>
+                            {data.occupancy_status}
+                          </Table.Cell> */}
 
-                          <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base `}>
+                          {/* <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base `}>
                             {formatCurrency(data.total_fee)}
-                          </Table.Cell>
+                          </Table.Cell> */}
                           
                       </Table.Row>
                   ))

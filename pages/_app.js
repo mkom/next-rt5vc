@@ -2,7 +2,7 @@ import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
-import "@/styles/globals.css";
+import "../styles/globals.css";
 import { SessionProvider } from 'next-auth/react';
 import Spinner from "../components/Spinner";
 import CustomThemeProvider from '../components/CustomTheme';

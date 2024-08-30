@@ -1,15 +1,21 @@
 import Head from 'next/head';
-import {useState } from 'react';
 import Header from '../components/Header';
 import SideMenu from '../components/Sidebar';
 import Report from '../components/Report';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const router = useRouter();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  useEffect(() => {
+    router.push('/data-ipl');
+  }, []);
 
   return (
     <>
