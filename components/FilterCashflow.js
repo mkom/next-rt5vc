@@ -62,7 +62,12 @@ const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,i
                     endDate: endDateAdjusted,
                 },
             });
-            setTransactions(response.data);
+            const transactionsData = response.data.sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+              });
+            
+            setTransactions(transactionsData);
+            
         } catch (error) {
             console.error('Error fetching filtered transactions:', error);
         }

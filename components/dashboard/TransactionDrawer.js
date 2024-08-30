@@ -14,15 +14,16 @@ import Select from 'react-select';
 import moment from 'moment';
 import 'moment/locale/id';
 import id from "date-fns/locale/id";
-import { NEXT_CACHE_REVALIDATE_TAG_TOKEN_HEADER } from 'next/dist/lib/constants';
 moment.locale('id');
 
 const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transactionToEdit }) => {
   
+  //console.log(transactionToEdit);
   const [houseId, setHouseId] = useState('');
   const [houseName, setHouseName] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [additional_note_mutasi_bca, setAdditional_note_mutasi_bca] = useState('');
   const [proofOfTransfer, setProofOfTransfer] = useState('');
   const [relatedMonths, setRelatedMonths] = useState([]);
   const [status, setStatus] = useState('berhasil');
@@ -43,10 +44,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   
   useEffect(() => {
     if (transactionToEdit) {
-      //console.log(transactionToEdit.house_id.house_id)
-      //console.log(transactionToEdit)
-      
-
       if(transactionToEdit.related_months) {
         const formattedMonth = transactionToEdit.related_months.map((month) => {
           const date = new Date(month + '-01'); // add '-01' to create a valid date string
@@ -55,13 +52,13 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
         });
 
         setFormattedMonths(formattedMonth)
-        //console.log(formattedMonths)
       }
 
       setHouseId(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setHouseName(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setAmount(transactionToEdit.amount || '');
       setDescription(transactionToEdit.description || '');
+      setAdditional_note_mutasi_bca(transactionToEdit.additional_note_mutasi_bca || '');
       setProofOfTransfer(transactionToEdit.proof_of_transfer || '');
       setRelatedMonths(transactionToEdit.related_months ? formattedMonths : []);
       setPaymentDate(transactionToEdit.date ? transactionToEdit.date : new Date());
@@ -70,9 +67,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     }
   }, [transactionToEdit]);
 
-  //console.log(paymentType)
-
-  //console.log(transactionToEdit.paymentDate)
 
   useEffect(() => {
     if (session) {
@@ -83,6 +77,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               Authorization: `Bearer ${session.accessToken}`,
             },
           });
+          //console.log(res.data)
           setHouses(res.data.map(house => ({
             value: house.house_id,
             label: house.house_id
@@ -96,7 +91,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     }
   }, [session]);
 
- // console.log(transactionType)
   useEffect(() => {
     if (transactionType === 'ipl') {
       //console.log(relatedMonths)
@@ -135,7 +129,9 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
         return response.data.fileUrl;
     } catch (error) {
         //console.error('Error uploading file:', error);
-        //alert('Failed to upload file.');
+        alert('Failed to upload file.');
+        resetForm();
+        onClose();
         return null;
     }
   };
@@ -188,6 +184,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       transaction_type: transactionType,
       amount,
       description,
+      additional_note_mutasi_bca,
       proof_of_transfer: proofOfTransferUrl,
       houseId,
       payment_type: paymentType.value,
@@ -203,6 +200,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setHouseId('');
     setAmount('');
     setDescription('');
+    setAdditional_note_mutasi_bca('')
     setProofOfTransfer('');
     setRelatedMonths([]);
     setPaymentDate(new Date());
@@ -211,6 +209,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setPaymentType('');
     setIsProcessing(false); // Stop processing
     onClose();
+    resetForm();
   };
 
 
@@ -251,7 +250,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
 
 
   const handleTypeChange = (e) => {
-    console.log(e)
     setPaymentType(e);
   };
 
@@ -259,6 +257,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setHouseId('');
     setAmount('');
     setDescription('');
+    setAdditional_note_mutasi_bca('');
     setProofOfTransfer('');
     setRelatedMonths([]);
     setPaymentDate(new Date());
@@ -404,6 +403,18 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
             />
             </div>
             {errors.paymentDate && <div className="text-red-500 text-sm">{errors.paymentDate}</div>}
+            
+          </div>
+
+          <div className="mb-6 mt-3">
+            <Label htmlFor="additional_note_mutasi_bca" className="mb-2 block">Catatan</Label>
+            <Textarea
+              id="additional_note_mutasi_bca"
+              name="additional_note_mutasi_bca"
+              value={additional_note_mutasi_bca}
+              onChange={(e) => setAdditional_note_mutasi_bca(e.target.value)}
+              placeholder="Catatan tambahan"
+            />
             
           </div>
 

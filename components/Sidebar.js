@@ -25,11 +25,13 @@ const SideMenu = ({ isOpen }) => {
             <Sidebar.Item href="/" icon={IoIosHome}>
                 Beranda
             </Sidebar.Item>
-            <Sidebar.Item href="/cashflow" icon={HiViewBoards}>
+
+            {/* <Sidebar.Item href="/cashflow" icon={HiViewBoards}>
                 Arus Kas
-            </Sidebar.Item>
+            </Sidebar.Item> */}
+
             </Sidebar.ItemGroup>
-            <Sidebar.ItemGroup>
+            {/* <Sidebar.ItemGroup>
             <Sidebar.Collapse 
                 className={pathname === '/data-ipl' || pathname === '/outstanding' ? 'text-gray-900 bg-gray-100' : ''}
                 icon={HiDocumentReport} 
@@ -45,7 +47,7 @@ const SideMenu = ({ isOpen }) => {
                     href="/tbd-ipl">IPL TBD</Sidebar.Item>
             </Sidebar.Collapse>
               
-            </Sidebar.ItemGroup>
+            </Sidebar.ItemGroup> */}
 
             
             {hasRole(['admin', 'editor', 'superadmin']) && (

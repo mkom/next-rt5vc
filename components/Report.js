@@ -89,12 +89,13 @@ const Report = ({ initialTransaction }) =>  {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/balance`, {
            
         });
-       // console.log(response.data)
+        //console.log(response.data)
         setTotalBalance(response.data.totalBalance);
         setTotalIncome(response.data.totalIncome);
         setTotalExpense(response.data.totalExpense);
         setTotalIplPaguyuban(response.data.totalIPlPaguyuban);
         setLoading(false);
+
     } catch (error) {
         console.error('Error fetching total balance:', error);
         setLoading(false);
@@ -145,6 +146,7 @@ const Report = ({ initialTransaction }) =>  {
       setTotalHousesPaid(res.data.total_houses_paid);
       setTotalHouses(res.data.total);
       setPercentage(res.data.percentage_paid);
+      //setTotalIplTbd(res.data.total_tbd);
     } catch (error) {
         console.error('Error fetching houses data:', error);
         setLoading(false);
@@ -155,7 +157,7 @@ const Report = ({ initialTransaction }) =>  {
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/fee`, {
       });
-      //console.log(res.data.total_tbd)
+      //console.log(res.data)
       setTotalIplTbd(res.data.total_tbd);
     } catch (error) {
         console.error('Error fetching houses data:', error);
@@ -184,12 +186,11 @@ const Report = ({ initialTransaction }) =>  {
   }, []);
 
   useEffect(() => {
-    fetchTransactions();
+    fetchTbd();
     fetchTotalBalance();
+    fetchTransactions();
     fetchMonthlyPaid();
     fetchMonthlyBalances();
-    fetchTbd();
-
   }, [selectedPeriod,fetchTransactions,fetchTotalBalance,fetchMonthlyPaid,fetchMonthlyBalances,fetchTbd]);
   
 
@@ -351,22 +352,23 @@ const Report = ({ initialTransaction }) =>  {
             <div className='flex gap-1 md:gap-4 justify-between flex-row mb-4'>
             
                 <Card className='bg-green-700 text-white w-1/3'>
-                <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
+                  <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
                   <span className='flex'>
                     <span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-1 lg:mr-2" /></span>
                     <span>IPL</span>
                   </span>
                   <span className='text-xs lg:text-sm font-normal lg:ml-3'>{`${totalHousesPaid} / ${totalHouses} Rumah`}</span>
                   </h3>
-                <span className='font-semibold text-sm md:text-lg'>{percentage}</span>
+                  <span className='font-semibold text-sm md:text-lg'>{percentage}</span>
+                 <Button size='xs' as={Link} href="/data-ipl" className=''>Detail<GrFormNextLink  className='w-4 h-4'/></Button>
                 </Card>
                 <Card className='bg-green-500 text-white w-1/3'>
-                <h3 className='font-bold text-sm md:text-xl flex items-start'><span><FaRegArrowAltCircleDown className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Masuk</span></h3>
-                <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalIncomePeriod)}</span>
+                  <h3 className='font-bold text-sm md:text-xl flex items-start'><span><FaRegArrowAltCircleDown className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Masuk</span></h3>
+                  <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalIncomePeriod)}</span>
                 </Card>
                 <Card className='bg-red-500 text-white w-1/3'>
-                <h3 className='font-bold text-sm md:text-xl flex items-start'><span><FaRegArrowAltCircleUp className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Keluar</span></h3>
-                <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalExpensePeriod)}</span>
+                  <h3 className='font-bold text-sm md:text-xl flex items-start'><span><FaRegArrowAltCircleUp className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Keluar</span></h3>
+                  <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalExpensePeriod)}</span>
                 </Card>
             
             </div>
@@ -395,14 +397,14 @@ const Report = ({ initialTransaction }) =>  {
                                   onClick={() => handleExpandRow(index)}>
                                     <Table.Cell colSpan="2" className={`${getTextColor(transactionType)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
                                       {transactionType === 'ipl' ? `Pembayaran IPL` : transactionType === 'income' ? 'Pemasukan' : transactionType === 'expense' ? 'Pengeluaran' : ''}
-                                      </Table.Cell>
+                                    </Table.Cell>
                                     <Table.Cell className={`${getTextColor(transactionType)} flex items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
                                        <span className='pr-1' >{transactionType === 'ipl' ? `+` : transactionType === 'income' ? '+' : transactionType === 'expense' ? '-' : ''}</span>
                                        <span>{formatCurrency(groupedTransactions[transactionType].reduce((acc, curr) => acc + curr.amount, 0))}</span>
                                     </Table.Cell>
                                     <Table.Cell className={`${getTextColor(transactionType)}items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
                                       {expandedRows === index ? <IoChevronUpSharp /> : <IoChevronDownSharp />}
-                                      </Table.Cell>
+                                    </Table.Cell>
                                   </Table.Row>
                                 )}
 
@@ -410,7 +412,7 @@ const Report = ({ initialTransaction }) =>  {
                                   <>
                                    {groupedTransactions[transactionType].map((transaction, subIndex) => (
                                     <Table.Row key={subIndex} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === index? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
-                                      <Table.Cell className={`${getTextColor(transaction.transaction_type)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                      <Table.Cell  className={`${getTextColor(transaction.transaction_type)} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
                                         <span className='flex items-start'>
                                           <span>{getTypeIcon(transaction.transaction_type)} </span>
                                           <span className="ml-2">{transaction.description}</span>
@@ -423,6 +425,7 @@ const Report = ({ initialTransaction }) =>  {
                                       <Table.Cell className={`${getTextColor(transaction.transaction_type)} items-start content-start  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
                                         {formatCurrency(transaction.amount)}
                                       </Table.Cell>
+                                      <Table.Cell></Table.Cell>
                                     </Table.Row>
                                   ))}
                                   </>

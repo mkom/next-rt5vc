@@ -153,8 +153,12 @@ const Transaction = ({ initialTransaction }) =>  {
 
         });
 
-        setTransactions(res.data.data);
-        setReTransactions(res.data.data);
+        const transactionsData = res.data.data.sort((a, b) => {
+          return new Date(b.date) - new Date(a.date);
+        });
+
+        setTransactions(transactionsData);
+        setReTransactions(transactionsData);
         setLoading(false);
     } catch (error) {
         console.error('Error fetching houses data:', error);
@@ -226,16 +230,19 @@ const Transaction = ({ initialTransaction }) =>  {
 
   const handlePaymentClick = () => {
     setCurrentTransactionType('ipl');
+    setTransactionToEdit(null);
     setIsDrawerOpen(true);
   };
 
   const handleIncomeClick = () => {
     setCurrentTransactionType('income');
+    setTransactionToEdit(null);
     setIsDrawerOpen(true);
   };
 
   const handleExpenseClick = () => {
     setCurrentTransactionType('expense');
+    setTransactionToEdit(null);
     setIsDrawerOpen(true);
   };
 
@@ -341,7 +348,7 @@ const Transaction = ({ initialTransaction }) =>  {
           <div className='overflow-x-auto'>
             <Table hoverable>
               <Table.Head>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3  w-8'>No</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 w-4'>No</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 w-3/4'>Keterangan</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tanggal</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Nominal</Table.HeadCell>
@@ -355,7 +362,7 @@ const Transaction = ({ initialTransaction }) =>  {
                 
                 {currentPageData.map((transaction, index) => ( 
                   <Table.Row key={index} className="py-2 px-2 md:py-3 md:px-3 text-xs md:text-base">
-                    <Table.Cell className={`flex items-start content-start`}>
+                    <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base w-4`}>
                     {offset + index + 1}
                     </Table.Cell>
 
@@ -472,9 +479,12 @@ export const getServerSideProps = async (context) => {
               Authorization: `Bearer ${session.accessToken}`,
           },
       });
+      const transactions = res.data.data.sort((a, b) => {
+        return new Date(b.date) - new Date(a.date);
+      });
       return {
           props: {
-            initialTransaction: res.data,
+            initialTransaction: transactions,
           },
       };
   } catch (error) {

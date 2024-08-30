@@ -115,6 +115,7 @@ const Houses = ({ initialHouses }) => {
                 Authorization: `Bearer ${session.accessToken}`,
             },
         });
+        //console.log(res.data)
         setHouses(houses.map(house => house._id === editData._id ? {...house,...res.data}  : house));
         setIsDrawerOpen(false);
         setAlertType('success');
@@ -292,6 +293,31 @@ const Houses = ({ initialHouses }) => {
           <Drawer.Header title="Edit Data Rumah" titleIcon={HiHome}/>
             <Drawer.Items>
                 <div>
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Rumah</label>
+                    <TextInput
+                        name="house_id"
+                        value={editData?.house_id || ''}
+                        onChange={handleInputChange}
+                        className="mb-4"
+                    />
+
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Grup</label>
+         
+                      <Select
+                        id="group"
+                        name="group"
+                        value={editData?.group || ''}
+                        onChange={handleInputChange}
+                        className="mb-4"
+                      >
+                          <option value="-">-</option>
+                          <option value="E1 Ganjil">E1 Ganjil</option>
+                          <option value="E1 Genap - E2 Ganjil">E1 Genap - E2 Ganjil</option>
+                          <option value="E2 Genap - E3 Ganjil">E2 Genap - E3 Ganjil</option>
+                          <option value="E3 Genap - E5">E3 Genap - E3A Ganjil - E5</option>
+                          <option value="E3A Genap - E8">E3A Genap - E8</option>
+                      </Select>
+
                     <label className="block mb-2 text-sm font-medium text-gray-700">Nama</label>
                     <TextInput
                         name="resident_name"

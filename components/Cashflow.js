@@ -66,8 +66,14 @@ const AllCashflow = ({ initialTransaction }) =>  {
           const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
   
           });
-          setReTransactions(res.data.data);
-          setTransactions(res.data.data);
+
+          const transactionsData = res.data.data.sort((a, b) => {
+            return new Date(b.date) - new Date(a.date);
+          });
+
+          //console.log(transactionsData);
+          setReTransactions(transactionsData);
+          setTransactions(transactionsData);
           setLastUpdate(res.data.lastUpdate);
           setLoading(false);
       } catch (error) {
@@ -94,7 +100,8 @@ const AllCashflow = ({ initialTransaction }) =>  {
     };
   
     const filteredTransactions = transactions.filter(transaction => 
-        transaction && transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())
+        transaction && transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction && transaction.additional_note_mutasi_bca && transaction.additional_note_mutasi_bca.toLowerCase().includes(searchTerm.toLowerCase())
     );
   
     const offset = currentPage * ITEMS_PER_PAGE;
@@ -153,6 +160,42 @@ const AllCashflow = ({ initialTransaction }) =>  {
         }
         return acc;
     }, 0);
+
+    const totalIncome = filteredTransactions.reduce((acc, transaction) => {
+        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
+          return acc + transaction.amount;
+        }
+        return acc;
+      }, 0);
+      
+      const totalExpense = filteredTransactions.reduce((acc, transaction) => {
+        if (transaction.transaction_type === 'expense') {
+          return acc + transaction.amount;
+        }
+        return acc;
+      }, 0);
+
+      const totalIPL = filteredTransactions.reduce((acc, transaction) => {
+        if (transaction.transaction_type === 'ipl') {
+          return acc + transaction.amount;
+        }
+        return acc;
+      }, 0);
+
+      const totalincome = filteredTransactions.reduce((acc, transaction) => {
+        if (transaction.transaction_type === 'income') {
+          return acc + transaction.amount;
+        }
+        return acc;
+      }, 0);
+      
+      const totaladanya = totalIncome - totalExpense;
+      
+      console.log('ipl :'+totalIPL)
+      console.log('income:'+totalincome)
+      console.log('ipl dan income:'+totalIncome)
+      console.log('pengeluaran :'+totalExpense)
+      
 
     const currentPageNav = currentPage + 1;
     const pageCount = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);

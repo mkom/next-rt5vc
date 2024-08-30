@@ -47,7 +47,10 @@ const FilterTransactions = ({ setTransactions, initialTransaction }) => {
                     endDate: endDateAdjusted,
                 },
             });
-            setTransactions(response.data);
+            const transactions =response.data.sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+              });
+            setTransactions(transactions);
         } catch (error) {
             console.error('Error fetching filtered transactions:', error);
         }
