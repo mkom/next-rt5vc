@@ -36,7 +36,7 @@ const Outstanding = ({ initialHousesPaid }) =>  {
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/tbd`, {
       });
-      //console.log(res.data)
+    //console.log(res.data)
      setDataOutStanding(res.data.data);
      setTotalHouses(res.data.total);
      setTotalAmount(res.data.total_amount)
@@ -80,7 +80,7 @@ const Outstanding = ({ initialHousesPaid }) =>  {
       </div>
            
       <div className="overflow-x-auto">
-        <Table striped>
+        <Table striped className='block'>
             <Table.Head className='' >
                 <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4'>No</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-7 md:w-32'>No Rumah</Table.HeadCell>

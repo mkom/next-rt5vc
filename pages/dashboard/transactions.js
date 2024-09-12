@@ -152,8 +152,9 @@ const Transaction = ({ initialTransaction }) =>  {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
 
         });
-
-        const transactionsData = res.data.data.sort((a, b) => {
+        const dataRes = res.data;
+        //console.log(dataRes.data)
+        const transactionsData =  dataRes.data.transactions.sort((a, b) => {
           return new Date(b.date) - new Date(a.date);
         });
 
@@ -479,7 +480,7 @@ export const getServerSideProps = async (context) => {
               Authorization: `Bearer ${session.accessToken}`,
           },
       });
-      const transactions = res.data.data.sort((a, b) => {
+      const transactions = res.data.data.transactions.sort((a, b) => {
         return new Date(b.date) - new Date(a.date);
       });
       return {

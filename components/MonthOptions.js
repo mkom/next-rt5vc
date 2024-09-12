@@ -1,24 +1,30 @@
 // components/MonthOptions.js
 import moment from 'moment';
-import axios from 'axios';
-import { useState } from 'react';
-
 const MonthOptions = (monthly) => {
   const startYear = 2024;
-  const endYear = 2030;
+  const endYear = moment().year();
+  const currentMonth = moment().month();
+
 
  // console.log(monthly)
 
-  const options = [];
+ const options = [];
 
   for (let year = startYear; year <= endYear; year++) {
-    let startMonth = (year === startYear)? 6 : 0;
-    let endMonth = 11;
+    let startMonth;
+    if (year === startYear) {
+      startMonth = 6; // July
+    } else {
+      startMonth = 0; // January
+    }
+    const endMonth = year === endYear ? currentMonth : 11; // December
 
     for (let month = startMonth; month <= endMonth; month++) {
-      const value = moment().month(month).year(year).format("YYYY-MM");
-      const label = moment().month(month).year(year).format("MMMM YYYY");
-      options.push({ value, label });
+      const date = moment().month(month).year(year);
+      options.push({
+        value: date.format("YYYY-MM"),
+        label: date.format("MMMM YYYY")
+      });
     }
   }
 

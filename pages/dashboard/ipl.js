@@ -3,6 +3,7 @@ import { useEffect,useState,useCallback } from 'react';
 import axios from 'axios';
 import { useRequireAuth } from '../../utils/authUtils.js'; 
 import ReactPaginate from 'react-paginate';
+import { IoPrism } from "react-icons/io5";
 
 import { Table } from "flowbite-react";
 import { Button } from "flowbite-react";
@@ -16,8 +17,7 @@ import {FaRegEdit,FaEye,FaRegTrashAlt,FaCalendarCheck } from 'react-icons/fa';
 import { FaEllipsisH } from "react-icons/fa";
 import { IoCloseCircle } from "react-icons/io5";
 import { IoCheckmarkDoneCircleSharp } from "react-icons/io5";
-
-
+import { IoBookmark } from "react-icons/io5";
 import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
@@ -29,7 +29,7 @@ import CustomThemeProviderSecond from '../../components/CustomThemeSecond';
 
 const ITEMS_PER_PAGE = 20;
 
-const Houses = ({ initialHouses }) => {
+const Ipl = ({ initialHouses }) => {
   const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
   useAuthRedirect();
   const { data: session, status } = useSession();
@@ -52,21 +52,31 @@ const Houses = ({ initialHouses }) => {
   const handleMonthChange = (selectedOption) => {
     setSelectedPeriod(selectedOption.value);
     setCurrentPage(0);
-   // console.log(Houses);
+  };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+  
+    // Extract day, month, and year
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = String(date.getFullYear()).slice(-2); // Get last two digits of the year
+  
+    // Format the date as DD/MM/YY
+    return `${day}/${month}/${year}`;
   };
 
 
   const fetchHouses = useCallback (async () => {
     if (session) {
         try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/ipl2`, {
                 headers: {
                   Authorization: `Bearer ${session.accessToken}`,
                 },
             });
             
-           // console.log(res.data)
+           //console.log(res.data)
             setHouses(res.data.data);
             setLoading(false);
         } catch (error) {
@@ -105,9 +115,9 @@ const Houses = ({ initialHouses }) => {
 
   const statusHouses = [
     { value: '', label: 'Semua Status' },
-    { value: 'Isi', label: 'Isi' },
-    { value: 'Kosong', label: 'Kosong' },
-    { value: 'Weekend', label: 'Weekend' },
+    { value: 'Lunas', label: 'Lunas' },
+    { value: 'Belum Bayar', label: 'Belum Bayar' },
+    { value: 'TBD', label: 'PGYB' },
   ]
 
   const handleGroupChange = (selectedOption) => {
@@ -125,6 +135,7 @@ const Houses = ({ initialHouses }) => {
   ? houses.filter(house => {
       const searchTermLower = searchTerm.toLowerCase();
       const selectedGroupLower = selectedGroup.toLowerCase();
+      const monthlyStatus = house.monthly_status && house.monthly_status.find(status => status.month === selectedPeriod);
 
       return (
         (searchTermLower === '' || (
@@ -132,13 +143,16 @@ const Houses = ({ initialHouses }) => {
           house?.house_id?.toLowerCase().includes(searchTermLower)
         )) &&
         (selectedGroupLower === '' || house?.group?.toLowerCase() === selectedGroupLower) &&
-        (selectedStatus === '' || house.monthly_status.find(status => status.month === selectedPeriod)?.status === selectedStatus)
+        (selectedStatus === '' || house.monthly_fees.find(status => status.month === selectedPeriod)?.status === selectedStatus) &&
+        (house.monthly_fees?.length > 0 && house.monthly_status?.length > 0) &&
+        monthlyStatus && monthlyStatus.status === 'Isi'
       );
     })
   : [];
 
   const offset = currentPage * ITEMS_PER_PAGE;
-  const currentPageData = filteredHouses.slice(offset, offset + ITEMS_PER_PAGE);
+  const currentPageData = filteredHouses
+  .slice(offset, offset + ITEMS_PER_PAGE);
 
   const getTypeIcon = (status) => {
     switch (status) {
@@ -146,6 +160,21 @@ const Houses = ({ initialHouses }) => {
         return <IoCheckmarkDoneCircleSharp  className="text-green-700 h-6 w-6 " />;
       case false:
         return <IoCloseCircle  className="text-red-700 h-6 w-6 " />;
+      default:
+        return null;
+    }
+  };
+
+  const getTypeIconFee = (status) => {
+    switch (status) {
+      case 'Lunas':
+        return <IoCheckmarkDoneCircleSharp  className="text-green-700 h-6 w-6 " />;
+      case 'Belum Bayar':
+        return <IoCloseCircle  className="text-red-700 h-6 w-6 " />;
+      case 'Bayar Sebagian':
+      return <IoPrism  className="text-orange-700 h-6 w-6 " />;  
+      case 'TBD':
+        return <IoBookmark  className="text-green-400  h-6 w-6 " />;
       default:
         return null;
     }
@@ -200,22 +229,19 @@ const Houses = ({ initialHouses }) => {
   };
 
   const monthlyStatusCount = houses.reduce((acc, house) => {
-    const month = house.monthly_status?.find((status) => status.month === selectedPeriod)?.month;
+    const month = house.monthly_fees?.find((status) => status.month === selectedPeriod)?.month;
     if (month) {
-      acc[month] = acc[month] || { Isi: 0, Kosong: 0, Weekend: 0 };
-      if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Isi') {
-        acc[month].Isi++;
-      } else if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Kosong') {
-        acc[month].Kosong++;
-      } else if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Weekend') {
-        acc[month].Weekend++;
+      acc[month] = acc[month] || { Lunas: 0, BelumBayar: 0, Tbd: 0 };
+      if (house.monthly_fees?.find((status) => status.month === selectedPeriod)?.status === 'Lunas') {
+        acc[month].Lunas++;
+      } else if (house.monthly_fees?.find((status) => status.month === selectedPeriod)?.status === 'Belum Bayar') {
+        acc[month].BelumBayar++;
+      } else if (house.monthly_fees?.find((status) => status.month === selectedPeriod)?.status === 'TBD') {
+        acc[month].Tbd++;
       }
     }
     return acc;
   }, {});
-
-  
-
 
   if (loading) {
     return <Spinner />;
@@ -231,7 +257,7 @@ const Houses = ({ initialHouses }) => {
         <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
             <h1 className='text-xl mb-4 flex font-semibold text-gray-900 sm:text-2xl dark:text-white'>
             <FaCalendarCheck  className="mr-2 h-7 w-7" /> 
-            <span>Data Rumah</span>
+            <span>Data IPL</span>
             </h1>
 
             <div className='w-2/4'>
@@ -246,34 +272,58 @@ const Houses = ({ initialHouses }) => {
             />
 
             </div>
-            <div className="overflow-x-auto mt-5">
-                <Table className='w-auto block'>
+            {/* <div className="overflow-x-auto mt-5">
+                <Table className='w-auto'>
                     <Table.Head className='border'>
-                        <Table.HeadCell className='bg-white py-1 px-1 w-28'>Status</Table.HeadCell>
-                        <Table.HeadCell className='bg-white py-1 px-1  w-20'>Jumlah</Table.HeadCell>
-                        <Table.HeadCell className='bg-white py-1 px-1 w-24'>Iuran</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1 border-r w-20'>Iuran</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1 border-r w-10'>Jumlah</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1 border-r w-32'>Nominal Total</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1 border-r w-10'>Lunas</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1 border-r w-18'>Blm Bayar</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1 border-r w-30'>Nominal yang didapat</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1 border-r w-32'>Nominal Kurang</Table.HeadCell>
                     </Table.Head>
                     <Table.Body className="divide-y border border-t-0">
                         <Table.Row className="">
-                            <Table.Cell className='py-1 px-1  w-28'>Isi</Table.Cell>
-                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
-                            <Table.Cell className='py-1 px-1 w-24'>IPL + KAS</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-20'>IPL + KAS</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-10'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-32 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-10'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-18'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-30 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-32 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
                         </Table.Row>
                         <Table.Row className="">
-                            <Table.Cell className='py-1 px-1  w-28'>Weekend</Table.Cell>
-                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Weekend || 0}</Table.Cell>
-                            <Table.Cell className='py-1 px-1 w-24'>KAS</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-20'>KAS</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-10'>{monthlyStatusCount[selectedPeriod]?.Weekend || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-32 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-10'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-18'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-30 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-32 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
                         </Table.Row>
                         <Table.Row className="">
-                            <Table.Cell className='py-1 px-1  w-28'>Kosong</Table.Cell>
-                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Kosong || 0}</Table.Cell>
-                            <Table.Cell className='py-1 px-1 w-24'>-</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-20'>Kosong</Table.Cell>
+                            <Table.Cell className='py-1 px-1  border-r w-10'>{monthlyStatusCount[selectedPeriod]?.Kosong || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-32 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-10'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-18'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-30 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 border-r w-32 text-right'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
                         </Table.Row>
                     </Table.Body>
                 </Table>
 
                 
-            </div>
+            </div> */}
+
+            <div>
+              <Button.Group className='mt-3'>
+              <Button color="gray" size="xs" className='p-1 cst-btn'><IoCheckmarkDoneCircleSharp className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Lunas</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.Lunas || 0}</span></Button>
+              <Button color="gray" size="xs" className='p-1 cst-btn'><IoCloseCircle className="text-red-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Belum Bayar</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.BelumBayar || 0}</span></Button>
+              <Button color="gray" size="xs" className='p-1 cst-btn'><IoBookmark className="text-green-400 sm:mr-1 h-5 w-5" /><span className='text-xs' >PGYB</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.Tbd || 0}</span></Button>
+              </Button.Group>
+            </div>   
 
             <div className="mb-3 mt-5 flex justify-between content-center items-center gap-3 w-full">
             <CustomThemeProviderSecond>
@@ -310,20 +360,18 @@ const Houses = ({ initialHouses }) => {
 
             </div>
 
-            <div className='overflow-x-auto mt-5'>
-                <table>
+            
+
+            <div className='overflow-x-auto mt-4'>
+                <table className='block w-full'>
                     <thead className='bg-gray-50 border-b-2 group/head text-xs uppercase text-gray-700'>
                         <tr>
-                            <th rowSpan={2}  className='py-1 px-2 text-left'>No</th>
-                            <th rowSpan={2} className='py-1 px-2 text-left '>Rumah</th>
-                            <th rowSpan={2} className='py-1 px-2 text-left w-1/4'>Nama</th>
-                            <th rowSpan={2} className='py-1 px-2 text-left  w-1/6'>Status</th>
-                            <th colSpan={2}  className='py-1 px-2 text-center w-1/3'>Iuran Wajib</th>
-                            <th rowSpan={2} className='py-1 px-2 w-1/3 text-left'>Edit</th>
-                        </tr>
-                        <tr>
-                            <th className='pt-0 pb-1 px-2 text-center '>IPL</th>
-                            <th className='pt-0 pb-1 px-2  text-center '>Kas</th>
+                            <th className='py-1 px-2 text-left'>No</th>
+                            <th className='py-1 px-2 text-left '>Rumah</th>
+                            <th className='py-1 px-2 text-left w-1/3'>Nama</th>
+                            <th className='py-1 px-2 text-left  w-1/6'>Tanggal</th>
+                            <th className='py-1 px-2 text-center w-1/4'>Status</th>
+                            <th className='py-1 px-2 w-1/6 text-left'>Detail</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y border-b text-xs">
@@ -333,22 +381,22 @@ const Houses = ({ initialHouses }) => {
                             <td className="py-2 px-2">{house.house_id}</td>
                             <td className="py-2 px-2 ">{house.resident_name}</td>
                             <td className="py-2 px-2  ">
-                              {house.monthly_status.find((status) => status.month === selectedPeriod)?.status}
+                            {
+                              house.monthly_fees.find((status) => status.month === selectedPeriod)?.transaction_id?.date
+                                ? formatDate(house.monthly_fees.find((status) => status.month === selectedPeriod)?.transaction_id?.date)
+                                : '-'
+                            }
                             </td>
                             <td className="py-2 px-2 ">
                               <div className='flex justify-center items-center content-center h-full'>
-                                {getTypeIcon(house.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_ipl)}
+                                {getTypeIconFee(house.monthly_fees.find((status) => status.month === selectedPeriod)?.status)}
                               </div>
                             </td>
-                            <td className="py-2 px-2 ">
-                            <div className='flex justify-center items-center content-center h-full'>
-                                {getTypeIcon(house.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_rt)}
-                              </div>
-                            </td>
+                           
                             <td className="py-2 px-2 ">
                               <Button.Group className=''>
                               {/* <Button color="gray" size="xs" className=''>Detail</Button> */}
-                              <Button color="gray" size="xs" className=' rounded-md' onClick={() => handleEditClick(house)}>Edit</Button>
+                              <Button color="gray" size="xs" className=' rounded-md' onClick={() => handleEditClick(house)}>Detail</Button>
                               {/* <Button color="gray" size="xs" className=''>Hapus</Button> */}
                               </Button.Group>
                               </td>
@@ -496,7 +544,7 @@ const Houses = ({ initialHouses }) => {
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
   try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/ipl2`, {
           headers: {
               Authorization: `Bearer ${session.accessToken}`,
           },
@@ -516,4 +564,4 @@ export const getServerSideProps = async (context) => {
   }
 };
 
-export default Houses;
+export default Ipl;
