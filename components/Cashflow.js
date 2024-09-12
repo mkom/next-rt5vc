@@ -66,12 +66,12 @@ const AllCashflow = ({ initialTransaction }) =>  {
           const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
   
           });
-
-          const transactionsData = res.data.data.sort((a, b) => {
+          const dataRes = res.data;
+          //console.log(dataRes.data)
+          const transactionsData =  dataRes.data.transactions.sort((a, b) => {
             return new Date(b.date) - new Date(a.date);
           });
 
-          //console.log(transactionsData);
           setReTransactions(transactionsData);
           setTransactions(transactionsData);
           setLastUpdate(res.data.lastUpdate);
@@ -88,13 +88,19 @@ const AllCashflow = ({ initialTransaction }) =>  {
     }, [fetchTransactions]);
   
     const handleSearchChange = (event) => {
+        setCurrentPage(0);
         const query = event.target.value;
         const queryObj = { ...router.query };
         delete queryObj.startDate;
         delete queryObj.endDate;
+        // tambahkan kondisi untuk mereset currentPage jika search term kosong
+        if (query === '') {
+          queryObj.page = undefined;
+        }
+
         router.push({
             pathname: '/cashflow',
-            query: { ...queryObj, s: query },
+            query: { ...queryObj, s: query,page: undefined },
         });
         setSearchTerm(query);
     };
@@ -150,8 +156,6 @@ const AllCashflow = ({ initialTransaction }) =>  {
       return <Spinner />;
     }
   
-   // console.log(transactions)
-
     const totalAmount = filteredTransactions.reduce((acc, transaction) => {
         if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
         return acc + transaction.amount;
@@ -160,42 +164,6 @@ const AllCashflow = ({ initialTransaction }) =>  {
         }
         return acc;
     }, 0);
-
-    const totalIncome = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
-          return acc + transaction.amount;
-        }
-        return acc;
-      }, 0);
-      
-      const totalExpense = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'expense') {
-          return acc + transaction.amount;
-        }
-        return acc;
-      }, 0);
-
-      const totalIPL = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'ipl') {
-          return acc + transaction.amount;
-        }
-        return acc;
-      }, 0);
-
-      const totalincome = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'income') {
-          return acc + transaction.amount;
-        }
-        return acc;
-      }, 0);
-      
-      const totaladanya = totalIncome - totalExpense;
-      
-      console.log('ipl :'+totalIPL)
-      console.log('income:'+totalincome)
-      console.log('ipl dan income:'+totalIncome)
-      console.log('pengeluaran :'+totalExpense)
-      
 
     const currentPageNav = currentPage + 1;
     const pageCount = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
@@ -226,6 +194,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
                 initialTransaction={reTransactions} 
                 initialStartDate={pStartDate}
                 initialEndDate={pEndDate}
+                setCurrentPage={setCurrentPage}
             />
         </div>
         
@@ -237,7 +206,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
         <div className='overflow-x-auto'>
         <Table striped>
             <Table.Head>
-            <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white  w-8'>No</Table.HeadCell>
+            <Table.HeadCell className='py-2 pl-2 pr-0 md:text-base md:py-3 md:pl-2 md:pr-0 bg-cyan-600 text-white'>No</Table.HeadCell>
             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-3/4'>Keterangan</Table.HeadCell>
             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Nominal</Table.HeadCell>

@@ -5,7 +5,7 @@ import axios from 'axios';
 
 import Spinner from './Spinner';
 import CustomThemeProviderSecond from './CustomThemeSecond';
-import { Card, Button, Table,Alert,Badge } from 'flowbite-react';
+import { Card, Button, Table,Alert } from 'flowbite-react';
 import { IoCloseCircle } from "react-icons/io5";
 import { IoCheckmarkDoneCircleSharp } from "react-icons/io5";
 import { IoBookmark } from "react-icons/io5";
@@ -13,6 +13,8 @@ import { IoPrism } from "react-icons/io5";
 import { HiHome } from "react-icons/hi";
 import { GrMoney } from "react-icons/gr";
 import { HiInformationCircle } from "react-icons/hi";
+import { GrFormNextLink } from "react-icons/gr";
+import Link from 'next/link';
 
 import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -67,15 +69,16 @@ const IplReport = ({ initialHousesPaid }) =>  {
             group: selectedGroup
         }
       });
-      //console.log(res.data)
-      setMonthlyPaid(res.data.data);
-      setTotalHouses(res.data.data.length);
-      setTotalHousesPaid(res.data.total_done)
+      const dataRes = res.data;
+      //console.log(dataRes)
+      setMonthlyPaid(dataRes.data.data);
+      setTotalHouses(dataRes.total_unit);
+      setTotalHousesPaid(dataRes.total_house_done)
       setTotalPaid(res.data.total_nominal);
-      setPercentage(res.data.percentage_paid);
+      setPercentage(dataRes.percentage_paid);
       setTbd(res.data.total_pgyb);
-      setLunas(res.data.total_lunas);
-      setBlm(res.data.total_belum_bayar);
+      setLunas(dataRes.total_houses_paid);
+      setBlm(dataRes.total_house_unpaid);
 
       setLoading(false);
       setSkeleton(false);
@@ -230,21 +233,21 @@ const IplReport = ({ initialHousesPaid }) =>  {
             </Button.Group>
           </div>   
           <div className="overflow-x-auto">
-        <Table striped>
-            <Table.Head className='' >
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-2'>No</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>No Rumah</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Ket.</Table.HeadCell>
-            </Table.Head>
-            <Table.Body className="divide-y">
-            <Table.Row>
-                <Table.Cell colSpan="5" className="text-center w-full py-3 mt-2 animate-pulse bg-gray-200"></Table.Cell>
-                </Table.Row>
-            </Table.Body>
-        </Table>
-        </div>
+            <Table striped className='block' >
+                <Table.Head className='' >
+                    <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-2'>No</Table.HeadCell>
+                    <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-28'>No Rumah</Table.HeadCell>
+                    <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
+                    <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+                    <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white  w-40'>Ket.</Table.HeadCell>
+                </Table.Head>
+                <Table.Body className="divide-y">
+                <Table.Row>
+                    <Table.Cell colSpan="5" className="text-center w-full py-3 mt-2 animate-pulse bg-gray-200"></Table.Cell>
+                    </Table.Row>
+                </Table.Body>
+            </Table>
+          </div>
         </div> 
       ): (
         <div>
@@ -259,12 +262,17 @@ const IplReport = ({ initialHousesPaid }) =>  {
               
               </h3>
             <span className='font-semibold text-sm md:text-lg'>{percentage}</span>
+            
             </Card>
             <Card className='bg-blue-700 text-white w-1/2'>
             <h3 className='font-bold text-sm md:text-xl flex items-start'><span><GrMoney className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Nominal</span></h3>
             <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalPaid)}</span>
             </Card>
             
+          </div>
+
+          <div className='flex py-4 items-center content-center justify-between'>
+          <Button size='sm' as={Link} href="/outstanding" className='bg-red-700 '>Outstanding<GrFormNextLink  className='w-5 h-5'/></Button>
           </div>
   
           <div>
@@ -275,13 +283,13 @@ const IplReport = ({ initialHousesPaid }) =>  {
             </Button.Group>
           </div>      
           <div className="overflow-x-auto">
-            <Table striped >
+            <Table striped className='block'>
                 <Table.Head className='' >
                     <Table.HeadCell className='py-1 px-1 md:text-base md:py-2 md:px-2 bg-cyan-600 text-white w-2'>No</Table.HeadCell>
                     <Table.HeadCell className='py-1 px-1 md:text-base md:py-2 md:px-2 bg-cyan-600 text-white'>No Rumah</Table.HeadCell>
                     <Table.HeadCell className='py-1 px-1 md:text-base md:py-2 md:px-2 bg-cyan-600 text-white'>Status</Table.HeadCell>
                     <Table.HeadCell className='py-1 px-1 md:text-base md:py-2 md:px-2 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                    <Table.HeadCell className='py-1 px-1 md:text-base md:py-2 md:px-2 bg-cyan-600 text-white'>Ket.</Table.HeadCell>
+                    <Table.HeadCell className='py-1 px-1 md:text-base md:py-2 md:px-2 bg-cyan-600 text-white w-40'>Ket.</Table.HeadCell>
                 </Table.Head>
                 <Table.Body className="divide-y">
                 {monthlyPaid && monthlyPaid.length > 0 && monthlyPaid[0] !== undefined ? (
@@ -297,7 +305,7 @@ const IplReport = ({ initialHousesPaid }) =>  {
                                {/* {monthly.occupancy_status !== 'Isi' ? <Badge color="failure" >{monthly.occupancy_status}</Badge> :'' } */}
                                </span>
                             </Table.Cell>
-                            <Table.Cell className={`py-1 px-1 md:py-2 md:px-2 text-xs md:text-base`}>
+                            <Table.Cell className={`py-1 px-1 md:py-2 md:px-2 text-xs md:text-base text-center`}>
                               <span>{getTypeIcon(monthly.monthly_fees[0].status)} </span>
                             </Table.Cell>
   

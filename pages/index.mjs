@@ -13,9 +13,9 @@ export default function Home() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  useEffect(() => {
-    router.push('/data-ipl');
-  }, []);
+  // useEffect(() => {
+  //   router.push('/data-ipl');
+  // }, []);
 
   return (
     <>

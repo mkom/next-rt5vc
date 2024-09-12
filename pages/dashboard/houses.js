@@ -1,159 +1,102 @@
-// pages/home.js
 import { getSession, useSession } from 'next-auth/react';
-import { useEffect,useState } from 'react';
+import { useEffect,useState,useCallback } from 'react';
 import axios from 'axios';
 import { useRequireAuth } from '../../utils/authUtils.js'; 
 import ReactPaginate from 'react-paginate';
 
 import { Table } from "flowbite-react";
 import { Button } from "flowbite-react";
-import {TextInput,Drawer,Select,Dropdown,Alert } from "flowbite-react";
+import {TextInput,Drawer,Dropdown,Alert } from "flowbite-react";
 import Header from '../../components/Header';
 import SideMenu from '../../components/dashboard/Sidebar'
 import Spinner from '../../components/Spinner';
 import { HiHome } from "react-icons/hi";
 import { HiOutlineSearch } from "react-icons/hi";
-import {FaRegEdit,FaEye,FaRegTrashAlt } from 'react-icons/fa';
+import {FaRegEdit,FaEye,FaRegTrashAlt,FaCalendarCheck } from 'react-icons/fa';
 import { FaEllipsisH } from "react-icons/fa";
 import { IoCloseCircle } from "react-icons/io5";
 import { IoCheckmarkDoneCircleSharp } from "react-icons/io5";
 
-const ITEMS_PER_PAGE = 10;
+import Select from 'react-select';
+import 'react-datepicker/dist/react-datepicker.css';
+import moment from 'moment';
+import 'moment/locale/id';
+moment.locale('id');
+import MonthOptions from '../../components/MonthOptions.js';
+
+
+const ITEMS_PER_PAGE = 20;
 
 const Houses = ({ initialHouses }) => {
   const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
   useAuthRedirect();
-
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
   const { data: session, status } = useSession();
-  // /console.log(session)
-  //const token = session.accessToken;
   const [houses, setHouses] = useState([initialHouses]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-  const [filter, setFilter] = useState({ name: '', house_id: '' });
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editData, setEditData] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState(moment().format('YYYY-MM')); // Format YYYY-MM moment().format('YYYY-MM')
+  const [monthly ,setMonthly] = useState([]);
+  const [editData, setEditData] = useState(null);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState('success');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleMonthChange = (selectedOption) => {
+    setSelectedPeriod(selectedOption.value);
+  };
+
+
+  const fetchHouses = useCallback (async () => {
+    if (session) {
+        try {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/ipl`, {
+                headers: {
+                  Authorization: `Bearer ${session.accessToken}`,
+                },
+            });
+            
+           // console.log(res.data)
+            setHouses(res.data.data);
+            setLoading(false);
+        } catch (error) {
+    
+          console.error('Error fetching houses data:', error);
+          setLoading(false);
+        }
+    }
+   
+  },[selectedPeriod,session])
+
 
   useEffect(() => {
     if (session) {
-        const fetchHouses = async () => {
-            try {
-                const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
-                    headers: {
-                      Authorization: `Bearer ${session.accessToken}`,
-                    },
-                });
-                //setAlertType('success');
-                //setAlertMessage('Data berhasil diupdate');
-                //setShowAlert(true);
-                handleAlertTimeout(3000);
-
-                setHouses(res.data);
-                setLoading(false);
-            } catch (error) {
-              //setAlertType('failure');
-              //setAlertMessage('Gagal mengupdate rumah');
-              //setShowAlert(true);
-              handleAlertTimeout(3000);
-              console.error('Error fetching houses data:', error);
-              setLoading(false);
-            }
-        };
-
         fetchHouses();
     }
-  }, [session, status]);
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  }, [selectedPeriod,session,fetchHouses ]);
 
   const handlePageClick = (data) => {
     setCurrentPage(data.selected);
   };
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilter({ ...filter, [name]: value });
-  };  
-  
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
-  const filteredHouses = houses.filter(house => 
-    (house.resident_name && house.resident_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (house.house_id && house.house_id.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+
+  const filteredHouses = Array.isArray(houses) ? houses.filter(house => 
+    (house?.resident_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (house?.house_id?.toLowerCase().includes(searchTerm.toLowerCase()))
+  ) :[];
 
   const offset = currentPage * ITEMS_PER_PAGE;
   const currentPageData = filteredHouses.slice(offset, offset + ITEMS_PER_PAGE);
-
-  const handleEditClick = (house) => {
-    setEditData(house);
-    setIsDrawerOpen(true);
-  };
-
-  const handleSaveChanges = async () => {
-    try {
-        const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/houses/update/${editData._id}`, editData, {
-            headers: {
-                Authorization: `Bearer ${session.accessToken}`,
-            },
-        });
-        //console.log(res.data)
-        setHouses(houses.map(house => house._id === editData._id ? {...house,...res.data}  : house));
-        setIsDrawerOpen(false);
-        setAlertType('success');
-        setAlertMessage('Data berhasil diupdate');
-        setShowAlert(true);
-    } catch (error) {
-        setAlertType('failure');
-        setAlertMessage('Gagal mengupdate rumah');
-        setShowAlert(true);
-        console.error('Error updating house data:', error);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditData({...editData, [name]: value });
-    //console.log(value)
-    
-  };
-
-  // Calculate house status counts
-  const statusCounts = houses.reduce((acc, house) => {
-    const status = house.occupancy_status || 'Unknown';
-    if (!acc[status]) {
-        acc[status] = 0;
-    }
-    acc[status]++;
-    return acc;
-  }, {});
-
-  const mandatoryFeeCounts = houses.reduce((acc, house) => {
-    if (house.mandatory_fee) {
-      acc.true++;
-    } else {
-      acc.false++;
-    }
-    return acc;
-  }, { true: 0, false: 0 });
 
   const getTypeIcon = (status) => {
     switch (status) {
@@ -166,15 +109,71 @@ const Houses = ({ initialHouses }) => {
     }
   };
 
-  const handleAlertDismiss = () => {
-    handleAlertTimeout(0);
+  const handleEditClick = (house) => {
+    setEditData(house);
+    setIsDrawerOpen(true);
   };
 
-  const handleAlertTimeout = (timeoutDuration) => {
-    setTimeout(() => {
-      setShowAlert(false);
-    }, timeoutDuration);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditData({...editData, [name]: value });
+   // console.log(editData)
+    
   };
+  
+  const handleEditStatus = (month, newStatus, newMandatoryIpl, newMandatoryRt) => {
+    console.log(newStatus)
+    const updatedMonthlyStatus = editData.monthly_status.map((status) => {
+      if (status.month === month) {
+        return { ...status, status: newStatus, mandatory_ipl: newMandatoryIpl, mandatory_rt: newMandatoryRt };
+      }
+      return status;
+    });
+    setEditData({ ...editData, monthly_status: updatedMonthlyStatus });
+
+    console.log(updatedMonthlyStatus)
+  };
+
+  
+  const handleSaveChanges = async () => {
+    try {
+      console.log(editData); 
+        const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/houses/update/${editData._id}`, editData, {
+            headers: {
+                Authorization: `Bearer ${session.accessToken}`,
+            },
+            params: {
+              period: selectedPeriod
+          }
+        });
+        //console.log(res.data)
+        setHouses(houses.map(house => house._id === editData._id ? {...house,...res.data.data}  : house));
+        setIsDrawerOpen(false);
+        setAlertType('success');
+        setAlertMessage('Data berhasil diupdate');
+        setShowAlert(true);
+    } catch (error) {
+        setAlertType('failure');
+        setAlertMessage('Gagal mengupdate rumah');
+        setShowAlert(true);
+        console.error('Error updating house data:', error);
+    }
+  };
+
+  const monthlyStatusCount = houses.reduce((acc, house) => {
+    const month = house.monthly_status?.find((status) => status.month === selectedPeriod)?.month;
+    if (month) {
+      acc[month] = acc[month] || { Isi: 0, Kosong: 0, Weekend: 0 };
+      if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Isi') {
+        acc[month].Isi++;
+      } else if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Kosong') {
+        acc[month].Kosong++;
+      } else if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Weekend') {
+        acc[month].Weekend++;
+      }
+    }
+    return acc;
+  }, {});
 
 
   if (loading) {
@@ -189,110 +188,133 @@ const Houses = ({ initialHouses }) => {
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
         <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
-        {showAlert && (
-            <Alert className='' color={alertType === 'success' ? 'success' : 'failure'} onDismiss={handleAlertDismiss}>
-                <span className="font-medium">{alertMessage}</span>
-            </Alert>
-        )}
-          <h1 className='text-xl mb-4 flex font-semibold text-gray-900 sm:text-2xl dark:text-white'>
-            <HiHome  className="mr-2 h-8 w-8" /> 
+            <h1 className='text-xl mb-4 flex font-semibold text-gray-900 sm:text-2xl dark:text-white'>
+            <FaCalendarCheck  className="mr-2 h-7 w-7" /> 
             <span>Data Rumah</span>
-          </h1>
-          
-          <div className="mb-1">
-              <ul className='flex gap-4'>
-                  {Object.entries(statusCounts).map(([status, count]) => (
-                      <li key={count}>{`${status}: ${count} Rumah`}</li>
-                  ))}
-              </ul>
-          </div>
-          <div className="mb-4">
-          <p>Wajib IPL: {`${mandatoryFeeCounts.true} Rumah`} </p>
-          </div>
+            </h1>
 
-          <div className="max-w-sm mb-4">
-            <TextInput 
-              name="name"
-              placeholder="Cari"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="mr-2"
-              icon={HiOutlineSearch} 
-               />
-          </div>
-          
-          <div className='overflow-x-auto '>
-            <Table hoverable>
-                <Table.Head>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>No</Table.HeadCell>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Rumah</Table.HeadCell>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Nama</Table.HeadCell>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>No. WA</Table.HeadCell>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>Status</Table.HeadCell>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>IPL</Table.HeadCell>
-                    <Table.HeadCell className='py-2 px-4 md:py-3 md:px-3'>
-                        <span className="sr-only">Edit</span>
-                    </Table.HeadCell>
-                </Table.Head>
-                <Table.Body className="divide-y">
-                    {currentPageData.map((house, index) => (
-                        <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                            <Table.Cell  className="py-2 px-4 md:py-3 md:px- whitespace-nowrap font-medium text-gray-900 dark:text-white">
-                                {offset + index + 1}
-                            </Table.Cell>
-                            <Table.Cell className='py-2 px-4 md:py-3 md:px-'>{house.house_id}</Table.Cell>
-                            <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.resident_name}</Table.Cell>
-                            <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.whatsapp_number}</Table.Cell>
-                            <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{house.occupancy_status}</Table.Cell>
-                            <Table.Cell  className='py-2 px-4 md:py-3 md:px-'>{getTypeIcon(house.mandatory_fee)}</Table.Cell>
-                            <Table.Cell className='py-2 px-4 md:py-3 md:px-'>
-                                {/* <Button size="sm" onClick={() => handleEditClick(house)}>
-                                    <HiPencilAlt  className="md:mr-2 h-4 w-4" />
-                                    <span className='hidden md:block'>Edit</span>
-                                </Button> */}
-
-                          <Dropdown  className="relative z-50 cursor-pointer" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4 cursor-pointer" /></span>}>
-                            <Dropdown.Item onClick={() => handleEditClick(house)}><FaRegEdit className='mr-1'/><span>Edit</span></Dropdown.Item>
-                            <Dropdown.Item><FaEye className='mr-1'/><span>View</span></Dropdown.Item>
-                            <Dropdown.Item  ><FaRegTrashAlt className='mr-1' /><span>Delete</span></Dropdown.Item>
-                          </Dropdown>
-
-                            </Table.Cell>
-                        </Table.Row>
-                    ))}
-                </Table.Body>
-            </Table>
-          </div>
-
-          <nav className='py-6'>
-          <ReactPaginate
-                previousLabel={'Previous'}
-                nextLabel={'Next'}
-                breakLabel={'...'}
-                pageCount={Math.ceil(filteredHouses.length / ITEMS_PER_PAGE)}
-                marginPagesDisplayed={2}
-                pageRangeDisplayed={5}
-                onPageChange={handlePageClick}
-                containerClassName={'pagination flex justify-center -space-x-px text-sm'}
-                pageClassName={'page-item'}
-                pageLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                previousClassName={'page-item'}
-                previousLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                nextClassName={'page-item'}
-                nextLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                breakClassName={'page-item'}
-                breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                activeClassName={'active bg-gray-300'}
-                activeLinkClassName={'bg-green-300'}
+            <div className='w-2/4'>
+              {/* <span className='font-semibol'>PERIODE</span> */}
+              <Select
+              id="relatedMonths"
+              options={MonthOptions(monthly)}
+              value={MonthOptions(monthly).find(option => option.value === selectedPeriod)}
+              onChange={handleMonthChange}
+              placeholder="Pilih bulan"
+              className='bg-gray-50 w-full'
             />
-          </nav>
+
+            </div>
+            <div className="overflow-x-auto mt-5">
+                <Table className='w-auto block'>
+                    <Table.Head className='border'>
+                        <Table.HeadCell className='bg-white py-1 px-1 w-28'>Status</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1  w-20'>Jumlah</Table.HeadCell>
+                        <Table.HeadCell className='bg-white py-1 px-1 w-24'>Iuran</Table.HeadCell>
+                    </Table.Head>
+                    <Table.Body className="divide-y border border-t-0">
+                        <Table.Row className="">
+                            <Table.Cell className='py-1 px-1  w-28'>Isi</Table.Cell>
+                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 w-24'>IPL + KAS</Table.Cell>
+                        </Table.Row>
+                        <Table.Row className="">
+                            <Table.Cell className='py-1 px-1  w-28'>Weekend</Table.Cell>
+                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Weekend || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 w-24'>KAS</Table.Cell>
+                        </Table.Row>
+                        <Table.Row className="">
+                            <Table.Cell className='py-1 px-1  w-28'>Kosong</Table.Cell>
+                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Kosong || 0}</Table.Cell>
+                            <Table.Cell className='py-1 px-1 w-24'>-</Table.Cell>
+                        </Table.Row>
+                    </Table.Body>
+                </Table>
+
+                
+            </div>
+
+            <div className='overflow-x-auto mt-5'>
+                <table>
+                    <thead className='bg-gray-50 border-b-2 group/head text-xs uppercase text-gray-700'>
+                        <tr>
+                            <th rowSpan={2}  className='py-1 px-2 text-left'>No</th>
+                            <th rowSpan={2} className='py-1 px-2 text-left '>Rumah</th>
+                            <th rowSpan={2} className='py-1 px-2 text-left w-1/4'>Nama</th>
+                            <th rowSpan={2} className='py-1 px-2 text-left  w-1/6'>Status</th>
+                            <th colSpan={2}  className='py-1 px-2 text-center w-1/3'>Iuran Wajib</th>
+                            <th rowSpan={2} className='py-1 px-2 w-1/3 text-left'>Detail</th>
+                        </tr>
+                        <tr>
+                            <th className='pt-0 pb-1 px-2 text-center '>IPL</th>
+                            <th className='pt-0 pb-1 px-2  text-center '>Kas</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y border-b text-xs">
+                    {currentPageData.map((house, index) => (  
+                        <tr key={index} className="bg-white ">
+                            <td className="py-2 px-2 ">{offset + index + 1}</td>
+                            <td className="py-2 px-2">{house.house_id}</td>
+                            <td className="py-2 px-2 ">{house.resident_name}</td>
+                            <td className="py-2 px-2  ">
+                              {house.monthly_status.find((status) => status.month === selectedPeriod)?.status}
+                            </td>
+                            <td className="py-2 px-2 ">
+                              <div className='flex justify-center items-center content-center h-full'>
+                                {getTypeIcon(house.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_ipl)}
+                              </div>
+                            </td>
+                            <td className="py-2 px-2 ">
+                            <div className='flex justify-center items-center content-center h-full'>
+                                {getTypeIcon(house.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_rt)}
+                              </div>
+                            </td>
+                            <td className="py-2 px-2 ">
+                              <Button.Group className=''>
+                              <Button color="gray" size="xs" className=''>Detail</Button>
+                              <Button color="gray" size="xs" className='' onClick={() => handleEditClick(house)}>Edit</Button>
+                              <Button color="gray" size="xs" className=''>Hapus</Button>
+                              </Button.Group>
+                              </td>
+                        </tr>
+                    ))}
+                   
+                    </tbody>
+                   
+                </table>
+            </div>
+
+            <nav className='py-6'>
+            <ReactPaginate
+                  previousLabel={'Previous'}
+                  nextLabel={'Next'}
+                  breakLabel={'...'}
+                  pageCount={Math.ceil(filteredHouses.length / ITEMS_PER_PAGE)}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={5}
+                  onPageChange={handlePageClick}
+                  containerClassName={'pagination flex justify-center -space-x-px text-sm'}
+                  pageClassName={'page-item'}
+                  pageLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+                  previousClassName={'page-item'}
+                  previousLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+                  nextClassName={'page-item'}
+                  nextLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+                  breakClassName={'page-item'}
+                  breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
+                  activeClassName={'active bg-gray-100'}
+                  activeLinkClassName={'bg-gray-100'}
+              />
+            </nav>
+
         </section>
 
         {editData && (
-          <Drawer className='pt-16' open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} position="right">
+          <Drawer className='py-4 px-7 top-0 z-50 w-full md:w-2/4' open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} position="right">
           <Drawer.Header title="Edit Data Rumah" titleIcon={HiHome}/>
             <Drawer.Items>
                 <div>
+                  <span></span>
                     <label className="block mb-2 text-sm font-medium text-gray-700">Rumah</label>
                     <TextInput
                         name="house_id"
@@ -303,12 +325,12 @@ const Houses = ({ initialHouses }) => {
 
                     <label className="block mb-2 text-sm font-medium text-gray-700">Grup</label>
          
-                      <Select
+                      <select
                         id="group"
                         name="group"
                         value={editData?.group || ''}
                         onChange={handleInputChange}
-                        className="mb-4"
+                        className="mb-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                       >
                           <option value="-">-</option>
                           <option value="E1 Ganjil">E1 Ganjil</option>
@@ -316,7 +338,7 @@ const Houses = ({ initialHouses }) => {
                           <option value="E2 Genap - E3 Ganjil">E2 Genap - E3 Ganjil</option>
                           <option value="E3 Genap - E5">E3 Genap - E3A Ganjil - E5</option>
                           <option value="E3A Genap - E8">E3A Genap - E8</option>
-                      </Select>
+                      </select>
 
                     <label className="block mb-2 text-sm font-medium text-gray-700">Nama</label>
                     <TextInput
@@ -325,45 +347,58 @@ const Houses = ({ initialHouses }) => {
                         onChange={handleInputChange}
                         className="mb-4"
                     />
-                    <label className="block mb-2 text-sm font-medium text-gray-700">No. Whatsapp</label>
-                    <TextInput
-                        name="whatsapp_number"
-                        type="number"
-                        value={editData?.whatsapp_number || ''}
-                        onChange={handleInputChange}
-                        className="mb-4"
-                    />
+                    
                     <label className="block mb-2 text-sm font-medium text-gray-700">Status</label>
-                      <Select
-                        id="occupancy_status"
-                        name="occupancy_status"
-                        value={editData?.occupancy_status || ''}
-                        onChange={handleInputChange}
-                        className="mb-4"
+                      <select
+                        id="monthly_status"
+                        name="monthly_status"
+                        value={Array.isArray(editData.monthly_status) ? editData.monthly_status.find((status) => status.month === selectedPeriod)?.status : ''}
+                        onChange={(e) => handleEditStatus(selectedPeriod, e.target.value, editData.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_ipl, editData.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_rt)}
+                        className="mb-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                       >
-                          <option value="Kosong">Kosong</option>
                           <option value="Isi">Isi</option>
+                          <option value="Kosong">Kosong</option>
                           <option value="Weekend">Weekend</option>
+                          <option value="Monthly">Monthly</option>
                           <option value="Tidak ada kontak">Tidak ada kontak</option>
-                      </Select>
+                      </select>
                     <label className="block mb-2 text-sm font-medium text-gray-700">Wajib IPL</label>
-                     <Select
-                        id="mandatory_fee"
-                        name="mandatory_fee"
-                        value={editData.mandatory_fee.toString()}
-                        onChange={handleInputChange}
-                        className="mb-4"
+                     <select
+                        id="mandatory_ipl"
+                        name="mandatory_ipl"
+                        value={Array.isArray(editData.monthly_status) ? editData.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_ipl : ''}
+                        onChange={(e) => handleEditStatus(selectedPeriod, editData.monthly_status.find((status) => status.month === selectedPeriod)?.status, e.target.value, editData.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_rt)}
+                        className="mb-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                       >
                           <option value="true">Ya</option>
                           <option value="false">Tidak</option>
-                      </Select>  
-                    <label className="block mb-2 text-sm font-medium text-gray-700">Tarif IPL</label>
-                    <TextInput
-                        name="fee"
-                        value={editData?.fee || ''}
-                        onChange={handleInputChange}
-                        className="mb-4"
-                    />
+                      </select>  
+
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Wajib KAs</label>
+                     <select
+                        id="mandatory_rt"
+                        name="mandatory_rt"
+                        value={Array.isArray(editData.monthly_status) ? editData.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_rt : ''}
+                        onChange={(e) => handleEditStatus(selectedPeriod, editData.monthly_status.find((status) => status.month === selectedPeriod)?.status, editData.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_ipl, e.target.value)}
+                        className="mb-4 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      >
+                          <option value="true">Ya</option>
+                          <option value="false">Tidak</option>
+                      </select>  
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Nominal IPL</label>
+                      <TextInput
+                          name="Ipl_fee"
+                          value={editData?.Ipl_fee || ''}
+                          onChange={handleInputChange}
+                          className="mb-4"
+                      />
+                    <label className="block mb-2 text-sm font-medium text-gray-700">Nominal Kas</label>
+                      <TextInput
+                          name="Rt_fee"
+                          value={editData?.Rt_fee || ''}
+                          onChange={handleInputChange}
+                          className="mb-4"
+                      />
                 </div>
                 <div className='flex'>
                 <Button className='mr-4' size='md' onClick={handleSaveChanges}>Simpan</Button>
@@ -373,8 +408,6 @@ const Houses = ({ initialHouses }) => {
             
           </Drawer>
         )}
-        
-       
       </div>
       
       
@@ -385,25 +418,15 @@ const Houses = ({ initialHouses }) => {
 
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
-  
-  // if (!session) {
-  //     return {
-  //         redirect: {
-  //             destination: '/',
-  //             permanent: false,
-  //         },
-  //     };
-  // }
-
   try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/ipl`, {
           headers: {
               Authorization: `Bearer ${session.accessToken}`,
           },
       });
       return {
           props: {
-              initialHouses: res.data,
+              initialHouses: res.data.data,
           },
       };
   } catch (error) {
@@ -415,6 +438,5 @@ export const getServerSideProps = async (context) => {
       };
   }
 };
-
 
 export default Houses;
