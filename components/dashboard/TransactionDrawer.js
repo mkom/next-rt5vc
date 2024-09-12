@@ -78,7 +78,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
             },
           });
           //console.log(res.data)
-          setHouses(res.data.map(house => ({
+          const dataRes = res.data;
+          setHouses(dataRes.data.map(house => ({
             value: house.house_id,
             label: house.house_id
           })));

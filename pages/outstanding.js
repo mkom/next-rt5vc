@@ -3,6 +3,8 @@ import {useState } from 'react';
 import Header from '../components/Header.js';
 import SideMenu from '../components/Sidebar.js'
 import Outstanding from '../components/IplOutstanding.js';
+import { Breadcrumb } from "flowbite-react";
+import { HiHome } from "react-icons/hi";
 
 const DataOutstanding = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -27,6 +29,12 @@ const DataOutstanding = () => {
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
         <section className='mt-14 px-3 py-5 md:px-8 sm:ml-64 mb-11'>
+          <Breadcrumb aria-label="Default breadcrumb" className='mb-3'>
+            <Breadcrumb.Item href="/" icon={HiHome}>
+              Home
+            </Breadcrumb.Item>
+            <Breadcrumb.Item>Outstanding</Breadcrumb.Item>
+          </Breadcrumb>
           <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>OUTSTANDING IPL</h1>
           <Outstanding/>
         </section>

@@ -47,7 +47,7 @@ const customThemesecond = {
             "base": "block w-full border disabled:cursor-not-allowed disabled:opacity-50",
             "sizes": {
               "sm": "p-2 sm:text-xs",
-              "md": "p-2 text-sm",
+              "md": "p-2 text-sm bg-white rounded-md",
               "lg": "p-4 sm:text-base"
             }
           }

@@ -9,7 +9,7 @@ import 'moment/locale/id';
 import id from "date-fns/locale/id";
 moment.locale('id');
 
-const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,initialEndDate }) => {
+const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,initialEndDate,setCurrentPage }) => {
     //const { data: session } = useSession();
     // const [startDate, setStartDate] = useState('');
     // const [endDate, setEndDate] = useState('');
@@ -20,10 +20,11 @@ const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,i
 
 
     const handleDataRange = (update) => {
-        setDateRange(update)
-
+        setDateRange(update);
+       
         if(update[0] === null && update[1] === null) {
             //console.log(initialTransaction)
+            
             setTransactions(initialTransaction);
             const query = { ...router.query };
             delete query.startDate;
@@ -37,9 +38,10 @@ const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,i
             handleFilter(update[0], update[1]);
             const startDate = moment(update[0]).format('YYYY-MM-DD');
             const endDate = moment(update[1]).format('YYYY-MM-DD');
+            
             router.push({
                 pathname: '/cashflow',
-                query: { ...router.query, startDate: `${startDate}`, endDate:`${endDate}` },
+                query: { ...router.query, startDate: `${startDate}`, endDate:`${endDate}`, page:undefined },
             });
         }
     } 
@@ -62,10 +64,11 @@ const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,i
                     endDate: endDateAdjusted,
                 },
             });
-            const transactionsData = response.data.sort((a, b) => {
+            const transactionsData = response.data.data.transactions.sort((a, b) => {
                 return new Date(b.date) - new Date(a.date);
-              });
+            });
             
+            setCurrentPage(0);
             setTransactions(transactionsData);
             
         } catch (error) {

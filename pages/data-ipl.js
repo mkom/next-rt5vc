@@ -3,6 +3,8 @@ import Header from '../components/Header.js';
 import SideMenu from '../components/Sidebar.js'
 import IplReport from '../components/IplReport.js';
 import Head from 'next/head';
+import { Breadcrumb } from "flowbite-react";
+import { HiHome } from "react-icons/hi";
 
 const Ipl = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -27,6 +29,12 @@ const Ipl = () => {
       <div className='w-full'>
         <SideMenu isOpen={isSidebarOpen}/>
         <section className='mt-14 px-3 py-5 md:px-8 sm:ml-64 mb-11'>
+          <Breadcrumb aria-label="Default breadcrumb" className='mb-3'>
+            <Breadcrumb.Item href="/" icon={HiHome}>
+              Home
+            </Breadcrumb.Item>
+            <Breadcrumb.Item>Data Ipl</Breadcrumb.Item>
+          </Breadcrumb>
           <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>DATA IPL RT 05 VILLA CITAYAM</h1>
           <IplReport/>
           

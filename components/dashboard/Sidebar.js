@@ -5,6 +5,8 @@ import { HiChartPie,HiDocumentReport,HiUser, HiViewBoards } from "react-icons/hi
 import { GrTransaction } from "react-icons/gr";
 import { IoIosHome } from "react-icons/io";
 import { useSession } from 'next-auth/react';
+import { FaCalendarCheck } from "react-icons/fa";
+import { HiHome } from "react-icons/hi2";
 
 const SideMenu = ({ isOpen }) => {
     const router = useRouter();
@@ -34,10 +36,18 @@ const SideMenu = ({ isOpen }) => {
              >
                 Transaksi
             </Sidebar.Item>
+
+            <Sidebar.Item
+             href="/dashboard/ipl" 
+             icon={FaCalendarCheck}
+             className={pathname === '/dashboard/ipl' ? 'text-gray-900 bg-gray-100' : ''}
+             >
+                Ipl
+            </Sidebar.Item>
     
             <Sidebar.Item 
             href="/dashboard/houses" 
-            icon={IoIosHome}
+            icon={HiHome}
             className={pathname === '/dashboard/houses' ? 'text-gray-900 bg-gray-100' : ''}>
                 Rumah
             </Sidebar.Item>

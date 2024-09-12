@@ -10,33 +10,31 @@ import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
 import { MdMotionPhotosPaused,MdNavigateNext } from "react-icons/md";
 import FilterCashflow from './FilterCashflow';
+import Select from 'react-select';
+import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
 import 'moment/locale/id';
 moment.locale('id');
+import MonthOptions from './MonthOptions';
 
 
-const ITEMS_PER_PAGE = 15;
-
-
+const ITEMS_PER_PAGE = 20;
 const AllCashflow = ({ initialTransaction }) =>  {
-    const [reTransactions, setReTransactions] = useState([initialTransaction])
     const [transactions, setTransactions] = useState([initialTransaction]);
+    const [selectedPeriod, setSelectedPeriod] = useState(''); 
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(0);
     const [lastUpdate, setLastUpdate] = useState('-');
     const router = useRouter();
-    const[pStartDate, setPStartDate] = useState(null);
-    const[pEndDate, setPEndDate] = useState(null);
 
     useEffect(() => {
-        const { s, startDate,endDate } = router.query;
+        const { s,period } = router.query;
         if (s) {
             setSearchTerm(s);
         }
-        if (startDate && endDate ) {
-            setPStartDate(startDate);
-            setPEndDate(endDate)
+        if (period ) {
+            setSelectedPeriod(period);
         }
     }, [router.query]);
     
@@ -66,13 +64,11 @@ const AllCashflow = ({ initialTransaction }) =>  {
           const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
   
           });
-
-          const transactionsData = res.data.data.sort((a, b) => {
+          const dataRes = res.data;
+          const transactionsData =  dataRes.data.transactions.sort((a, b) => {
             return new Date(b.date) - new Date(a.date);
           });
 
-          //console.log(transactionsData);
-          setReTransactions(transactionsData);
           setTransactions(transactionsData);
           setLastUpdate(res.data.lastUpdate);
           setLoading(false);
@@ -88,26 +84,60 @@ const AllCashflow = ({ initialTransaction }) =>  {
     }, [fetchTransactions]);
   
     const handleSearchChange = (event) => {
+        setCurrentPage(0);
         const query = event.target.value;
         const queryObj = { ...router.query };
         delete queryObj.startDate;
         delete queryObj.endDate;
+        // tambahkan kondisi untuk mereset currentPage jika search term kosong
+        if (query === '') {
+          queryObj.page = undefined;
+        }
+
         router.push({
             pathname: '/cashflow',
-            query: { ...queryObj, s: query },
+            query: { ...queryObj, s: query,page: undefined },
         });
         setSearchTerm(query);
     };
+
+    const handleMonthChange = (selectedOption) => {
+        setCurrentPage(0);
+        
+        const query = selectedOption?.value || '';
+        const queryObj = { ...router.query };
+        if (query === '') {
+            queryObj.page = undefined;
+          }
   
-    const filteredTransactions = transactions.filter(transaction => 
-        transaction && transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction && transaction.additional_note_mutasi_bca && transaction.additional_note_mutasi_bca.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+        router.push({
+            pathname: '/cashflow',
+            query: { ...queryObj, period: query,page: undefined },
+        });
+        setSelectedPeriod(query);
+    };
+  
+    
+    const filteredTransactions = transactions.filter(transaction => {
+        // Ensure the transaction has a 'date' before formatting it
+        const transactionMonth = transaction && transaction.date ? moment(transaction.date).format('YYYY-MM') : null;
+        
+        // Check if the transaction matches the selected period (if it's set)
+        const matchesPeriod = selectedPeriod ? transactionMonth === selectedPeriod : true;
+        
+        // Check if the transaction matches the search term in description or additional_note_mutasi_bca
+        const matchesSearchTerm = 
+            (transaction && transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (transaction && transaction.additional_note_mutasi_bca && transaction.additional_note_mutasi_bca.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        // Return true only if both the period and search term conditions are met
+        return matchesPeriod && matchesSearchTerm;
+    });
+    
   
     const offset = currentPage * ITEMS_PER_PAGE;
     const currentPageData = filteredTransactions.slice(offset, offset + ITEMS_PER_PAGE);
   
-    
     const handlePageClick = (data) => {
         const page = data.selected;
         const queryObj = { ...router.query };
@@ -127,7 +157,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
         case 'expense':
           return <FaRegArrowAltCircleUp  className="text-red-700 h-4 w-4 md:h-5 md:w-5 " />;
         case 'ipl':
-          return <FaRegArrowAltCircleDown  className="text-green-700  h-4 w-4 md:h-4 md:w-4 " />;
+          return <FaRegArrowAltCircleDown  className="text-green-700  h-4 w-4 md:h-5 md:w-5 " />;
         default:
           return null;
       }
@@ -150,8 +180,6 @@ const AllCashflow = ({ initialTransaction }) =>  {
       return <Spinner />;
     }
   
-   // console.log(transactions)
-
     const totalAmount = filteredTransactions.reduce((acc, transaction) => {
         if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
         return acc + transaction.amount;
@@ -160,42 +188,6 @@ const AllCashflow = ({ initialTransaction }) =>  {
         }
         return acc;
     }, 0);
-
-    const totalIncome = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
-          return acc + transaction.amount;
-        }
-        return acc;
-      }, 0);
-      
-      const totalExpense = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'expense') {
-          return acc + transaction.amount;
-        }
-        return acc;
-      }, 0);
-
-      const totalIPL = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'ipl') {
-          return acc + transaction.amount;
-        }
-        return acc;
-      }, 0);
-
-      const totalincome = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'income') {
-          return acc + transaction.amount;
-        }
-        return acc;
-      }, 0);
-      
-      const totaladanya = totalIncome - totalExpense;
-      
-      console.log('ipl :'+totalIPL)
-      console.log('income:'+totalincome)
-      console.log('ipl dan income:'+totalIncome)
-      console.log('pengeluaran :'+totalExpense)
-      
 
     const currentPageNav = currentPage + 1;
     const pageCount = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
@@ -212,21 +204,33 @@ const AllCashflow = ({ initialTransaction }) =>  {
             placeholder="Cari"
             value={searchTerm}
             onChange={handleSearchChange}
-            className="w-3/5"
+            className="w-3/5 bg-white"
             icon={HiOutlineSearch} 
             sizing="md"
             
             />
+
+            <Select
+                id="relatedMonths"
+                options={MonthOptions()}
+                defaultValue={router.query.period ? MonthOptions().find(option => option.value === router.query.period) : null}
+                onChange={handleMonthChange}
+                isSearchable={false}
+                isClearable={true} 
+                placeholder={<div>Pilih Bulan</div>}
+                className=' rounded-md w-3/5'
+            />
             </CustomThemeProviderSecond>
         
 
-            <FilterCashflow 
+            {/* <FilterCashflow 
                 className="w-2/5 p-1" 
                 setTransactions={setTransactions} 
                 initialTransaction={reTransactions} 
                 initialStartDate={pStartDate}
                 initialEndDate={pEndDate}
-            />
+                setCurrentPage={setCurrentPage}
+            /> */}
         </div>
         
         <div className='mb-4 flex justify-between content-center items-center'> 
@@ -237,7 +241,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
         <div className='overflow-x-auto'>
         <Table striped>
             <Table.Head>
-            <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white  w-8'>No</Table.HeadCell>
+            <Table.HeadCell className='py-2 pl-2 pr-0 md:text-base md:py-3 md:pl-2 md:pr-0 bg-cyan-600 text-white'>No</Table.HeadCell>
             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-3/4'>Keterangan</Table.HeadCell>
             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Nominal</Table.HeadCell>
@@ -248,22 +252,22 @@ const AllCashflow = ({ initialTransaction }) =>  {
             
             {currentPageData.map((transaction, index) => ( 
                 <Table.Row key={index} className="py-2 px-2 md:py-3 md:px-3 text-xs md:text-base">
-                <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base flex items-start content-start`}>
-                {offset + index + 1}
-                </Table.Cell>
+                    <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base flex items-start content-start`}>
+                    {offset + index + 1}
+                    </Table.Cell>
 
-                <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                    <span className='flex items-start content-start'>
-                    <span>{getTypeIcon(transaction.transaction_type)} </span>
-                    <span className="ml-2">{transaction.description}</span> 
-                    {transaction.description.includes('#IPLPaguyuban') && <span className="ml-2 text-red-500"><MdMotionPhotosPaused className='text-red-600 h-4 w-4 md:h-5 md:w-5' /></span>}
-                    </span>
-                </Table.Cell>
-                <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatDate(transaction.date)}</Table.Cell>
-                <Table.Cell className={`flex items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                    <span className='pr-1' >{transaction.transaction_type === 'ipl' ? `+` : transaction.transaction_type  === 'income' ? '+' : transaction.transaction_type  === 'expense' ? '-' : ''}</span>
-                    <span>{formatCurrency(transaction.amount)}</span>
-                </Table.Cell>
+                    <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                        <span className='flex items-center content-center'>
+                        <span>{getTypeIcon(transaction.transaction_type)} </span>
+                        <span className="ml-2">{transaction.description}</span> 
+                        {transaction.description.includes('#IPLPaguyuban') && <span className="ml-2 text-red-500"><MdMotionPhotosPaused className='text-red-600 h-4 w-4 md:h-5 md:w-5' /></span>}
+                        </span>
+                    </Table.Cell>
+                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatDate(transaction.date)}</Table.Cell>
+                    <Table.Cell className={`flex items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                        <span className='pr-1' >{transaction.transaction_type === 'ipl' ? `+` : transaction.transaction_type  === 'income' ? '+' : transaction.transaction_type  === 'expense' ? '-' : ''}</span>
+                        <span>{formatCurrency(transaction.amount)}</span>
+                    </Table.Cell>
                 
                 {/* <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
                     <span className='flex items-center'>
@@ -350,7 +354,7 @@ try {
     });
     return {
         props: {
-            initialTransaction: res.data,
+            initialTransaction: res.data.transactions,
         },
     };
 } catch (error) {

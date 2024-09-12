@@ -32,7 +32,7 @@ const Header = ({ toggleSidebar }) => {
           <HiMenuAlt1 onClick={toggleSidebar} className="h-9 w-9 cursor-pointer mr-3 sm:hidden" />
           <a href="/" className="flex items-center space-x-2">
             <span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white">rt5vc</span>
-            <span className="text-xs">Demo</span>
+            <span className="text-xs">v1</span>
           </a>
           </div>
           <div className="flex md:order-2">
