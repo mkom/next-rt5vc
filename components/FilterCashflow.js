@@ -64,7 +64,7 @@ const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,i
                     endDate: endDateAdjusted,
                 },
             });
-            const transactionsData = response.data.sort((a, b) => {
+            const transactionsData = response.data.data.transactions.sort((a, b) => {
                 return new Date(b.date) - new Date(a.date);
             });
             

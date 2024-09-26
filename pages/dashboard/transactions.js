@@ -153,7 +153,7 @@ const Transaction = ({ initialTransaction }) =>  {
 
         });
         const dataRes = res.data;
-        console.log(dataRes.data)
+        //console.log(dataRes.data)
         const transactionsData =  dataRes.data.transactions.sort((a, b) => {
           return new Date(b.date) - new Date(a.date);
         });
@@ -480,7 +480,7 @@ export const getServerSideProps = async (context) => {
               Authorization: `Bearer ${session.accessToken}`,
           },
       });
-      const transactions = res.data.data.sort((a, b) => {
+      const transactions = res.data.data.transactions.sort((a, b) => {
         return new Date(b.date) - new Date(a.date);
       });
       return {

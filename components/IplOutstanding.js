@@ -5,7 +5,9 @@ import axios from 'axios';
 
 import Spinner from './Spinner';
 import CustomThemeProviderSecond from './CustomThemeSecond';
-import { Card, Table,Badge } from 'flowbite-react';
+import { Button, Table,Badge } from 'flowbite-react';
+import Link from 'next/link';
+import { GrFormNextLink } from "react-icons/gr";
 import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
 import 'moment/locale/id';
@@ -34,7 +36,7 @@ const Tbd = ({ initialHousesPaid }) =>  {
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
       });
-      //console.log(res.data)
+     // console.log(res.data)
      setDataOutStanding(res.data.data);
      setTotalHouses(res.data.total);
      setTotalAmount(res.data.total_amount)
@@ -44,6 +46,7 @@ const Tbd = ({ initialHousesPaid }) =>  {
         setLoading(false);
     }
   },[]);
+
 
   useEffect(() => {
     fetchOutstanding();
@@ -76,28 +79,30 @@ const Tbd = ({ initialHousesPaid }) =>  {
           <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalAmount)}</span>
         </div>
       </div>
+
+     
            
       <div className="overflow-x-auto">
-          <Table striped className='block'>
+          <Table striped className='block w-full'>
               <Table.Head className='' >
-                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4'>No</Table.HeadCell>
-                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-7 md:w-32'>No Rumah</Table.HeadCell>
-                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Periode</Table.HeadCell>
+                  <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-4'>No</Table.HeadCell>
+                  <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-7 md:w-32'>No Rumah</Table.HeadCell>
+                  <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white'>Periode</Table.HeadCell>
                   {/* <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell> */}
-                  <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Total</Table.HeadCell>
+                  <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white'>Total</Table.HeadCell>
               </Table.Head>
               <Table.Body className="divide-y">
               {dataOutStanding && dataOutStanding.length > 0 && dataOutStanding[0] !== undefined ? (
                   dataOutStanding.map((data, index) => (
                       <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                          <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                          <Table.Cell className={`p-2  text-xs md:text-base`}>
                           {offset + index + 1}
                           </Table.Cell>
 
-                          <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                          <Table.Cell className={`p-2  text-xs md:text-base`}>
                             <span className="">{data.house}</span>
                           </Table.Cell>
-                          <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                          <Table.Cell className={`p-2  text-xs md:text-base`}>
                             <span className="flex flex-wrap gap-2">
                               {data.periods.map((period, subindex) => (
                               <Badge key={subindex} color="failure">
@@ -111,7 +116,7 @@ const Tbd = ({ initialHousesPaid }) =>  {
                             {data.occupancy_status}
                           </Table.Cell> */}
 
-                          <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base `}>
+                          <Table.Cell className={`p-2  text-xs md:text-base`}>
                             {formatCurrency(data.total_fee)}
                           </Table.Cell>
                           
@@ -127,6 +132,10 @@ const Tbd = ({ initialHousesPaid }) =>  {
               
               </Table.Body>
           </Table>
+      </div>
+
+      <div className='flex items-center content-center justify-between mt-3'>
+        <Button size='xs' as={Link} href="/data-ipl" className='bg-green-700 '>Data IPL<GrFormNextLink  className='w-4 h-4'/></Button>
       </div>
     </CustomThemeProviderSecond>
     </>

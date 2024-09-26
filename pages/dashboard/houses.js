@@ -17,12 +17,14 @@ import { FaEllipsisH } from "react-icons/fa";
 import { IoCloseCircle } from "react-icons/io5";
 import { IoCheckmarkDoneCircleSharp } from "react-icons/io5";
 
+
 import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
 import 'moment/locale/id';
 moment.locale('id');
 import MonthOptions from '../../components/MonthOptions.js';
+import CustomThemeProviderSecond from '../../components/CustomThemeSecond';
 
 
 const ITEMS_PER_PAGE = 20;
@@ -39,10 +41,9 @@ const Houses = ({ initialHouses }) => {
   const [selectedPeriod, setSelectedPeriod] = useState(moment().format('YYYY-MM')); // Format YYYY-MM moment().format('YYYY-MM')
   const [monthly ,setMonthly] = useState([]);
   const [editData, setEditData] = useState(null);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState('success');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -50,13 +51,16 @@ const Houses = ({ initialHouses }) => {
 
   const handleMonthChange = (selectedOption) => {
     setSelectedPeriod(selectedOption.value);
+    setCurrentPage(0);
+   // console.log(Houses);
+
   };
 
 
   const fetchHouses = useCallback (async () => {
     if (session) {
         try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/ipl`, {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
                 headers: {
                   Authorization: `Bearer ${session.accessToken}`,
                 },
@@ -72,28 +76,66 @@ const Houses = ({ initialHouses }) => {
         }
     }
    
-  },[selectedPeriod,session])
+  },[session])
 
 
   useEffect(() => {
     if (session) {
         fetchHouses();
     }
-  }, [selectedPeriod,session,fetchHouses ]);
+  }, [session,fetchHouses ]);
 
   const handlePageClick = (data) => {
     setCurrentPage(data.selected);
   };
 
   const handleSearchChange = (event) => {
+    setCurrentPage(0);
     setSearchTerm(event.target.value);
   };
 
+  const group = [
+    { value: '', label: 'Semua Zona' },
+    { value: 'E1 Ganjil', label: 'E1 Ganjil' },
+    { value: 'E1 Genap - E2 Ganjil', label: 'E1 Genap - E2 Ganjil' },
+    { value: 'E2 Genap - E3 Ganjil', label: 'E2 Genap - E3 Ganjil' },
+    { value: 'E3 Genap - E5', label: 'E3 Genap - E3A Ganjil - E5' },
+    { value: 'E3A Genap - E8', label: 'E3A Genap - E8' },
+  ]
 
-  const filteredHouses = Array.isArray(houses) ? houses.filter(house => 
-    (house?.resident_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (house?.house_id?.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) :[];
+  const statusHouses = [
+    { value: '', label: 'Semua Status' },
+    { value: 'Isi', label: 'Isi' },
+    { value: 'Kosong', label: 'Kosong' },
+    { value: 'Weekend', label: 'Weekend' },
+  ]
+
+  const handleGroupChange = (selectedOption) => {
+    setSelectedGroup(selectedOption.value);
+    setCurrentPage(0);
+   
+  };
+
+  const handleStatusChange = (selectedOption) => {
+    setSelectedStatus(selectedOption.value);
+    setCurrentPage(0);
+  };
+
+  const filteredHouses = Array.isArray(houses)
+  ? houses.filter(house => {
+      const searchTermLower = searchTerm.toLowerCase();
+      const selectedGroupLower = selectedGroup.toLowerCase();
+
+      return (
+        (searchTermLower === '' || (
+          house?.resident_name?.toLowerCase().includes(searchTermLower) ||
+          house?.house_id?.toLowerCase().includes(searchTermLower)
+        )) &&
+        (selectedGroupLower === '' || house?.group?.toLowerCase() === selectedGroupLower) &&
+        (selectedStatus === '' || house.monthly_status.find(status => status.month === selectedPeriod)?.status === selectedStatus)
+      );
+    })
+  : [];
 
   const offset = currentPage * ITEMS_PER_PAGE;
   const currentPageData = filteredHouses.slice(offset, offset + ITEMS_PER_PAGE);
@@ -122,7 +164,7 @@ const Houses = ({ initialHouses }) => {
   };
   
   const handleEditStatus = (month, newStatus, newMandatoryIpl, newMandatoryRt) => {
-    console.log(newStatus)
+   // console.log(newStatus)
     const updatedMonthlyStatus = editData.monthly_status.map((status) => {
       if (status.month === month) {
         return { ...status, status: newStatus, mandatory_ipl: newMandatoryIpl, mandatory_rt: newMandatoryRt };
@@ -131,31 +173,28 @@ const Houses = ({ initialHouses }) => {
     });
     setEditData({ ...editData, monthly_status: updatedMonthlyStatus });
 
-    console.log(updatedMonthlyStatus)
+   // console.log(updatedMonthlyStatus)
   };
 
   
   const handleSaveChanges = async () => {
     try {
-      console.log(editData); 
+     // console.log(editData); 
         const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/houses/update/${editData._id}`, editData, {
             headers: {
                 Authorization: `Bearer ${session.accessToken}`,
             },
             params: {
-              period: selectedPeriod
+              period: selectedPeriod,
+              zona: selectedGroup
           }
         });
         //console.log(res.data)
         setHouses(houses.map(house => house._id === editData._id ? {...house,...res.data.data}  : house));
         setIsDrawerOpen(false);
-        setAlertType('success');
-        setAlertMessage('Data berhasil diupdate');
-        setShowAlert(true);
+      
     } catch (error) {
-        setAlertType('failure');
-        setAlertMessage('Gagal mengupdate rumah');
-        setShowAlert(true);
+      
         console.error('Error updating house data:', error);
     }
   };
@@ -174,6 +213,8 @@ const Houses = ({ initialHouses }) => {
     }
     return acc;
   }, {});
+
+  
 
 
   if (loading) {
@@ -234,6 +275,41 @@ const Houses = ({ initialHouses }) => {
                 
             </div>
 
+            <div className="mb-3 mt-5 flex justify-between content-center items-center gap-3 w-full">
+            <CustomThemeProviderSecond>
+              <TextInput 
+                name="name"
+                placeholder="Cari"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="mr-2 rounded-md w-full md:w-1/3"
+                icon={HiOutlineSearch} 
+              />
+
+            <Select
+              id="group"
+              options={group}
+              value={group.find(option => option.value === selectedGroup)}
+              onChange={handleGroupChange}
+              placeholder="Zona"
+              className='bg-gray-50  rounded-md w-full md:w-1/3'
+              
+            />
+
+            <Select
+              id="status"
+              options={statusHouses}
+              value={statusHouses.find(option => option.value === selectedStatus)}
+              onChange={handleStatusChange}
+              placeholder="Status"
+              className='bg-gray-50  rounded-md w-full md:w-1/3'
+              
+            />
+            
+            </CustomThemeProviderSecond>
+
+            </div>
+
             <div className='overflow-x-auto mt-5'>
                 <table>
                     <thead className='bg-gray-50 border-b-2 group/head text-xs uppercase text-gray-700'>
@@ -243,7 +319,7 @@ const Houses = ({ initialHouses }) => {
                             <th rowSpan={2} className='py-1 px-2 text-left w-1/4'>Nama</th>
                             <th rowSpan={2} className='py-1 px-2 text-left  w-1/6'>Status</th>
                             <th colSpan={2}  className='py-1 px-2 text-center w-1/3'>Iuran Wajib</th>
-                            <th rowSpan={2} className='py-1 px-2 w-1/3 text-left'>Detail</th>
+                            <th rowSpan={2} className='py-1 px-2 w-1/3 text-left'>Edit</th>
                         </tr>
                         <tr>
                             <th className='pt-0 pb-1 px-2 text-center '>IPL</th>
@@ -271,9 +347,9 @@ const Houses = ({ initialHouses }) => {
                             </td>
                             <td className="py-2 px-2 ">
                               <Button.Group className=''>
-                              <Button color="gray" size="xs" className=''>Detail</Button>
-                              <Button color="gray" size="xs" className='' onClick={() => handleEditClick(house)}>Edit</Button>
-                              <Button color="gray" size="xs" className=''>Hapus</Button>
+                              {/* <Button color="gray" size="xs" className=''>Detail</Button> */}
+                              <Button color="gray" size="xs" className=' rounded-md' onClick={() => handleEditClick(house)}>Edit</Button>
+                              {/* <Button color="gray" size="xs" className=''>Hapus</Button> */}
                               </Button.Group>
                               </td>
                         </tr>
@@ -304,6 +380,7 @@ const Houses = ({ initialHouses }) => {
                   breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
                   activeClassName={'active bg-gray-100'}
                   activeLinkClassName={'bg-gray-100'}
+                  forcePage={currentPage === 0 ? 0 : currentPage}
               />
             </nav>
 
@@ -419,7 +496,7 @@ const Houses = ({ initialHouses }) => {
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
   try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/ipl`, {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
           headers: {
               Authorization: `Bearer ${session.accessToken}`,
           },
