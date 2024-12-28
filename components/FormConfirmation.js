@@ -199,7 +199,7 @@ const Confirmation = () => {
         amount,
         description,
         additional_note_mutasi_bca,
-        //proof_of_transfer: proofOfTransferUrl,
+        proof_of_transfer: proofOfTransferUrl,
         houseId,
         payment_type:'transfer',
         related_months: dateArray,
