@@ -39,7 +39,7 @@ const DataTbd = () => {
           {
             !session ? (
               <div className='py-6'>
-                <p>Untuk melanjutkan dan mengisi formulir konfirmasi transfer, silakan klik tombol "Masuk dengan Google" di bawah ini. </p>
+                <p>Untuk melanjutkan dan mengisi formulir konfirmasi transfer, silakan klik tombol &quot;Masuk dengan Google&quot; di bawah ini. </p>
                 <Button
                 onClick={() => signIn('google',{callbackUrl: `${window.location.origin}${currentPath}`,})}
                 className="justify-start mt-4"
