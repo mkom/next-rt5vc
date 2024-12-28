@@ -26,11 +26,11 @@ const Autocomplete = ({ value, onChange, options, onSelect }) => {
   return (
     <div className="mt-1 block w-72">
       <Select
-        value={options.find(option => option.value === value)}
+        value={value ? options.find(option => option.value === value) : null}
         onChange={handleChange}
         options={options}
         styles={customStyles}
-        placeholder="Pilih"
+        placeholder="Cari"
         className='text-sm'
       />
     </div>

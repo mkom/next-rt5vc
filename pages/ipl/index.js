@@ -1,9 +1,9 @@
 import {useState } from 'react';
-import Header from '../components/Header.js';
-import SideMenu from '../components/Sidebar.js'
-import IplReport from '../components/IplReport.js';
+import Header from '../../components/Header.js';
+import SideMenu from '../../components/Sidebar.js'
+import IplReport from '../../components/IplReport.js';
 import Head from 'next/head';
-import { Breadcrumb } from "flowbite-react";
+import { Breadcrumb,Drawer } from "flowbite-react";
 import { HiHome } from "react-icons/hi";
 
 const Ipl = () => {
@@ -17,15 +17,14 @@ const Ipl = () => {
     <>
     <Head>
         <title>RT5VC - Laporan IPL Rt 05 Villa Citayam</title>
-        <meta name="description" content="Laporan IPL RT05/RW11 Villa Citayam Susukan Bojong gede Bogor" />
+        <meta name="description" content="Laporan IPL RT05/RW 11 Villa Citayam Susukan Bojong gede Bogor" />
         <meta property="og:title" content="RT5VC" />
-        <meta property="og:description" content="Laporan IPL RT05/RW11 Villa Citayam Susukan Bogor" />
+        <meta property="og:description" content="Laporan IPL RT05/RW 11 Villa Citayam Susukan Bogor" />
         <meta property="og:image" content="" />
         <meta property="og:url" content="" />
     </Head>
-
-    <Header toggleSidebar={toggleSidebar}/>
     <SideMenu isOpen={isSidebarOpen}/>
+    <Header toggleSidebar={toggleSidebar}/>
     <main className='max-w-screen-md mx-auto'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5  mb-11'>

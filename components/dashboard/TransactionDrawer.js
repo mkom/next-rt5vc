@@ -1,8 +1,8 @@
 // components/TransactionDrawer.js
 import { getSession, useSession } from 'next-auth/react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef,useCallback } from 'react';
 import Image from "next/image";
-import { Drawer, Button, Input, FileInput, Textarea, Label, TextInput, Dropdown,Alert } from 'flowbite-react';
+import { Drawer, Button, Input, FileInput, Textarea, Label, TextInput, Dropdown,Alert, Card } from 'flowbite-react';
 import {FaCalendarAlt, FaMoneyBill, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa';
 import { FaExchangeAlt } from "react-icons/fa";
 import { AiOutlineLoading } from "react-icons/ai";
@@ -18,11 +18,14 @@ moment.locale('id');
 
 const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transactionToEdit }) => {
   
-  //console.log(transactionToEdit);
+ // console.log(transactionToEdit);
   const [houseId, setHouseId] = useState('');
   const [houseName, setHouseName] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+ // const [attachments, setAttachments] = useState([]);
+  const [attachmentTitle, setAttachmentTitle] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
   const [additional_note_mutasi_bca, setAdditional_note_mutasi_bca] = useState('');
   const [proofOfTransfer, setProofOfTransfer] = useState('');
   const [relatedMonths, setRelatedMonths] = useState([]);
@@ -38,31 +41,49 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const [paymentType, setPaymentType] = useState('');
   const [selectedImage, setSelectedImage] = useState();
   const [formattedMonths, setFormattedMonths] =useState([]);
+  const [lastPaidIPl, setLastPaidIPl] = useState(null);
+  const [feeIPl, setFeeIPl] = useState(0);
 
-  // Set nilai awal formulir jika ada transactionToEdit
+  // const handleAddAttachment = () => {
+  //   setAttachments([...attachments, { attachment_title: attactment_title, attachment_url: attactment_url }]);
+  //   setAttactment_title(''); // Reset the input
+  //   setAttactment_url('');
+  // };
 
-  
   useEffect(() => {
     if (transactionToEdit) {
-      if(transactionToEdit.related_months) {
-        const formattedMonth = transactionToEdit.related_months.map((month) => {
-          const date = new Date(month + '-01'); // add '-01' to create a valid date string
-          const label = moment(date).format('MMMM YYYY');
-          return { value: month, label };
-        });
+      const formattedMonth = transactionToEdit.related_months.map((month) => {
+        const date = new Date(month + '-01'); // add '-01' to create a valid date string
+        const label = moment(date).format('MMMM YYYY');
+        return { value: month, label };
+      });
+      setFormattedMonths(formattedMonth)
+    }
+    
 
-        setFormattedMonths(formattedMonth)
-      }
+  }, [transactionToEdit]);
 
+  useEffect(() => {
+    if (formattedMonths !== null) {
+      //console.log(formattedMonths);
+      setRelatedMonths(formattedMonths || []);
+    }
+  }, [formattedMonths]);
+
+  useEffect(() => {
+    if (transactionToEdit) {
+      
       setHouseId(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setHouseName(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setAmount(transactionToEdit.amount || '');
       setDescription(transactionToEdit.description || '');
+      setAttachmentTitle(transactionToEdit.attachment.attachment_title || '');
+      setAttachmentUrl(transactionToEdit.attachment.attachment_url || '');
       setAdditional_note_mutasi_bca(transactionToEdit.additional_note_mutasi_bca || '');
       setProofOfTransfer(transactionToEdit.proof_of_transfer || '');
-      setRelatedMonths(transactionToEdit.related_months ? formattedMonths : []);
+      //setRelatedMonths(formattedMonths || []);
       setPaymentDate(transactionToEdit.date ? transactionToEdit.date : new Date());
-      setStatus(transactionToEdit.status || 'berhasil');
+      setStatus('berhasil');
       setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
     }
   }, [transactionToEdit]);
@@ -152,6 +173,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     if (!description) newErrors.description = 'Description is required';
     if (!paymentDate) newErrors.paymentDate = 'Payment date is required';
     if (!relatedMonths) newErrors.relatedMonths = 'Months is required';
+    if (!paymentType) newErrors.paymentType = 'Payment Type is required';
     if (transactionType === 'ipl' && !houseId) newErrors.houseId = 'House ID is required';
     if (paymentType === 'transfer' && !proofOfTransfer) newErrors.proofOfTransfer = 'Proof of transfer is required';
 
@@ -178,9 +200,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     const dateString = relatedMonths.map(option => option.value).join(', ');
     const dateArray = convertStringToArray(dateString);
 
-
-
-    //console.log(relatedMonths.map(option => option.value))
     const newTransaction = {
       transaction_type: transactionType,
       amount,
@@ -190,17 +209,20 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       houseId,
       payment_type: paymentType.value,
       related_months: dateArray,
-      //relatedMonths:relatedMonths.map(option => moment(option.value, "YYYY-MM")).join(', '),
       paymentDate,
-      status
+      status,
+      attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl }
+      
     };
 
-   // console.log(newTransaction)
+    //console.log(newTransaction)
 
     onSubmit(newTransaction);
     setHouseId('');
     setAmount('');
     setDescription('');
+    setAttachmentTitle('');
+    setAttachmentUrl('');
     setAdditional_note_mutasi_bca('')
     setProofOfTransfer('');
     setRelatedMonths([]);
@@ -219,29 +241,67 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   };
 
   const handleHouseSelect = (selectedHouse) => {
+
+    resetForm();
+    const currentHouseId = selectedHouse.value;
     setHouseId(selectedHouse.value);
     setHouseName(selectedHouse.label)
-    //setDescription(`IPL rumah ${selectedHouse.value} periode ${relatedMonths.join(', ')}`);
+    fetchIPlStatus(currentHouseId);
+
   };
   
+  const fetchIPlStatus = useCallback (async (currentHouseId) => {
+    try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`, {
+
+    });
+
+        const dataMonthlyFees = res.data.data.monthly_fees
+
+        // Filter data yang memiliki status "Lunas"
+        const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas");
+        // Urutkan berdasarkan bulan, dari yang terbaru
+        const sortedPaidMonths = paidMonths.sort((a, b) => new Date(b.month) - new Date(a.month));
+    
+        // Ambil bulan terakhir yang statusnya "Lunas"
+        if (sortedPaidMonths.length > 0) {
+            const lastPaidMonth = sortedPaidMonths[0].month;
+            const getFeeIPL = sortedPaidMonths[0].fee;
+            setFeeIPl(getFeeIPL);
+            setLastPaidIPl(lastPaidMonth);
+        }
+      
+    } catch (error) {
+
+        console.error('Error fetching houses data:', error);
+        //setLoading(false);
+    }
+   
+},[houseId])
 
   const handleMonthChange = (selectedOptions) => {
     setRelatedMonths(selectedOptions || []);
+    setAmount(feeIPl*selectedOptions.length)
   };
 
   const generateMonthsOptions = () => {
-    const options = [];
-    const startYear = moment().year();
-    const endYear = startYear + 2; // 2 tahun ke depan
+      if (!lastPaidIPl) return [];
+      const options = [];
+      let nextMonth = moment(lastPaidIPl, "YYYY-MM").add(1, 'month'); // Bulan setelah bulan terakhir yang "Lunas"
+      let startYear = nextMonth.year();
+      let startMonthIndex = nextMonth.month(); // Bulan setelah bulan terakhir yang "Lunas"
+      let endYear = startYear + 1; 
 
-    for (let year = startYear; year <= endYear; year++) {
-      for (let month = 0; month < 12; month++) {
-        const value = moment().month(month).year(year).format("YYYY-MM");
-        const label = moment().month(month).year(year).format("MMMM YYYY");
-        options.push({ value, label });
+      // Generate bulan selama 2 tahun ke depan
+      for (let year = startYear; year <= endYear; year++) {
+          for (let month = startMonthIndex; month < 12; month++) {
+          const value = moment().month(month).year(year).format("YYYY-MM");
+          const label = moment().month(month).year(year).format("MMMM YYYY");
+          options.push({ value, label });
+          }
+          startMonthIndex = 0; // Setelah tahun pertama, mulai lagi dari bulan Januari
       }
-    }
-    return options;
+      return options;
   };
 
   const optionsType = [
@@ -258,16 +318,18 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setHouseId('');
     setAmount('');
     setDescription('');
+    setAttachmentTitle('');
+    setAttachmentUrl('');
     setAdditional_note_mutasi_bca('');
     setProofOfTransfer('');
     setRelatedMonths([]);
     setPaymentDate(new Date());
-    setStatus('berhasil');
     setPaymentType('');
     fileInputRef.current.value = '';
     setErrors({});
     setIsProcessing(false);
-    setSelectedImage(null)
+    setSelectedImage(null);
+    setLastPaidIPl(null);
   };
 
  
@@ -283,8 +345,27 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     >
       <Drawer.Header title={`Transaksi ${transactionType === 'ipl' ? 'IPL' : transactionType === 'income' ? 'Masuk' : 'Keluar'}`} titleIcon={FaExchangeAlt} />
       <Drawer.Items>
+
+        {transactionToEdit && 
+         <div className='p-3 shadow-none rounded-md border '>
+            <div className='flex flex-wrap gap-3 justify-start'>
+              <div className="text-sm ">Dibuat oleh :</div>
+              <div className="text-sm ">{transactionToEdit.created_by[0]?  transactionToEdit.created_by[0].email :''}</div>
+            </div>
+            <div className='flex flex-wrap gap-3 justify-start'>
+              <div className="text-sm ">Tanggal :</div>
+              <div className="text-sm ">{transactionToEdit.created_at}</div>
+            </div>
+            <div className='flex flex-wrap gap-3 justify-start'>
+              <div className="text-sm ">Whatsapp :</div>
+              <div className="text-sm ">{transactionToEdit.created_by[0].whatsapp_number}</div>
+            </div>
+          </div>
+        }
+       
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          {transactionType !== 'expense' && (
+          {transactionType !== 'expense' && transactionType !== 'income' && (
             <>
               <div className="mb-6 mt-3">
                 <Label htmlFor="houseId" className="mb-2 block">No Rumah</Label>
@@ -295,7 +376,13 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                   onSelect={handleHouseSelect}
                 />
                 {errors.houseId && <div className="text-red-500 text-sm">{errors.houseId}</div>}
+                {lastPaidIPl && 
+                  <>
+                  <p className='text-xs pt-2 text-gray-700'>IPL Terakhir : {moment(lastPaidIPl,("YYYY-MM")).format("MMMM YYYY")}</p>
+                  </>
+                }
               </div>
+              
 
             </>
           )}
@@ -352,7 +439,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                 placeholder="Cash atau Transfer"
                 className='bg-gray-50 text-sm'
               />
-            {/* {errors.amount && <div className="text-red-500 text-sm">{errors.amount}</div>} */}
+            {errors.paymentType && <div className="text-red-500 text-sm">{errors.paymentType}</div>}
           </div>
 
           <div className="mb-6 mt-3">
@@ -418,6 +505,37 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
             />
             
           </div>
+
+          {transactionType !== 'ipl' && 
+            <Card>
+            <h3>Dokumen tambahan</h3>
+              <div className=" mt-3">
+                <Label htmlFor="attactment_title" className="mb-2 block">Judul Dokumen</Label>
+                <TextInput
+                  id="attactment_title"
+                  name="attactment_title"
+                  type="text"
+                  value={attachmentTitle}
+                  onChange={(e) => setAttachmentTitle(e.target.value)}
+                  placeholder="Judul"
+                />
+              
+              </div>
+              <div className="mb-6">
+                <Label htmlFor="attactment_url" className="mb-2 block">Url Dokumen</Label>
+                <TextInput
+                  id="attactment_url"
+                  name="attactment_url"
+                  type="text"
+                  value={attachmentUrl}
+                  onChange={(e) => setAttachmentUrl(e.target.value)}
+                  placeholder="Link Url"
+                />
+              
+              </div>
+            </Card>
+          }
+         
 
           <div className='flex gap-2'>
             <Button 

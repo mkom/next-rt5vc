@@ -32,16 +32,21 @@ export default function Home() {
     </Head>
 
     <Header toggleSidebar={toggleSidebar}/>
-
-    <main className='max-w-screen-xl mx-auto'>
+    <SideMenu isOpen={isSidebarOpen}/>
+    <main className='max-w-screen-md mx-auto'>
       <div className='w-full'>
-        <SideMenu isOpen={isSidebarOpen}/>
-        <section className='mt-14 px-3 py-5 md:px-8 sm:ml-64'>
+        <section className='mt-14 px-3 py-5'>
           <div className='flex items-start md:items-center flex-col md:flex-row content-start md:content-center mb-4 justify-between gap-2'>
-          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white'>KAS RT 05 VILLA CITAYAM</h1>
+          <h1 className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white order-last md:order-first'>KAS RT 05 VILLA CITAYAM</h1>
           <div className='flex flex-row md:flex-row justify-center gap-2'>
+            <div className=''>
+              <a href="/confirmation" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
+              <span className='text-center content-center'>Konfirmasi transfer IPL</span>
+              <GrFormNextLink  className='w-5 h-5'/>
+              </a>
+            </div>
             <div className=' '>
-              <a href="/data-ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
+              <a href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
               <span className='text-center content-center'>Data IPL</span>
               <GrFormNextLink  className='w-5 h-5'/>
               </a>
@@ -52,6 +57,7 @@ export default function Home() {
               <GrFormNextLink  className='w-5 h-5'/>
               </a>
             </div>
+            
           </div>
           </div>
          

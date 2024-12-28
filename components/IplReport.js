@@ -1,6 +1,6 @@
 import { useEffect,useState,useCallback } from 'react';
 import axios from 'axios';
-
+import { useRouter } from 'next/router';
 import Spinner from './Spinner';
 import CustomThemeProviderSecond from './CustomThemeSecond';
 import { Card, Button, Table,Alert } from 'flowbite-react';
@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { HiHome } from "react-icons/hi";
 import { TbCirclePercentage } from "react-icons/tb";
 import { AiFillLike } from "react-icons/ai";
+import { MdOutlineContentPasteSearch } from "react-icons/md";
 
 import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -34,6 +35,15 @@ const IplReport = ({ initialHouses }) =>  {
   const [currentPage, setCurrentPage] = useState(0);
   const [skeleten, setSkeleton] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
+
+  useEffect(() => {
+    const { period } = router.query;
+    if (period ) {
+        setSelectedPeriod(period);
+    }
+  }, [router.query]);
+  
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -49,15 +59,22 @@ const IplReport = ({ initialHouses }) =>  {
 
   const handleMonthChange = (selectedOption) => {
     setSelectedPeriod(selectedOption.value);
+    const query = selectedOption?.value || '';
+    const queryObj = { ...router.query };
+   
+    router.push({
+        pathname: '/ipl',
+        query: { ...queryObj, period: query},
+    });
     setCurrentPage(0);
   };
 
   const fetchHouses = useCallback (async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/ipl2`, {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl`, {
       });
       
-     //console.log(res.data)
+      //console.log(res.data)
       setHouses(res.data.data);
       setLoading(false);
       setSkeleton(false);
@@ -199,6 +216,7 @@ const IplReport = ({ initialHouses }) =>  {
   return (
     <>
     <CustomThemeProviderSecond>
+      
       <div className=' mb-4 mt-3 bg-cyan-700 rounded-md p-3 pb-5'>
           <div className='flex justify-between flex-col md:flex-row  md:items-center md:content-center gap-2'>
             <div className='md:w-1/3'>
@@ -318,33 +336,6 @@ const IplReport = ({ initialHouses }) =>  {
         </div> 
       ): (
         <div>
-          
-          {/* <div className='flex gap-1 md:gap-4 justify-start flex-row mb-4'>
-            <Card className='bg-green-700 text-white w-1/2'>
-            <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
-              <span className='flex '>
-                <span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-1 lg:mr-2" /></span>
-                <span>IPL</span>
-                <span className='ml-1 text-xs lg:text-sm font-normal lg:ml-3 flex items-center'>{`${totalHousesPaid} / ${totalHouses} Rumah`}</span>
-              </span>
-              
-              </h3>
-            <span className='font-semibold text-sm md:text-lg'>{percentage}</span>
-            
-            </Card>
-            <Card className='bg-blue-700 text-white w-1/2'>
-            <h3 className='font-bold text-sm md:text-xl flex items-start'><span><GrMoney className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span><span>Nominal</span></h3>
-            <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalPaid)}</span>
-            </Card>
-            
-          </div>
-
-          <div className='flex py-4 items-center content-center justify-between'>
-          <Button size='sm' as={Link} href="/outstanding" className='bg-red-700 '>Outstanding<GrFormNextLink  className='w-5 h-5'/></Button>
-          </div>
-   */}
-
-          
           <div>
             <Button.Group className='mb-2'>
             <Button color="gray" size="xs" className='p-1 cst-btn'><HiHome className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Wajib IPL</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount?.total || 0}</span></Button>
@@ -360,12 +351,13 @@ const IplReport = ({ initialHouses }) =>  {
             </Button.Group>
           </div>      
           <div className="overflow-x-auto">
-            <Table striped className='block w-full'>
+            <Table striped className='md:block w-full'>
                 <Table.Head className='' >
                     <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-2'>No</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-32'>No Rumah</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white text-center w-20'>Status</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white  w-32'>Tanggal</Table.HeadCell>
+                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-24 md:w-32'>No Rumah</Table.HeadCell>
+                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white text-center'>Status</Table.HeadCell>
+                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-28 '>Tanggal</Table.HeadCell>
+                    {/* <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-14 '></Table.HeadCell> */}
                 </Table.Head>
                 <Table.Body className="divide-y border-b">
                 {currentPageData && currentPageData.length > 0? (
@@ -377,14 +369,25 @@ const IplReport = ({ initialHouses }) =>  {
   
                             <Table.Cell className={`p-2  text-xs md:text-base`}>
                               <span className=" flex flex-wrap gap-2 item-center align-center">
-                                <span>{house.house_id}</span>
+                                <span>
+                                  <a href={`/ipl/${house.house_id.toLowerCase()}`} target='_blank'>
+                                    {house.house_id}
+                                    {house.outstanding_count != 0 && (
+                                      <sup className='ml-1 text-red-400'>-{house.outstanding_count}</sup>
+                                    )}
+                                    {house.future_count != 0 && (
+                                      <sup className='ml-1 text-blue-400'>+{house.future_count}</sup>
+                                    )}
+                                  </a>
+                                  
+                                </span>
                                {/* {monthly.occupancy_status !== 'Isi' ? <Badge color="failure" >{monthly.occupancy_status}</Badge> :'' } */}
                                </span>
                             </Table.Cell>
                             <Table.Cell className={`p-2  text-xs md:text-base text-center`}>
-                              <div className='flex justify-center items-center content-center h-full'>
+                              <span className='flex justify-center items-center content-center h-full'>
                                 {getTypeIcon(house.monthly_fees.find((status) => status.month === selectedPeriod)?.status)}
-                              </div>
+                              </span>
                             </Table.Cell>
   
                             <Table.Cell className={`p-2  text-xs md:text-base`}>
@@ -394,6 +397,12 @@ const IplReport = ({ initialHouses }) =>  {
                                 : '-'
                             }
                             </Table.Cell>
+                            {/* <Table.Cell className={`p-2  text-xs md:text-base text-center`}>
+                              <span className='flex justify-center items-center content-center h-full'>
+                              <MdOutlineContentPasteSearch className=' h-6 w-6 cursor-pointer' />
+
+                              </span>
+                            </Table.Cell> */}
   
                             
                         </Table.Row>
@@ -411,8 +420,8 @@ const IplReport = ({ initialHouses }) =>  {
           </div>
           <nav className='py-6'>
             <ReactPaginate
-                  previousLabel={'Previous'}
-                  nextLabel={'Next'}
+                  previousLabel={'<<'}
+                  nextLabel={'>>'}
                   breakLabel={'...'}
                   pageCount={Math.ceil(filteredHouses.length / ITEMS_PER_PAGE)}
                   marginPagesDisplayed={2}
@@ -443,13 +452,17 @@ const IplReport = ({ initialHouses }) =>  {
         </div>
       )}
       </CustomThemeProviderSecond>  
+
+
+
+
     </>
   );
 }
 
 export const getServerSideProps = async (context) => {
     try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/ipl2`, {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl`, {
         });
         return {
             props: {

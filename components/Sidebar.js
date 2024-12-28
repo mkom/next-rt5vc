@@ -18,7 +18,7 @@ const SideMenu = ({ isOpen }) => {
     };
 
     return (
-        <Sidebar  className={`fixed top-0  z-40 w-64 h-screen pt-14 transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} bg-white border-r border-gray-200 sm:translate-x-0 duration-300 ease-in-out dark:bg-gray-800 dark:border-gray-700`}>
+        <Sidebar  className={`fixed top-0  z-40 w-64 h-screen pt-14 transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} bg-white border-r border-gray-200  duration-300 ease-in-out dark:bg-gray-800 dark:border-gray-700`}>
         <Sidebar.Items >
 
             <Sidebar.ItemGroup>

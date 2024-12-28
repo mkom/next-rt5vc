@@ -25,10 +25,10 @@ const Transactions = () => {
     </Head>
 
     <Header toggleSidebar={toggleSidebar}/>
-    <main className='max-w-screen-xl mx-auto'>
+    <SideMenu isOpen={isSidebarOpen}/>
+    <main className='max-w-screen-md mx-auto'>
       <div className='w-full'>
-        <SideMenu isOpen={isSidebarOpen}/>
-        <section className='mt-14 px-3 py-5 md:px-8 sm:ml-64 mb-11'>
+        <section className='mt-14 px-3 py-5  mb-11'>
           <Breadcrumb aria-label="Default breadcrumb" className='mb-3'>
             <Breadcrumb.Item href="/" icon={HiHome}>
               Home

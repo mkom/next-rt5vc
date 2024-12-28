@@ -24,28 +24,47 @@ export const useRequireAuth = (allowedRoles = ['admin', 'user', 'editor', 'super
         router.push('/unauthorized');
         return false;
       }
-
       return true;
+      
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching data:', error);
       signOut();
       router.push('/');
       return false;
     }
   };
 
+  // const useAuthRedirect = () => {
+  //   useEffect(() => {
+  //     if (status === 'loading') return; // Wait for session to load
+  //     if (!session) {
+
+  //       // Redirect to login popup
+  //       //const redirectUrl = encodeURIComponent(router.asPath); // Store current path
+  //       //signIn('google', { callbackUrl: redirectUrl }); // Open Google login popup
+  //       router.push('/');
+  //       return;
+  //     }
+  //     const token = session.accessToken;
+  //     const userRole = session.user.role;
+  //     checkAuthAndRole(token, userRole);
+  //   }, [session, status, router]);
+  // };
+
   const useAuthRedirect = () => {
     useEffect(() => {
-      if (status === 'loading') return; // Wait for session to load
-      if (!session) {
-        router.push('/');
+      if (status === 'loading') return; // Tunggu hingga session selesai dimuat
+  
+      if (!session && status !== 'authenticated') {
+        // Jika belum login, tetap di halaman dan tampilkan LoginCard
         return;
       }
-      const token = session.accessToken;
-      const userRole = session.user.role;
-      checkAuthAndRole(token, userRole);
-    }, [session, status, router]);
+      
+  
+      // Jika sudah login, tidak ada tindakan tambahan
+    }, [session, status]);
   };
+  
 
   return { checkAuthAndRole, useAuthRedirect };
 };
