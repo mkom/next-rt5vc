@@ -135,7 +135,7 @@ const Tbd = ({ initialHousesPaid }) =>  {
       </div>
 
       <div className='flex items-center content-center justify-between mt-3'>
-        <Button size='xs' as={Link} href="/data-ipl" className='bg-green-700 '>Data IPL<GrFormNextLink  className='w-4 h-4'/></Button>
+        <Button size='xs' as={Link} href="/ipl" className='bg-green-700 '>Data IPL<GrFormNextLink  className='w-4 h-4'/></Button>
       </div>
     </CustomThemeProviderSecond>
     </>

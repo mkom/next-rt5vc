@@ -26,7 +26,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env.local
 .env.production
 .env.development
 .env
@@ -42,3 +42,5 @@ next-env.d.ts
 .history
 .lh
 .vccode
+.next
+.vscode

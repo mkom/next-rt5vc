@@ -87,9 +87,9 @@ const Report = ({ initialTransaction }) =>  {
         setTotalIncome(dataRes.balance.total_income);
         setTotalExpense(dataRes.balance.total_expense);
 
-        setTotalIncomePeriod(dataRes.monthlyData[0].income || 0);
-        setTotalExpensePeriod(dataRes.monthlyData[0].expense  || 0);
-        setOpening_balance(dataRes.monthlyData[0].opening_balance  || 0)
+        setTotalIncomePeriod(dataRes.monthlyData[0][0].income || 0);
+        setTotalExpensePeriod(dataRes.monthlyData[0][0].expense  || 0);
+        setOpening_balance(dataRes.monthlyData[0][0].opening_balance  || 0)
 
         setTransactions(dataRes.transactions);
         setSkeleton(false);
@@ -299,7 +299,7 @@ const Report = ({ initialTransaction }) =>  {
                                     className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
                                     onClick={() => handleExpandRow('ipl')}>
                                       <Table.Cell colSpan="2" className={`${getTextColor('ipl')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
-                                        IPL
+                                        Masuk (IPL)
                                       </Table.Cell>
                                       <Table.Cell className={`${getTextColor('ipl')} flex items-center content-center justify-around  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
                                         <span className='pr-1' >+</span>
@@ -344,7 +344,7 @@ const Report = ({ initialTransaction }) =>  {
                                       className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
                                       onClick={() => handleExpandRow('income')}>
                                         <Table.Cell colSpan="2" className={`${getTextColor('income')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
-                                          Masuk
+                                          Masuk (Lainnya)
                                         </Table.Cell>
                                         <Table.Cell className={`${getTextColor('income')} flex items-center content-center justify-around  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
                                           <span className='pr-1' >+</span>

@@ -23,67 +23,55 @@ import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
 import 'moment/locale/id';
 moment.locale('id');
-import MonthOptions from '../../components/MonthOptions.js';
 import CustomThemeProviderSecond from '../../components/CustomThemeSecond';
 
 
 const ITEMS_PER_PAGE = 20;
 
-const Houses = ({ initialHouses }) => {
+const Users = ({ initialUser }) => {
   const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
   useAuthRedirect();
   const { data: session, status } = useSession();
-  const [houses, setHouses] = useState([initialHouses]);
+  const [houses, setHouses] = useState([initialUser]);
+  const [users, setUsers] = useState([initialUser]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState(moment().format('YYYY-MM')); // Format YYYY-MM moment().format('YYYY-MM')
-  const [monthly ,setMonthly] = useState([]);
   const [editData, setEditData] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+ 
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleMonthChange = (selectedOption) => {
-    setSelectedPeriod(selectedOption.value);
-    setCurrentPage(0);
-   // console.log(Houses);
 
-  };
-
-
-  const fetchHouses = useCallback (async () => {
+  const fetchUser = useCallback (async () => {
     if (session) {
         try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/list`, {
                 headers: {
                   Authorization: `Bearer ${session.accessToken}`,
                 },
             });
             
            // console.log(res.data)
-            setHouses(res.data.data);
+            setUsers(res.data.data);
             setLoading(false);
         } catch (error) {
-    
-          console.error('Error fetching houses data:', error);
+          console.error('Error fetching user data:', error);
           setLoading(false);
         }
     }
    
   },[session])
 
-
   useEffect(() => {
     if (session) {
-        fetchHouses();
+        fetchUser();
     }
-  }, [session,fetchHouses ]);
+  }, [session,fetchUser ]);
 
   const handlePageClick = (data) => {
     setCurrentPage(data.selected);
@@ -94,62 +82,25 @@ const Houses = ({ initialHouses }) => {
     setSearchTerm(event.target.value);
   };
 
-  const group = [
-    { value: '', label: 'Semua Zona' },
-    { value: 'E1 Ganjil', label: 'E1 Ganjil' },
-    { value: 'E1 Genap - E2 Ganjil', label: 'E1 Genap - E2 Ganjil' },
-    { value: 'E2 Genap - E3 Ganjil', label: 'E2 Genap - E3 Ganjil' },
-    { value: 'E3 Genap - E5', label: 'E3 Genap - E3A Ganjil - E5' },
-    { value: 'E3A Genap - E8', label: 'E3A Genap - E8' },
-  ]
-
-  const statusHouses = [
-    { value: '', label: 'Semua Status' },
-    { value: 'Isi', label: 'Isi' },
-    { value: 'Kosong', label: 'Kosong' },
-    { value: 'Weekend', label: 'Weekend' },
-  ]
-
-  const handleGroupChange = (selectedOption) => {
-    setSelectedGroup(selectedOption.value);
-    setCurrentPage(0);
-   
-  };
-
-  const handleStatusChange = (selectedOption) => {
-    setSelectedStatus(selectedOption.value);
-    setCurrentPage(0);
-  };
-
-  const filteredHouses = Array.isArray(houses)
-  ? houses.filter(house => {
+  const filteredUsers = Array.isArray(users)
+  ? users.filter(user => {
       const searchTermLower = searchTerm.toLowerCase();
-      const selectedGroupLower = selectedGroup.toLowerCase();
 
       return (
         (searchTermLower === '' || (
-          house?.resident_name?.toLowerCase().includes(searchTermLower) ||
-          house?.house_id?.toLowerCase().includes(searchTermLower)
-        )) &&
-        (selectedGroupLower === '' || house?.group?.toLowerCase() === selectedGroupLower) &&
-        (selectedStatus === '' || house.monthly_status.find(status => status.month === selectedPeriod)?.status === selectedStatus)
+            user?.username?.toLowerCase().includes(searchTermLower) ||
+            user?.name?.toLowerCase().includes(searchTermLower) ||
+            user?.email?.toLowerCase().includes(searchTermLower)
+        ))
       );
     })
   : [];
 
-  const offset = currentPage * ITEMS_PER_PAGE;
-  const currentPageData = filteredHouses.slice(offset, offset + ITEMS_PER_PAGE);
 
-  const getTypeIcon = (status) => {
-    switch (status) {
-      case true:
-        return <IoCheckmarkDoneCircleSharp  className="text-green-700 h-6 w-6 " />;
-      case false:
-        return <IoCloseCircle  className="text-red-700 h-6 w-6 " />;
-      default:
-        return null;
-    }
-  };
+
+  const offset = currentPage * ITEMS_PER_PAGE;
+  const currentPageData = filteredUsers.slice(offset, offset + ITEMS_PER_PAGE);
+
 
   const handleEditClick = (house) => {
     setEditData(house);
@@ -162,35 +113,6 @@ const Houses = ({ initialHouses }) => {
    // console.log(editData)
     
   };
-  
-  const handleEditStatus = (month, newStatus, newMandatoryIpl, newMandatoryRt) => {
-   // console.log(newStatus)
-    const updatedMonthlyStatus = editData.monthly_status.map((status) => {
-      if (status.month === month) {
-        return { ...status, status: newStatus, mandatory_ipl: newMandatoryIpl, mandatory_rt: newMandatoryRt };
-      }
-      return status;
-    });
-    setEditData({ ...editData, monthly_status: updatedMonthlyStatus });
-
-   // console.log(updatedMonthlyStatus)
-  };
-
-  const handleFeeChange = (e) => {
-    const { name, value } = e.target;
-    const numericValue = value === '' ? '' : parseInt(value, 10);
-
-    setEditData((prevState) => {
-      const updatedFees = prevState.monthly_fees.map((feeData) => {
-          if (feeData.month === selectedPeriod) {
-              return { ...feeData, [name]: numericValue };
-          }
-          return feeData;
-      });
-      return { ...prevState, monthly_fees: updatedFees };
-    });
-  };
-
   
   const handleSaveChanges = async () => {
     try {
@@ -214,24 +136,6 @@ const Houses = ({ initialHouses }) => {
     }
   };
 
-  const monthlyStatusCount = houses.reduce((acc, house) => {
-    const month = house.monthly_status?.find((status) => status.month === selectedPeriod)?.month;
-    if (month) {
-      acc[month] = acc[month] || { Isi: 0, Kosong: 0, Weekend: 0 };
-      if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Isi') {
-        acc[month].Isi++;
-      } else if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Kosong') {
-        acc[month].Kosong++;
-      } else if (house.monthly_status?.find((status) => status.month === selectedPeriod)?.status === 'Weekend') {
-        acc[month].Weekend++;
-      }
-    }
-    return acc;
-  }, {});
-
-  
-
-
   if (loading) {
     return <Spinner />;
   }
@@ -246,49 +150,8 @@ const Houses = ({ initialHouses }) => {
         <section className='mt-14 px-3 py-5  mb-11'>
             <h1 className='text-xl mb-4 flex font-semibold text-gray-900 sm:text-2xl dark:text-white'>
             <FaCalendarCheck  className="mr-2 h-7 w-7" /> 
-            <span>Data Rumah</span>
+            <span>User</span>
             </h1>
-
-            <div className='w-2/4'>
-              {/* <span className='font-semibol'>PERIODE</span> */}
-              <Select
-              id="relatedMonths"
-              options={MonthOptions(monthly)}
-              value={MonthOptions(monthly).find(option => option.value === selectedPeriod)}
-              onChange={handleMonthChange}
-              placeholder="Pilih bulan"
-              className='bg-gray-50 w-full'
-            />
-
-            </div>
-            <div className="overflow-x-auto mt-5">
-                <Table className='w-auto block'>
-                    <Table.Head className='border'>
-                        <Table.HeadCell className='bg-white py-1 px-1 w-28'>Status</Table.HeadCell>
-                        <Table.HeadCell className='bg-white py-1 px-1  w-20'>Jumlah</Table.HeadCell>
-                        <Table.HeadCell className='bg-white py-1 px-1 w-24'>Iuran</Table.HeadCell>
-                    </Table.Head>
-                    <Table.Body className="divide-y border border-t-0">
-                        <Table.Row className="">
-                            <Table.Cell className='py-1 px-1  w-28'>Isi</Table.Cell>
-                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Isi || 0}</Table.Cell>
-                            <Table.Cell className='py-1 px-1 w-24'>IPL + KAS</Table.Cell>
-                        </Table.Row>
-                        <Table.Row className="">
-                            <Table.Cell className='py-1 px-1  w-28'>Weekend</Table.Cell>
-                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Weekend || 0}</Table.Cell>
-                            <Table.Cell className='py-1 px-1 w-24'>KAS</Table.Cell>
-                        </Table.Row>
-                        <Table.Row className="">
-                            <Table.Cell className='py-1 px-1  w-28'>Kosong</Table.Cell>
-                            <Table.Cell className='py-1 px-1 text-center  w-20'>{monthlyStatusCount[selectedPeriod]?.Kosong || 0}</Table.Cell>
-                            <Table.Cell className='py-1 px-1 w-24'>-</Table.Cell>
-                        </Table.Row>
-                    </Table.Body>
-                </Table>
-
-                
-            </div>
 
             <div className="mb-3 mt-5 flex justify-between content-center items-center gap-3 w-full">
             <CustomThemeProviderSecond>
@@ -300,26 +163,6 @@ const Houses = ({ initialHouses }) => {
                 className="mr-2 rounded-md w-full md:w-1/3"
                 icon={HiOutlineSearch} 
               />
-
-            <Select
-              id="group"
-              options={group}
-              value={group.find(option => option.value === selectedGroup)}
-              onChange={handleGroupChange}
-              placeholder="Zona"
-              className='bg-gray-50  rounded-md w-full md:w-1/3'
-              
-            />
-
-            <Select
-              id="status"
-              options={statusHouses}
-              value={statusHouses.find(option => option.value === selectedStatus)}
-              onChange={handleStatusChange}
-              placeholder="Status"
-              className='bg-gray-50  rounded-md w-full md:w-1/3'
-              
-            />
             
             </CustomThemeProviderSecond>
 
@@ -329,42 +172,33 @@ const Houses = ({ initialHouses }) => {
                 <table>
                     <thead className='bg-gray-50 border-b-2 group/head text-xs uppercase text-gray-700'>
                         <tr>
-                            <th rowSpan={2}  className='py-1 px-2 text-left'>No</th>
-                            <th rowSpan={2} className='py-1 px-2 text-left '>Rumah</th>
-                            <th rowSpan={2} className='py-1 px-2 text-left w-1/4'>Nama</th>
-                            <th rowSpan={2} className='py-1 px-2 text-left  w-1/6'>Status</th>
-                            <th colSpan={2}  className='py-1 px-2 text-center w-1/3'>Iuran Wajib</th>
-                            <th rowSpan={2} className='py-1 px-2 w-1/3 text-left'>Edit</th>
+                            <th  className='py-1 px-2 text-left'>No</th>
+                            <th className='py-1 px-2 text-left w-1/4'>Nama</th>
+                            <th  className='py-1 px-2 text-left  w-1/4'>Whatsapp</th>
+                            <th  className='py-1 px-2 text-left  w-1/3'>Email</th>
+                            <th  className='py-1 px-2 w-1/3 text-left'>Edit</th>
                         </tr>
-                        <tr>
-                            <th className='pt-0 pb-1 px-2 text-center '>IPL</th>
-                            <th className='pt-0 pb-1 px-2  text-center '>Kas</th>
-                        </tr>
+                       
                     </thead>
                     <tbody className="divide-y border-b text-xs">
-                    {currentPageData.map((house, index) => (  
+                    {currentPageData.map((user, index) => (  
                         <tr key={index} className="bg-white ">
                             <td className="py-2 px-2 ">{offset + index + 1}</td>
-                            <td className="py-2 px-2">{house.house_id}</td>
-                            <td className="py-2 px-2 ">{house.resident_name}</td>
+                            <td className="py-2 px-2 ">
+                                {user.name? user.name : user.username}
+                            </td>
                             <td className="py-2 px-2  ">
-                              {house.monthly_status.find((status) => status.month === selectedPeriod)?.status}
+                              {user.whatsapp_number}
                             </td>
                             <td className="py-2 px-2 ">
-                              <div className='flex justify-center items-center content-center h-full'>
-                                {getTypeIcon(house.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_ipl)}
-                              </div>
+                                {user.email}
                             </td>
-                            <td className="py-2 px-2 ">
-                            <div className='flex justify-center items-center content-center h-full'>
-                                {getTypeIcon(house.monthly_status.find((status) => status.month === selectedPeriod)?.mandatory_rt)}
-                              </div>
-                            </td>
+                            
                             <td className="py-2 px-2 ">
                               <Button.Group className=''>
                               {/* <Button color="gray" size="xs" className=''>Detail</Button> */}
                               <Button color="gray" size="xs"  onClick={() => handleEditClick(house)}>Edit</Button>
-                              <Button color="gray" size="xs" target='_blank' as={Link} href={`/ipl/${house.house_id.toLowerCase()}`}>IPL</Button>
+                              {/* <Button color="gray" size="xs" target='_blank' as={Link} href={`/ipl/${house.house_id.toLowerCase()}`}>History</Button> */}
                               </Button.Group>
                               </td>
                         </tr>
@@ -380,7 +214,7 @@ const Houses = ({ initialHouses }) => {
                   previousLabel={'Previous'}
                   nextLabel={'Next'}
                   breakLabel={'...'}
-                  pageCount={Math.ceil(filteredHouses.length / ITEMS_PER_PAGE)}
+                  pageCount={Math.ceil(filteredUsers.length / ITEMS_PER_PAGE)}
                   marginPagesDisplayed={2}
                   pageRangeDisplayed={5}
                   onPageChange={handlePageClick}
@@ -516,17 +350,17 @@ export const getServerSideProps = async (context) => {
       });
       return {
           props: {
-              initialHouses: res.data.data,
+            initialUser: res.data.data,
           },
       };
   } catch (error) {
       console.error('Error fetching houses data:', error);
       return {
           props: {
-              initialHouses: [],
+              initialUser: [],
           },
       };
   }
 };
 
-export default Houses;
+export default Users;

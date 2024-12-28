@@ -1,25 +1,27 @@
-
+import CustomThemeProviderSecond from '../../components/CustomThemeSecond';
 import { getSession, useSession } from 'next-auth/react';
 import { useCallback, useEffect,useState } from 'react';
 import axios from 'axios';
 import { useRequireAuth } from '../../utils/authUtils.js'; 
 import ReactPaginate from 'react-paginate';
-
+import Select from 'react-select';
 import Header from '../../components/Header';
 import SideMenu from '../../components/dashboard/Sidebar';
 import TransactionDrawer from '../../components/dashboard/TransactionDrawer';
 import Spinner from '../../components/Spinner';
 import { HiOutlineExclamationCircle } from "react-icons/hi";
-import { Card, Button,TextInput,Drawer,Select, Table,Dropdown, Alert,Modal } from "flowbite-react";
+import { Card, Button,TextInput,Drawer, Table,Dropdown, Alert,Modal } from "flowbite-react";
 import { HiOutlineSearch } from "react-icons/hi";
 import {  FaCheckCircle, FaTimesCircle, FaHourglassHalf,FaRegEdit,FaEye,FaRegTrashAlt } from 'react-icons/fa';
 import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
 import { FaEllipsisH } from "react-icons/fa";
 import { FaExchangeAlt } from "react-icons/fa";
+import { MdOutlineAccountBalanceWallet } from "react-icons/md";
 import FilterTransactions from '../../components/dashboard/FilterTransactions';
 import moment from 'moment';
 import 'moment/locale/id';
+import 'moment-timezone';
 moment.locale('id');
 
 const ITEMS_PER_PAGE = 15;
@@ -47,6 +49,8 @@ const Transaction = ({ initialTransaction }) =>  {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [transactionIdToDelete, setTransactionIdToDelete] = useState(null);
   const [transactionToEdit, setTransactionToEdit] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState('-');
+  const [selectedType, setSelectedType] = useState('');
 
   const handleDeleteTransaction = async (transactionId) => {
     //console.log(transactionId)
@@ -100,6 +104,7 @@ const Transaction = ({ initialTransaction }) =>  {
 
   const handleUpdateTransaction = async (transactionData) => {
     try {
+     //console.log(transactionData)
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/transactions/update/${transactionToEdit._id}`,
         transactionData,
@@ -109,6 +114,29 @@ const Transaction = ({ initialTransaction }) =>  {
           },
         }
       );
+
+      console.log(response.data.created_by.whatsapp_number)
+
+      const bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0ATerima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
+      const number = response.data.created_by.whatsapp_number; // Replace with the actual admin phone number
+
+      // Send notification to admin via the WhatsApp bot
+      try {
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_WABOTAPI_URL}/notify`,
+          { number, bodyMessage },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        
+      } catch (error) {
+      // console.error(error.response ? error.response.data : error);
+      }
+
+      //console.log(response);
       setAlertType('success');
       setAlertMessage('Transaksi berhasil diupdate');
       setShowAlert(true);
@@ -153,13 +181,14 @@ const Transaction = ({ initialTransaction }) =>  {
 
         });
         const dataRes = res.data;
-        //console.log(dataRes.data)
+        //console.log(dataRes)
         const transactionsData =  dataRes.data.transactions.sort((a, b) => {
           return new Date(b.date) - new Date(a.date);
         });
 
         setTransactions(transactionsData);
         setReTransactions(transactionsData);
+        setLastUpdate(res.data.lastUpdate);
         setLoading(false);
     } catch (error) {
         console.error('Error fetching houses data:', error);
@@ -179,7 +208,8 @@ const Transaction = ({ initialTransaction }) =>  {
   };
 
   const filteredTransactions = transactions.filter(transaction => 
-    (transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    (transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) && 
+    (selectedType === '' || transaction.transaction_type === selectedType)
   );
 
   const offset = currentPage * ITEMS_PER_PAGE;
@@ -287,16 +317,51 @@ const Transaction = ({ initialTransaction }) =>  {
     return <Spinner />;
   }
 
+  const totalAmount = filteredTransactions.reduce((acc, transaction) => {
+      if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
+      return acc + transaction.amount;
+      } else if (transaction.transaction_type === 'expense') {
+      return acc - transaction.amount;
+      }
+      return acc;
+  }, 0);
+
+  const totalIncome = filteredTransactions.reduce((acc, transaction) => {
+      if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
+      return acc + transaction.amount;
+      } 
+      return acc;
+  }, 0);
+
+  const totalexpense = filteredTransactions.reduce((acc, transaction) => {
+      if (transaction.transaction_type === 'expense') {
+      return acc + transaction.amount;
+      } 
+      return acc;
+  }, 0);
+
+  const TrxType = [
+    { value: '', label: 'Semua Type' },
+    { value: 'ipl', label: 'IPL' },
+    { value: 'income', label: 'Masuk' },
+    { value: 'expense', label: 'Keluar' },
+  ]
+
+  const handleTypeChange = (selectedOption) => {
+    setSelectedType(selectedOption.value);
+    setCurrentPage(0);
+  };
+
  // console.log(transactions)
 
   return (
     <>
    
     <Header toggleSidebar={toggleSidebar}/>
-    <main className='max-w-screen-xl mx-auto'>
+    <SideMenu isOpen={isSidebarOpen}/>
+    <main className='max-w-screen-md mx-auto'>
       <div className='w-full'>
-        <SideMenu isOpen={isSidebarOpen}/>
-        <section className='mt-14 px-5 py-5 md:px-8 sm:ml-64'>
+        <section className='mt-14 px-3 py-5  mb-11'>
         {showAlert && (
             <Alert className='' color={alertType === 'success' ? 'success' : 'failure'} onDismiss={handleAlertDismiss}>
                 <span className="font-medium">{alertMessage}</span>
@@ -331,20 +396,53 @@ const Transaction = ({ initialTransaction }) =>  {
             transactionToEdit={transactionToEdit}
           />
 
-          <div className="max-w-md mb-4 flex">
+          <div className="max-w-xl mb-4 flex w-full">
 
+          <CustomThemeProviderSecond>
             <TextInput 
-              name="name"
-              placeholder="Cari"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="mr-2 w-3/5"
-              icon={HiOutlineSearch} 
-            />
+                name="name"
+                placeholder="Cari"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="mr-2 w-1/3"
+                icon={HiOutlineSearch} 
+              />
 
-            <FilterTransactions className="w-2/5" setTransactions={setTransactions} initialTransaction={reTransactions} />
+              <FilterTransactions className="w-1/3" setTransactions={setTransactions} initialTransaction={reTransactions} />
+
+              <Select
+                id="type"
+                options={TrxType}
+                value={TrxType.find(option => option.value === selectedType)}
+                onChange={handleTypeChange}
+                placeholder="Type"
+                className='bg-gray-50  rounded-md w-1/3  ml-2'
+                
+              />
+
+          </CustomThemeProviderSecond>
+
+            
 
           </div>
+
+          <div className='mb-2 flex justify-between content-start items-start md:content-center md:items-center flex-col md:flex-row'> 
+            <div>
+            <Button.Group className='mb-2'>
+                <Button color="gray" size="xs" className='p-1 cst-btn'>
+                    <MdOutlineAccountBalanceWallet  className="text-blue-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5 " /><span className='text-blue-700 text-xs md:text-sm'>{formatCurrency( totalAmount?totalAmount: 0)}</span>
+                </Button>
+                <Button color="gray" size="xs" className='p-1 cst-btn'>
+                    <FaRegArrowAltCircleDown  className="text-green-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5 " /><span className='text-green-700 text-xs md:text-sm'>{formatCurrency( totalIncome?totalIncome: 0)}</span>
+                </Button>
+                <Button color="gray" size="xs" className='p-1 cst-btn'>
+                    <FaRegArrowAltCircleUp className="text-red-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5" /><span className='text-red-700 text-xs md:text-sm'>{formatCurrency( totalexpense?totalexpense: 0)}</span>
+                </Button>
+            </Button.Group>
+            </div> 
+            <span className='text-xs order'>Last Update: { moment(lastUpdate).tz('Asia/Jakarta').format('D/M/YYYY, HH:mm')}</span>
+        </div>
+
 
           <div className='overflow-x-auto'>
             <Table hoverable>
@@ -422,7 +520,7 @@ const Transaction = ({ initialTransaction }) =>  {
                 breakClassName={'page-item'}
                 breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
                 activeClassName={'active bg-gray-300'}
-                activeLinkClassName={'bg-red-300'}
+                activeLinkClassName={'bg-gray-300'}
             />
           </nav>
 

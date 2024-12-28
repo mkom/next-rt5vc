@@ -3,7 +3,13 @@ const nextConfig = {
   reactStrictMode: true,
   pageExtensions: ['mjs', 'js', 'ts', 'jsx', 'tsx'],
   images: {
-    domains: ['drive.google.com'],
+    // domains: ['drive.google.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'drive.google.com',
+      }
+    ],
   }
 };
 
