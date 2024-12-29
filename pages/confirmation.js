@@ -37,7 +37,9 @@ const DataTbd = () => {
         <section className='mt-14 px-3 py-5  mb-11'>
           <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>Konfirmasi Transfer IPL</h1>
           {
-            !session ? (
+            session ? (
+              <Form/>
+            ) :(
               <div className='py-6'>
                 <p>Untuk melanjutkan dan mengisi formulir konfirmasi transfer, silakan klik tombol &quot;Masuk dengan Google&quot; di bawah ini. </p>
                 <Button
@@ -50,11 +52,6 @@ const DataTbd = () => {
                   Masuk dengan Google
                 </Button>
               </div>
-            ) :(
-              <>
-                
-                <Form/>
-              </>
              
             )
           }

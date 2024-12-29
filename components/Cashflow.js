@@ -97,7 +97,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
   
     const fetchTransactions = useCallback( async () => {
       try {
-          const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
+          const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/cashflow`, {
   
           });
           const dataRes = res.data;
