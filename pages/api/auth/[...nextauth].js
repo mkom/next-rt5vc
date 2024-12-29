@@ -47,8 +47,9 @@ export default NextAuth({
     },
 
     async redirect({ url, baseUrl }) {
-      return `/`; // Redirect ke halaman utama setelah login
-  }
+      // Pastikan redirect ke halaman yang aman
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 });

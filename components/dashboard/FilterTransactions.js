@@ -47,7 +47,8 @@ const FilterTransactions = ({ setTransactions, initialTransaction }) => {
                     endDate: endDateAdjusted,
                 },
             });
-            const transactions =response.data.sort((a, b) => {
+            //console.log(response)
+            const transactions = response.data.data.transactions.sort((a, b) => {
                 return new Date(b.date) - new Date(a.date);
               });
             setTransactions(transactions);
