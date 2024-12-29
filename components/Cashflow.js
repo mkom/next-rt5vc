@@ -236,23 +236,23 @@ const AllCashflow = ({ initialTransaction }) =>  {
     }
   
     const totalAmount = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
+        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
-        } else if (transaction.transaction_type === 'expense') {
+        } else if (transaction.transaction_type === 'expense'  && transaction.status === 'berhasil') {
         return acc - transaction.amount;
         }
         return acc;
     }, 0);
 
     const totalIncome = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
+        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
         } 
         return acc;
     }, 0);
 
     const totalexpense = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'expense') {
+        if (transaction.transaction_type === 'expense'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
         } 
         return acc;

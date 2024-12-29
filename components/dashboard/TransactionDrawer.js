@@ -27,6 +27,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const [attachmentTitle, setAttachmentTitle] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [additional_note_mutasi_bca, setAdditional_note_mutasi_bca] = useState('');
+  const [reason_cancellation, setReason_cancellation] = useState('');
   const [proofOfTransfer, setProofOfTransfer] = useState('');
   const [relatedMonths, setRelatedMonths] = useState([]);
   const [status, setStatus] = useState('berhasil');
@@ -43,6 +44,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const [formattedMonths, setFormattedMonths] =useState([]);
   const [lastPaidIPl, setLastPaidIPl] = useState(null);
   const [feeIPl, setFeeIPl] = useState(0);
+  const [noteCancel, setNoteCancel] = useState(false);
 
   // const handleAddAttachment = () => {
   //   setAttachments([...attachments, { attachment_title: attactment_title, attachment_url: attactment_url }]);
@@ -72,7 +74,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
 
   useEffect(() => {
     if (transactionToEdit) {
-      
+    //
       setHouseId(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setHouseName(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setAmount(transactionToEdit.amount || '');
@@ -83,7 +85,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       setProofOfTransfer(transactionToEdit.proof_of_transfer || '');
       //setRelatedMonths(formattedMonths || []);
       setPaymentDate(transactionToEdit.date ? transactionToEdit.date : new Date());
-      setStatus('berhasil');
+      setStatus(transactionToEdit.status ? { value: transactionToEdit.status, label: transactionToEdit.status } : '');
       setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
     }
   }, [transactionToEdit]);
@@ -174,6 +176,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     if (!paymentDate) newErrors.paymentDate = 'Payment date is required';
     if (!relatedMonths) newErrors.relatedMonths = 'Months is required';
     if (!paymentType) newErrors.paymentType = 'Payment Type is required';
+    if (!status) newErrors.status = 'Status is required';
     if (transactionType === 'ipl' && !houseId) newErrors.houseId = 'House ID is required';
     if (paymentType === 'transfer' && !proofOfTransfer) newErrors.proofOfTransfer = 'Proof of transfer is required';
 
@@ -210,8 +213,9 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       payment_type: paymentType.value,
       related_months: dateArray,
       paymentDate,
-      status,
-      attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl }
+      status: status.value,
+      attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl },
+      reason_cancellation
       
     };
 
@@ -227,7 +231,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setProofOfTransfer('');
     setRelatedMonths([]);
     setPaymentDate(new Date());
-    setStatus('berhasil');
+    setStatus('');
     fileInputRef.current.value = '';
     setPaymentType('');
     setIsProcessing(false); // Stop processing
@@ -309,6 +313,20 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     { value: 'transfer', label: 'Transfer' },
   ]
 
+  const optionsStatus = [
+    { value: 'berhasil', label: 'Berhasil' },
+    { value: 'gagal', label: 'Gagal' },
+    { value: 'sedang dicek', label: 'Sedang dicek' },
+  ]
+
+
+  const handleStatusChange = (e) => {
+    setStatus(e);
+    if(e.value == 'gagal') {
+      setNoteCancel(true)
+    }
+   
+  };
 
   const handleTypeChange = (e) => {
     setPaymentType(e);
@@ -330,6 +348,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setIsProcessing(false);
     setSelectedImage(null);
     setLastPaidIPl(null);
+    setStatus('');
   };
 
  
@@ -358,7 +377,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
             </div>
             <div className='flex flex-wrap gap-3 justify-start'>
               <div className="text-sm ">Whatsapp :</div>
-              <div className="text-sm ">{transactionToEdit.created_by[0].whatsapp_number}</div>
+              <div className="text-sm ">{transactionToEdit.whatsapp_notification}</div>
             </div>
           </div>
         }
@@ -505,6 +524,35 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
             />
             
           </div>
+
+          <div className="mb-6 mt-3">
+            <Label htmlFor="payment_type" className="mb-2 block">Status</Label>
+              <Select
+                id="status"
+                options={optionsStatus}
+                value={status}
+                onChange={handleStatusChange}
+                placeholder="Status"
+                className='bg-gray-50 text-sm'
+              />
+            {errors.status && <div className="text-red-500 text-sm">{errors.status}</div>}
+          </div>
+
+        {noteCancel && status.value === 'gagal' && 
+        
+        <div className="mb-6 mt-3">
+            <Label htmlFor="cancel_note" className="mb-2 block">Alasan pembatalan</Label>
+            <Textarea
+              id="cancel_note"
+              name="cancel_note"
+              value={reason_cancellation}
+              onChange={(e) => setReason_cancellation(e.target.value)}
+              placeholder="Catatan tambahan"
+            />
+            
+          </div>
+        }
+          
 
           {transactionType !== 'ipl' && 
             <Card>

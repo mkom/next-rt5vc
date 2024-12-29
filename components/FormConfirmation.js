@@ -64,7 +64,7 @@ const Confirmation = () => {
                 Authorization: `Bearer ${session.accessToken}`,
               },
             });
-            console.log(res.data)
+            //console.log(res.data)
             const dataRes = res.data.data;
             setUser (dataRes);
             setLoading(false);
@@ -205,7 +205,8 @@ const Confirmation = () => {
         related_months: dateArray,
         paymentDate,
         status,
-        attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl }
+        attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl },
+        whatsapp_notification: whatsapp
         
       };
 
@@ -223,7 +224,6 @@ const Confirmation = () => {
     };
 
     const onSubmit = async (transactionData) => {
-      
       try {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/transactions/create`, 

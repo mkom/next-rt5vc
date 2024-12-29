@@ -115,10 +115,19 @@ const Transaction = ({ initialTransaction }) =>  {
         }
       );
 
-      console.log(response.data.created_by.whatsapp_number)
+      //console.log(response.data)
+      let bodyMessage;
+      let number;
 
-      const bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0ATerima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
-      const number = response.data.created_by.whatsapp_number; // Replace with the actual admin phone number
+      if(response.data.status === 'berhasil') {
+         bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0ATerima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
+         number = response.data.created_by.whatsapp_number; // Replace with the actual admin phone number
+      } else {
+         bodyMessage = `*Konfirmasi Pembayaran IPL Gagal!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu Dibatalkan.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0A*Alasan Pembatalan:*%0A ${response.data.additional_note}%0A%0ADemikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
+         number = response.data.created_by.whatsapp_number; // Replace with the actual admin phone number
+      }
+
+      
 
       // Send notification to admin via the WhatsApp bot
       try {
@@ -208,7 +217,8 @@ const Transaction = ({ initialTransaction }) =>  {
   };
 
   const filteredTransactions = transactions.filter(transaction => 
-    (transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) && 
+    (transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (transaction.transaction_id && transaction.transaction_id.toLowerCase().includes(searchTerm.toLowerCase())) && 
     (selectedType === '' || transaction.transaction_type === selectedType)
   );
 
@@ -278,6 +288,7 @@ const Transaction = ({ initialTransaction }) =>  {
   };
 
   const handleDrawerSubmit = async (transactionData) => {
+    //console.log(transactionData)
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/transactions/create`, 
@@ -318,23 +329,23 @@ const Transaction = ({ initialTransaction }) =>  {
   }
 
   const totalAmount = filteredTransactions.reduce((acc, transaction) => {
-      if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
+      if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
       return acc + transaction.amount;
-      } else if (transaction.transaction_type === 'expense') {
+      } else if (transaction.transaction_type === 'expense'  && transaction.status === 'berhasil') {
       return acc - transaction.amount;
       }
       return acc;
   }, 0);
 
   const totalIncome = filteredTransactions.reduce((acc, transaction) => {
-      if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income') {
+      if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income' && transaction.status === 'berhasil') {
       return acc + transaction.amount;
       } 
       return acc;
   }, 0);
 
   const totalexpense = filteredTransactions.reduce((acc, transaction) => {
-      if (transaction.transaction_type === 'expense') {
+      if (transaction.transaction_type === 'expense' && transaction.status === 'berhasil') {
       return acc + transaction.amount;
       } 
       return acc;
