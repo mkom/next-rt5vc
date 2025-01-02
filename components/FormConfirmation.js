@@ -18,6 +18,7 @@ import 'react-datepicker/dist/react-datepicker.css'
 import Select from 'react-select';
 import moment from 'moment';
 import 'moment/locale/id';
+import 'moment-timezone';
 import id from "date-fns/locale/id";
 moment.locale('id');
 
@@ -108,6 +109,7 @@ const Confirmation = () => {
               value: house.house_id,
               label: house.house_id
             })));
+            
             setLoading(false);
           } catch (error) {
             setLoading(false);
@@ -171,7 +173,7 @@ const Confirmation = () => {
       if (relatedMonths.length == 0) newErrors.relatedMonths = 'Periode Wajib Diisi';
       if (!houseId) newErrors.houseId = 'Nomor Rumah Wajib Diisi';
       if (!proofOfTransfer) newErrors.proofOfTransfer = 'Bukti Transfer Wajib Diisi';
-    
+      if (!whatsapp) newErrors.whatsapp = 'Nomor Whatsapp Wajib Diisi';
   
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -203,7 +205,7 @@ const Confirmation = () => {
         houseId,
         payment_type:'transfer',
         related_months: dateArray,
-        paymentDate,
+        paymentDate, 
         status,
         attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl },
         whatsapp_notification: whatsapp
@@ -240,7 +242,7 @@ const Confirmation = () => {
         setShowForm(false);
         setAlertMessage('Konfirmasi pembayaran Anda sudah selesai dan menunggu validasi dari Admin/Pengurus Rt 05.\r\nBukti penerimaan pembayaran akan dikirimkan setelah pembayaran Anda dinyatakan valid.');
         // Prepare the transaction details message
-        const bodyMessage = `*Konfirmasi Transfer IPL baru!*%0A%0A*Detail:*%0A*ID Transaksi:* ${response.data.transaction_id}%0A*Oleh:* ${response.data.created_by}%0A*Input:* ${new Date(response.data.created_at).toLocaleString()}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Deskripsi:* ${response.data.description}%0A*Tanggal Pembayaran:* ${new Date(response.data.date).toLocaleString()}%0A*Status:* Perlu dicek`;
+        const bodyMessage = `*Konfirmasi Transfer IPL baru!*%0A%0A*Detail:*%0A*ID Transaksi:* ${response.data.transaction_id}%0A*Oleh:* ${response.data.created_by}%0A*Input:* ${new Date(response.data.created_at).toLocaleString()}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Deskripsi:* ${response.data.description}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A*Status:* Perlu dicek`;
         const number = '6281717889797'; // Replace with the actual admin phone number
 
         // Send notification to admin via the WhatsApp bot
@@ -293,7 +295,7 @@ const Confirmation = () => {
             const dataMonthlyFees = res.data.data.monthly_fees
 
             // Filter data yang memiliki status "Lunas"
-            const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas");
+            const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas" || item.status === "TBD");
             // Urutkan berdasarkan bulan, dari yang terbaru
             const sortedPaidMonths = paidMonths.sort((a, b) => new Date(b.month) - new Date(a.month));
         
@@ -487,12 +489,14 @@ const Confirmation = () => {
                 <Select
                 id="relatedMonths"
                 isMulti
+                isSearchable={false}
                 options={generateMonthsOptions()}
                 value={relatedMonths}
                 onChange={handleMonthChange}
-                placeholder="Pilih bulan"
+                placeholder="Pilih periode"
                 className='bg-gray-50 text-sm z-50 w-full'
                 disabled={isProcessing}
+                noOptionsMessage={() => "Tidak ada opsi tersedia"}
                 />
                 
                 {errors.relatedMonths && <div className="text-red-500 text-xs pt-2">{errors.relatedMonths}</div>}
@@ -517,7 +521,7 @@ const Confirmation = () => {
                 <TextInput
                   id="proofOfTransfer"
                   name="proofOfTransfer"
-                  value={proofOfTransfer}
+                  value={proofOfTransfer || ""}
                   onChange={(e) => setProofOfTransfer(e.target.value)}
                   placeholder="Masukkan URL lampiran"
                   className='hidden'
@@ -567,17 +571,18 @@ const Confirmation = () => {
 
             <div className="mb-5">
                 <Label htmlFor="proofOfTransfer" className="mb-1 block">No Whatsapp</Label>
-                <span className='mb-3 block text-sm'>Kirim bukti penerimaan pembayaran.</span>
+                <span className='mb-3 block text-sm'>Konfirmasi Penerimaan Pembayaran.</span>
                 <TextInput 
                   id='whatsapp'
                   name="whatsapp"
                   placeholder="No Whataspp dimulai dengan 62"
                   className=" w-full md:w-72"
                   type="number"
-                  value={whatsapp}
+                  value={whatsapp || ""}
                   onChange={handleInputChangeWA}
                 />
                 <p className='text-xs pt-2 text-gray-700'>Contoh: 6283863473596</p>
+                {errors.whatsapp && <div className="text-red-500 text-xs pt-2">{errors.whatsapp}</div>}
                 {whatsappError  && <div className="text-red-500 text-xs pt-2">{whatsappError}</div>}
             </div>
 

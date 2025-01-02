@@ -13,16 +13,22 @@ export default NextAuth({
   callbacks: {
     async jwt({ token, account,user}) {
       if (account) {
-        // console.log('Account:', account); // Debugging
-        //console.log('role:', user.role); // Debugging
         token.accessToken = user.jwtToken;
         token.user = user;
       }
       return token;
     },
     async session({session, token  }) {
+      // Adding accessToken and user to session
       session.accessToken = token.accessToken;
       session.user = token.user;
+
+      // Handle session expiration or invalid token
+      if (!session.accessToken) {
+        // Redirect to home if session expired
+        return null;
+      }
+
       return session;
     },
     async signIn({ user, account, profile }) {
@@ -47,9 +53,20 @@ export default NextAuth({
     },
 
     async redirect({ url, baseUrl }) {
-      // Pastikan redirect ke halaman yang aman
+      if (url === '/auth/signin' || url === '/auth/error') {
+        return baseUrl;  // Redirect to the homepage
+      }
       return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+
+  pages: {
+    signIn: '/',  // Customize the login page
+    //signIn: '/auth/signin',  // Customize the login page
+    error: '/auth/error',    // Custom error page
+    // Optionally, you can create a custom redirect page
+    // after a successful login:
+    // dashboard: '/dashboard',
+  },
 });

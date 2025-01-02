@@ -74,7 +74,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
 
   useEffect(() => {
     if (transactionToEdit) {
-    //
+    
+      fetchIPlStatus(transactionToEdit.house_id.house_id);
       setHouseId(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setHouseName(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setAmount(transactionToEdit.amount || '');
@@ -84,7 +85,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       setAdditional_note_mutasi_bca(transactionToEdit.additional_note_mutasi_bca || '');
       setProofOfTransfer(transactionToEdit.proof_of_transfer || '');
       //setRelatedMonths(formattedMonths || []);
-      setPaymentDate(transactionToEdit.date ? transactionToEdit.date : new Date());
+      setPaymentDate(transactionToEdit.date || '');
       setStatus(transactionToEdit.status ? { value: transactionToEdit.status, label: transactionToEdit.status } : '');
       setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
     }
@@ -212,7 +213,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       houseId,
       payment_type: paymentType.value,
       related_months: dateArray,
-      paymentDate,
+      paymentDate: paymentDate,
       status: status.value,
       attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl },
       reason_cancellation
@@ -245,16 +246,15 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   };
 
   const handleHouseSelect = (selectedHouse) => {
-
     resetForm();
     const currentHouseId = selectedHouse.value;
     setHouseId(selectedHouse.value);
     setHouseName(selectedHouse.label)
     fetchIPlStatus(currentHouseId);
-
   };
   
   const fetchIPlStatus = useCallback (async (currentHouseId) => {
+    
     try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`, {
 
@@ -281,7 +281,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
         //setLoading(false);
     }
    
-},[houseId])
+  },[houseId])
+ 
 
   const handleMonthChange = (selectedOptions) => {
     setRelatedMonths(selectedOptions || []);

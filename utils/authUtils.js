@@ -63,6 +63,17 @@ export const useRequireAuth = (allowedRoles = ['admin', 'user', 'editor', 'super
   
       // Jika sudah login, tidak ada tindakan tambahan
     }, [session, status]);
+
+    // useEffect(() => {
+    //   if (status === 'loading') return; // Wait until the session is fully loaded
+  
+    //   // If there is no session and the status is not authenticated, redirect to the homepage
+    //   if (!session && status !== 'authenticated') {
+    //     router.push('/');  // Redirect to the homepage
+    //   }
+    // }, [session, status, router]);
+
+
   };
   
 

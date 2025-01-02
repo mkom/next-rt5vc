@@ -41,13 +41,13 @@ export default function Home() {
           <div className='flex flex-row md:flex-row justify-center gap-2'>
             <div className=''>
               <a href="/confirmation" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
-              <span className='text-center content-center'>Konfirmasi transfer IPL</span>
+              <span className='text-center content-center'>Konfirmasi Transfer</span>
               <GrFormNextLink  className='w-5 h-5'/>
               </a>
             </div>
             <div className=' '>
               <a href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
-              <span className='text-center content-center'>Data IPL</span>
+              <span className='text-center content-center'>IPL</span>
               <GrFormNextLink  className='w-5 h-5'/>
               </a>
             </div>

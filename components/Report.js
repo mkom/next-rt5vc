@@ -16,7 +16,9 @@ import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
 import 'moment/locale/id';
+import 'moment-timezone';
 moment.locale('id');
+// moment.tz.setDefault('Asia/Jakarta');
 import MonthOptions from './MonthOptions';
 import Link from 'next/link';
 
@@ -44,15 +46,9 @@ const Report = ({ initialTransaction }) =>  {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-  
-    // Extract day, month, and year
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const year = String(date.getFullYear()).slice(-2); // Get last two digits of the year
-  
-    // Format the date as DD/MM/YY
-    return `${day}/${month}/${year}`;
+  // Gunakan timezone Asia/Jakarta
+      const date = moment.tz(dateString, 'Asia/Jakarta');
+      return date.format('DD/MM/YY'); // Format sesuai kebutuhan
   };
 
   const [relatedMonths, setRelatedMonths] = useState({
@@ -81,7 +77,7 @@ const Report = ({ initialTransaction }) =>  {
               period: selectedPeriod
           }
         });
-       // console.log(res.data)
+        //console.log(res.data)
         const dataRes = res.data.data;
         setTotalBalance(dataRes.balance.final_balance);
         setTotalIncome(dataRes.balance.total_income);

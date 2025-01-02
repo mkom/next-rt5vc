@@ -46,34 +46,6 @@ const AllCashflow = ({ initialTransaction }) =>  {
             setSelectedPeriod(period);
         }
     }, [s,period,router.query]);
-
-    // useEffect(() => {
-    //     const updatedQuery = { ...rest };
-    
-    //     // Hapus parameter period dan page jika kosong
-    //     if (!period) {
-    //       delete updatedQuery.period;
-    //     }
-    //     if (!page) {
-    //       delete updatedQuery.page;
-    //     }
-    //     if (!s) {
-    //         delete updatedQuery.s;
-    //     }
-    
-    //     // Cek apakah URL perlu diupdate
-    //     const currentQuery = new URLSearchParams(router.query).toString();
-    //     const newQuery = new URLSearchParams(updatedQuery).toString();
-
-    //     console.log(currentQuery);
-    //     console.log(newQuery);
-    //     if (currentQuery !== newQuery) {
-    //       router.replace({
-    //         pathname: router.pathname,
-    //         query: updatedQuery,
-    //       });
-    //     }
-    //   }, [period, page,s, router]);
     
 
     const formatCurrency = (amount) => {
@@ -84,16 +56,10 @@ const AllCashflow = ({ initialTransaction }) =>  {
       }).format(amount);
     };
     const formatDate = (dateString) => {
-      const date = new Date(dateString);
-    
-      // Extract day, month, and year
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-      const year = String(date.getFullYear()).slice(-2); // Get last two digits of the year
-    
-      // Format the date as DD/MM/YY
-      return `${day}/${month}/${year}`;
-    };
+      // Gunakan timezone Asia/Jakarta
+          const date = moment.tz(dateString, 'Asia/Jakarta');
+          return date.format('DD/MM/YY'); // Format sesuai kebutuhan
+      };
   
     const fetchTransactions = useCallback( async () => {
       try {
@@ -101,7 +67,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
   
           });
           const dataRes = res.data;
-        //  / console.log(dataRes)
+             //console.log(dataRes)
           const transactionsData =  dataRes.data.transactions.sort((a, b) => {
             return new Date(b.date) - new Date(a.date);
           });
@@ -236,7 +202,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
     }
   
     const totalAmount = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
+        if (transaction.transaction_type === 'ipl' && transaction.status === 'berhasil' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
         } else if (transaction.transaction_type === 'expense'  && transaction.status === 'berhasil') {
         return acc - transaction.amount;
@@ -245,14 +211,14 @@ const AllCashflow = ({ initialTransaction }) =>  {
     }, 0);
 
     const totalIncome = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
+        if (transaction.transaction_type === 'ipl' && transaction.status === 'berhasil' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
         } 
         return acc;
     }, 0);
 
     const totalexpense = filteredTransactions.reduce((acc, transaction) => {
-        if (transaction.transaction_type === 'expense'  && transaction.status === 'berhasil') {
+        if (transaction.transaction_type === 'expense' && transaction.status === 'berhasil'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
         } 
         return acc;
