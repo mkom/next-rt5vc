@@ -321,7 +321,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
         </Table>
         </div>
 
-                <Modal show={modalIsOpen} position="center" size="3xl" dismissible  onClose={closeModal}>
+            <Modal show={modalIsOpen} position="center" size="3xl" dismissible  onClose={closeModal}>
                 <Modal.Header>
                     <span className='block'>Detail</span>
                     {selectedTransaction && (
@@ -337,7 +337,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
                             <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Kategori</span><span>:</span></div>
                             <div className='w-10/12'>
                                 <span className='flex flex-wrap mt-1'>
-                                   <Badge color={selectedTransaction.transaction_type  === 'expense' ? 'failure' : 'info'}> {selectedTransaction.transaction_type  === 'expense' ? 'Keluar' : 'Masuk'}</Badge>
+                                    <Badge color={selectedTransaction.transaction_type  === 'expense' ? 'failure' : 'info'}> {selectedTransaction.transaction_type  === 'expense' ? 'Keluar' : 'Masuk'}</Badge>
                                 </span>
                             </div>
                         </div>
@@ -373,20 +373,20 @@ const AllCashflow = ({ initialTransaction }) =>  {
                             </div>
                             </div>
                         )}
-                       
-                       
-                      
+                        
+                        
+                        
                         <div className="mt-5">
                         {selectedTransaction.proof_of_transfer !== '' ? (
-                             <div className='w-1/2 relative'>
-                               <div className="relative w-full h-auto">
-                               {loadingImg && (
+                                <div className='w-1/2 relative'>
+                                <div className="relative w-full h-auto">
+                                {loadingImg && (
                                     <div className="animate-pulse flex justify-center items-center">
                                     {/* Skeleton Loader */}
                                     <div className="w-full h-40 bg-gray-300 rounded-lg"></div>
                                     </div>
                                 )}
-                               <Image
+                                <Image
                                 className='w-full h-auto relative'
                                 width={0} 
                                 height={0}
@@ -394,10 +394,10 @@ const AllCashflow = ({ initialTransaction }) =>  {
                                 onLoad={handleImageLoad}
                                 src={selectedTransaction.proof_of_transfer}  
                                 alt="Lampiran" /> 
-                               </div>
-                             </div>
+                                </div>
+                                </div>
                         ) : (
-                          <></>
+                            <></>
                         )}
                         </div>
 

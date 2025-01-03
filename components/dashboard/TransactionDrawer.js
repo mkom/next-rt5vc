@@ -418,6 +418,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               onChange={handleMonthChange}
               placeholder="Pilih bulan"
               className='bg-gray-50 text-sm'
+              isSearchable={false}
              />
              {errors.relatedMonths && <div className="text-red-500 text-sm">{errors.relatedMonths}</div>}
              </div>
@@ -530,6 +531,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
             <Label htmlFor="payment_type" className="mb-2 block">Status</Label>
               <Select
                 id="status"
+                isSearchable={false}
                 options={optionsStatus}
                 value={status}
                 onChange={handleStatusChange}

@@ -26,9 +26,22 @@ const SideMenu = ({ isOpen }) => {
                 Beranda
             </Sidebar.Item>
 
-            {/* <Sidebar.Item href="/cashflow" icon={HiViewBoards}>
-                Arus Kas
-            </Sidebar.Item> */}
+            <Sidebar.Item href="/cashflow">
+                Cashflow
+            </Sidebar.Item>
+
+            <Sidebar.Item href="/ipl" >
+                IPL
+            </Sidebar.Item>
+            <Sidebar.Item href="/outstanding" >
+                Outstanding
+            </Sidebar.Item>
+            <Sidebar.Item href="/confirmation" >
+                Konfirmasi Transfer
+            </Sidebar.Item>
+            <Sidebar.Item href="/history" >
+                Riwayat Pembayaran
+            </Sidebar.Item>
 
             </Sidebar.ItemGroup>
             {/* <Sidebar.ItemGroup>
