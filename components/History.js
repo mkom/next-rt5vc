@@ -14,6 +14,8 @@ import moment from 'moment';
 import 'moment/locale/id';
 import 'moment-timezone';
 moment.locale('id');
+import Link from 'next/link';
+import { FaExternalLinkAlt } from "react-icons/fa";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -94,7 +96,7 @@ const History = () => {
                     },
                 });
                 const dataRes = res.data;
-                console.log(dataRes)
+                //console.log(dataRes)
                 const transactionsData =  dataRes.data.sort((a, b) => {
                     return new Date(b.date) - new Date(a.date);
                 });
@@ -195,7 +197,7 @@ const History = () => {
         switch (status) {
             case 'berhasil':
             return { color: 'info', text: 'Sukses' };
-            case 'sedeng di cek':
+            case 'sedang dicek':
             return { color: 'warning', text: 'Menunggu' };
             default:
             return { color: 'failure', text: 'Gagal' };
@@ -205,14 +207,14 @@ const History = () => {
     return (
     <>
         <div className='flex justify-start gap-2'>
-            <a href="/confirmation" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
+            <Link href="/confirmation" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
             <span className='text-center content-center'>Konfirmasi Transfer</span>
             <GrFormNextLink  className='w-5 h-5'/>
-            </a>
-            <a href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
+            </Link>
+            <Link href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
             <span className='text-center content-center'>Data IPL</span>
             <GrFormNextLink  className='w-5 h-5'/>
-            </a>
+            </Link>
         </div>
         <p className='pt-6 pb-3 text-md'>Riwayat konfirmasi transfer oleh email: <span className='underline'>{user.email}</span></p>
 
@@ -220,7 +222,7 @@ const History = () => {
             <Table striped>
                 <Table.Head>
                 <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:pl-2 md:pr-0 bg-cyan-600 text-white'>No</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-3/4'>ID Trx</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-3/4'>Keterangan</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
                 <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Detail</Table.HeadCell>

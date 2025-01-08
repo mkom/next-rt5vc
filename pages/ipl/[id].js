@@ -226,7 +226,7 @@ const IplDetail = () => {
                 </h1>
                 {/* <button onClick={goBack}>Go Back</button> */}
 
-                <div className='flex items-center content-center border w-10/12 md:w-1/2 p-2'>
+                <div className='flex items-center content-center border w-full md:w-1/2 p-2'>
                   <div className='w-1/3 md:w-1/3'>Status IPL</div>
                   <div className='w-10/12'>
                     <span className='pr-2'>:</span>
@@ -241,7 +241,7 @@ const IplDetail = () => {
                     </div>
                 </div>
 
-                <div className='flex items-center content-center border border-t-0 w-10/12 md:w-1/2 p-2'>
+                <div className='flex items-center content-center border border-t-0 w-full md:w-1/2 p-2'>
                   <div className='w-1/3 md:w-1/3'>Tahun</div>
                   <div className='w-10/12 flex'>
                     <span className='pr-2'>:</span>
@@ -270,53 +270,54 @@ const IplDetail = () => {
                 </div>
 
                 
-
                 <div className="overflow-x-auto mt-4">
-                <Table striped className='block w-full' >
-                    <Table.Head className='' >
-                        <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white '>Periode</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                        <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white '>Lampiran</Table.HeadCell>
-                    </Table.Head>
-                    <Table.Body className="divide-y border-b">
-                    
-                    {months.map((month, index) => {
-                      const { status, transactionDate, proofOfTransfer,paymentType } = findFeeStatus(selectedPeriod, month);
-                      const { statusHouse} = findStatus(selectedPeriod, month, housesStatus);
-                      return (
-                        <Table.Row key={index}>
-                          <Table.Cell className='text-left py-2 px-2  md:text-base font-medium text-black'>
-                          {statusHouse === "Kosong" ? <s>{month.name}</s> : month.name}
-                            </Table.Cell>
-                          <Table.Cell className='text-left py-2 px-2  md:text-base'>
-                            <span className='flex justify-center items-center content-center h-full'>
-                              { status !== '-' && statusHouse !== "Kosong"  ?  getTypeIcon(status) :'-'}
-                            </span>
-                          </Table.Cell>
-                          <Table.Cell className='text-left py-2 px-2  md:text-base'>
-                          {
-                             transactionDate !== '-'
-                                ? formatDate(transactionDate)
-                                : '-'
-                            }
-                          </Table.Cell>
-                          <Table.Cell className='text-left py-2 px-2  md:text-base'>
-                            {proofOfTransfer && proofOfTransfer !== '-' ? (
-                              <span className='flex items-center'>
-                              <Button  as={Link} href={proofOfTransfer} target='_blank' color="gray" size="xs" className=' rounded-md focus:ring-0'>View</Button>
+                  <Table striped className=' w-full' >
+                      <Table.Head className='w-full' >
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white '>Periode</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white '>Lampiran</Table.HeadCell>
+                      </Table.Head>
+                      <Table.Body className="divide-y border-b">
+                      
+                      {months.map((month, index) => {
+                        const { status, transactionDate, proofOfTransfer,paymentType } = findFeeStatus(selectedPeriod, month);
+                        const { statusHouse} = findStatus(selectedPeriod, month, housesStatus);
+                        return (
+                          <Table.Row key={index}>
+                            <Table.Cell className='text-left py-2 px-2  md:text-base font-medium text-black'>
+                            {statusHouse === "Kosong" ? <s>{month.name}</s> : month.name}
+                              </Table.Cell>
+                            <Table.Cell className='text-left py-2 px-2  md:text-base'>
+                              <span className='flex justify-center items-center content-center h-full'>
+                                { status !== '-' && statusHouse !== "Kosong"  ?  getTypeIcon(status) :'-'}
                               </span>
-                            ):(
-                              <>{paymentType == 'cash' ? 'Cash' :'-' }</>
-                            )}
-                            
-                          </Table.Cell>
-                        </Table.Row>
-                      );
-                    })}
-                    </Table.Body>
-                </Table>
-            </div>
+                            </Table.Cell>
+                            <Table.Cell className='text-left py-2 px-2  md:text-base'>
+                            {
+                              transactionDate !== '-'
+                                  ? formatDate(transactionDate)
+                                  : '-'
+                              }
+                            </Table.Cell>
+                            <Table.Cell className='text-left py-2 px-2  md:text-base'>
+                              {proofOfTransfer && proofOfTransfer !== '-' ? (
+                                <span className='flex items-center'>
+                                <Button  as={Link} href={proofOfTransfer} target='_blank' color="gray" size="xs" className=' rounded-md focus:ring-0'>View</Button>
+                                </span>
+                              ):(
+                                <>{paymentType == 'cash' ? 'Cash' :'-' }</>
+                              )}
+                              
+                            </Table.Cell>
+                          </Table.Row>
+                        );
+                      })}
+                      </Table.Body>
+                  </Table>
+                </div>
+                <p className='pt-4 pb-1 text-sm font-medium'>Catatan:</p>
+                <p className='text-sm'>IPL RT 005 tercatat dan terhitung mulai dari Juli 2024.</p>
             </section>
         </div>
      </main>

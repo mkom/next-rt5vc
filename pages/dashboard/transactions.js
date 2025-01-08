@@ -51,6 +51,13 @@ const Transaction = ({ initialTransaction }) =>  {
   const [transactionToEdit, setTransactionToEdit] = useState(null);
   const [lastUpdate, setLastUpdate] = useState('-');
   const [selectedType, setSelectedType] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
 
   const handleDeleteTransaction = async (transactionId) => {
     //console.log(transactionId)
@@ -115,12 +122,15 @@ const Transaction = ({ initialTransaction }) =>  {
         }
       );
 
-      //console.log(response.data)
+    
+      let IPLUrl = `${baseUrl}/ipl/${response.data.house.house_id.toLowerCase()}`;
+    
+      //console.log(IPLUrl)
       let bodyMessage;
       let number;
 
       if(response.data.status === 'berhasil') {
-         bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0ATerima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
+         bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0ACek IPL *${response.data.house.house_id}:* ${IPLUrl} %0A%0ATerima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
          number = response.data.whatsapp_notification; // Replace with the actual admin phone number
       } else if(response.data.status === 'gagal') {
          bodyMessage = `*Konfirmasi Pembayaran IPL Gagal!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu Dibatalkan.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0A*Alasan Pembatalan:*%0A ${response.data.additional_note}%0A%0ADemikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;

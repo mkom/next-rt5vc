@@ -21,6 +21,7 @@ import 'moment/locale/id';
 import 'moment-timezone';
 import id from "date-fns/locale/id";
 moment.locale('id');
+import Link from 'next/link';
 
 const Confirmation = () => {
     const router = useRouter();
@@ -447,9 +448,7 @@ const Confirmation = () => {
           <div  className=" flex space-x-3 justify-center mb-4">
             <Button 
             color="success"
-            onClick={() => {
-              confirmFrom()
-            }}
+            as={Link} href="/history"
             >
               Selesai
               <GrFormNextLink  className='w-5 h-5'/>
@@ -466,14 +465,14 @@ const Confirmation = () => {
         {showForm && 
           <>
             <div className='flex justify-start gap-2'>
-              <a href="/history" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
+              <Link  href="/history" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
               <span className='text-center content-center'>Riwayat konfirmasi transfer</span>
               <GrFormNextLink  className='w-5 h-5'/>
-              </a>
-              <a href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
+              </Link >
+              <Link href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
               <span className='text-center content-center'>Data IPL</span>
               <GrFormNextLink  className='w-5 h-5'/>
-              </a>
+              </Link>
             </div>
           <p className='py-6'>Lengkapi data yang diperlukan. Jangan sampai terlewat satupun. Setelah yakin terisi semua, jangan lupa klik tombol KIRIM.</p>
           <form onSubmit={handleSubmit} className="">
