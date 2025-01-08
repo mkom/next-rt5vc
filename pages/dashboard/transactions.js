@@ -51,6 +51,13 @@ const Transaction = ({ initialTransaction }) =>  {
   const [transactionToEdit, setTransactionToEdit] = useState(null);
   const [lastUpdate, setLastUpdate] = useState('-');
   const [selectedType, setSelectedType] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
 
   const handleDeleteTransaction = async (transactionId) => {
     //console.log(transactionId)
@@ -104,7 +111,7 @@ const Transaction = ({ initialTransaction }) =>  {
 
   const handleUpdateTransaction = async (transactionData) => {
     try {
-     //console.log(transactionData)
+      
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/transactions/update/${transactionToEdit._id}`,
         transactionData,
@@ -115,34 +122,38 @@ const Transaction = ({ initialTransaction }) =>  {
         }
       );
 
-      //console.log(response.data)
+    
+      let IPLUrl = `${baseUrl}/ipl/${response.data.house.house_id.toLowerCase()}`;
+    
+      //console.log(IPLUrl)
       let bodyMessage;
       let number;
 
       if(response.data.status === 'berhasil') {
-         bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0ATerima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
-         number = response.data.created_by.whatsapp_number; // Replace with the actual admin phone number
-      } else {
+         bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0ACek IPL *${response.data.house.house_id}:* ${IPLUrl} %0A%0ATerima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
+         number = response.data.whatsapp_notification; // Replace with the actual admin phone number
+      } else if(response.data.status === 'gagal') {
          bodyMessage = `*Konfirmasi Pembayaran IPL Gagal!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu Dibatalkan.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0A*Alasan Pembatalan:*%0A ${response.data.additional_note}%0A%0ADemikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
-         number = response.data.created_by.whatsapp_number; // Replace with the actual admin phone number
+         number = response.data.whatsapp_notification; // Replace with the actual admin phone number
+      } else {
+
       }
 
-      
-
-      // Send notification to admin via the WhatsApp bot
-      try {
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_WABOTAPI_URL}/notify`,
-          { number, bodyMessage },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-        
-      } catch (error) {
-      // console.error(error.response ? error.response.data : error);
+      if(number) {
+        try {
+          await axios.post(
+            `${process.env.NEXT_PUBLIC_WABOTAPI_URL}/notify`,
+            { number, bodyMessage },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          
+        } catch (error) {
+        // console.error(error.response ? error.response.data : error);
+        }
       }
 
       //console.log(response);
@@ -173,15 +184,9 @@ const Transaction = ({ initialTransaction }) =>  {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-  
-    // Extract day, month, and year
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const year = String(date.getFullYear()).slice(-2); // Get last two digits of the year
-  
-    // Format the date as DD/MM/YY
-    return `${day}/${month}/${year}`;
+  // Gunakan timezone Asia/Jakarta
+      const date = moment.tz(dateString, 'Asia/Jakarta');
+      return date.format('DD/MM/YY'); // Format sesuai kebutuhan
   };
 
   const fetchTransactions = useCallback( async () => {
@@ -329,7 +334,7 @@ const Transaction = ({ initialTransaction }) =>  {
   }
 
   const totalAmount = filteredTransactions.reduce((acc, transaction) => {
-      if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
+      if (transaction.transaction_type === 'ipl' && transaction.status === 'berhasil' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
       return acc + transaction.amount;
       } else if (transaction.transaction_type === 'expense'  && transaction.status === 'berhasil') {
       return acc - transaction.amount;
@@ -338,7 +343,7 @@ const Transaction = ({ initialTransaction }) =>  {
   }, 0);
 
   const totalIncome = filteredTransactions.reduce((acc, transaction) => {
-      if (transaction.transaction_type === 'ipl' || transaction.transaction_type === 'income' && transaction.status === 'berhasil') {
+      if (transaction.transaction_type === 'ipl' && transaction.status === 'berhasil' || transaction.transaction_type === 'income' && transaction.status === 'berhasil') {
       return acc + transaction.amount;
       } 
       return acc;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import { TextInput } from 'flowbite-react';
 
@@ -19,19 +19,52 @@ const customStyles = {
 };
 
 const Autocomplete = ({ value, onChange, options, onSelect }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [inputValue, setInputValue] = useState("");
+  const [dataLoaded, setDataLoaded] = useState(false);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    // Simulasi pemuatan data
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    setDataLoaded(true); // Tandai bahwa data telah dimuat
+    if (options) {
+      setIsLoading(false); // Hanya nonaktifkan loading jika value ada
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [options]); // Jalankan ulang saat value berubah
+
+  const handleInputChange = (value) => {
+    setInputValue(value);
+  };
+
   const handleChange = (selectedOption) => {
     onSelect(selectedOption);
   };
 
+  // Filter opsi hanya jika inputValue memiliki 2 huruf atau lebih
+  const filteredOptions = inputValue.length >= 2 ? options : [];
+
   return (
-    <div className="mt-1 block w-72">
+    <div className="mt-1 block md:w-72">
       <Select
         value={value ? options.find(option => option.value === value) : null}
         onChange={handleChange}
-        options={options}
+        options={filteredOptions}
+        onInputChange={handleInputChange}
         styles={customStyles}
-        placeholder="Cari"
+        placeholder={isLoading ? "Memuat data..." : "Cari"}
         className='text-sm'
+        isDisabled={isLoading}
+        isLoading={isLoading}
+        noOptionsMessage={() =>
+          inputValue.length < 2
+            ? "Ketik minimal 2 huruf untuk mencari"
+            : "Tidak ada opsi yang cocok"
+        }
       />
     </div>
   );

@@ -18,8 +18,10 @@ import 'react-datepicker/dist/react-datepicker.css'
 import Select from 'react-select';
 import moment from 'moment';
 import 'moment/locale/id';
+import 'moment-timezone';
 import id from "date-fns/locale/id";
 moment.locale('id');
+import Link from 'next/link';
 
 const Confirmation = () => {
     const router = useRouter();
@@ -68,7 +70,7 @@ const Confirmation = () => {
             const dataRes = res.data.data;
             setUser (dataRes);
             setLoading(false);
-            setWhatsapp(res.data.data.whatsapp_number);
+            //setWhatsapp(res.data.data.whatsapp_number);
           } catch (error) {
            
             signOut();
@@ -108,6 +110,7 @@ const Confirmation = () => {
               value: house.house_id,
               label: house.house_id
             })));
+            
             setLoading(false);
           } catch (error) {
             setLoading(false);
@@ -171,7 +174,7 @@ const Confirmation = () => {
       if (relatedMonths.length == 0) newErrors.relatedMonths = 'Periode Wajib Diisi';
       if (!houseId) newErrors.houseId = 'Nomor Rumah Wajib Diisi';
       if (!proofOfTransfer) newErrors.proofOfTransfer = 'Bukti Transfer Wajib Diisi';
-    
+      if (!whatsapp) newErrors.whatsapp = 'Nomor Whatsapp Wajib Diisi';
   
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -203,7 +206,7 @@ const Confirmation = () => {
         houseId,
         payment_type:'transfer',
         related_months: dateArray,
-        paymentDate,
+        paymentDate, 
         status,
         attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl },
         whatsapp_notification: whatsapp
@@ -217,13 +220,17 @@ const Confirmation = () => {
       }
   
       onSubmit(newTransaction);
-      addWhatsapp(whatsapp); 
+      //addWhatsapp(whatsapp); 
       resetForm();
      
       
     };
 
     const onSubmit = async (transactionData) => {
+      setLoading(true);
+      setShowForm(false);
+      //setAlertMessage('Sedang memproses konfirmasi pembayaran Anda, harap tunggu...');
+
       try {
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/transactions/create`, 
@@ -235,13 +242,12 @@ const Confirmation = () => {
             },
           }
         );
-
-        setNotification (true);
-        setShowForm(false);
+        setLoading(false);
+        setNotification(true);
         setAlertMessage('Konfirmasi pembayaran Anda sudah selesai dan menunggu validasi dari Admin/Pengurus Rt 05.\r\nBukti penerimaan pembayaran akan dikirimkan setelah pembayaran Anda dinyatakan valid.');
-        // Prepare the transaction details message
-        const bodyMessage = `*Konfirmasi Transfer IPL baru!*%0A%0A*Detail:*%0A*ID Transaksi:* ${response.data.transaction_id}%0A*Oleh:* ${response.data.created_by}%0A*Input:* ${new Date(response.data.created_at).toLocaleString()}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Deskripsi:* ${response.data.description}%0A*Tanggal Pembayaran:* ${new Date(response.data.date).toLocaleString()}%0A*Status:* Perlu dicek`;
-        const number = '6281717889797'; // Replace with the actual admin phone number
+      
+        const bodyMessage = `*Konfirmasi Transfer IPL baru!*%0A%0A*Detail:*%0A*ID Transaksi:* ${response.data.transaction_id}%0A*Oleh:* ${response.data.created_by}%0A*Input:* ${new Date(response.data.created_at).toLocaleString()}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Deskripsi:* ${response.data.description}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A*Status:* Perlu dicek`;
+        const number = '6281717889797'; 
 
         // Send notification to admin via the WhatsApp bot
         try {
@@ -264,8 +270,8 @@ const Confirmation = () => {
         
        
       } catch (error) {
-        setNotification (true);
-        setShowForm(false);
+        setLoading(false);
+        setNotification(true);
         setAlertMessage('Konfirmasi pembayaran Anda gagal, coba ulangi lagi');
         //console.error('Error creating transaction:', error);
       }
@@ -291,12 +297,9 @@ const Confirmation = () => {
         });
 
             const dataMonthlyFees = res.data.data.monthly_fees
-
-            // Filter data yang memiliki status "Lunas"
-            const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas");
-            // Urutkan berdasarkan bulan, dari yang terbaru
+            const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas" || item.status === "TBD");
             const sortedPaidMonths = paidMonths.sort((a, b) => new Date(b.month) - new Date(a.month));
-        
+      
             // Ambil bulan terakhir yang statusnya "Lunas"
             if (sortedPaidMonths.length > 0) {
                 const lastPaidMonth = sortedPaidMonths[0].month;
@@ -319,24 +322,28 @@ const Confirmation = () => {
     };
   
     const generateMonthsOptions = () => {
-        if (!lastPaidIPl) return [];
-        const options = [];
-        let nextMonth = moment(lastPaidIPl, "YYYY-MM").add(1, 'month'); // Bulan setelah bulan terakhir yang "Lunas"
-        let startYear = nextMonth.year();
-        let startMonthIndex = nextMonth.month(); // Bulan setelah bulan terakhir yang "Lunas"
-        let endYear = startYear + 1; 
-
-         // Generate bulan selama 2 tahun ke depan
-        for (let year = startYear; year <= endYear; year++) {
-            for (let month = startMonthIndex; month < 12; month++) {
-            const value = moment().month(month).year(year).format("YYYY-MM");
-            const label = moment().month(month).year(year).format("MMMM YYYY");
-            options.push({ value, label });
-            }
-            startMonthIndex = 0; // Setelah tahun pertama, mulai lagi dari bulan Januari
-        }
-        return options;
+      const defaultStartDate = moment("2024-07", "YYYY-MM"); // Default mulai dari Juli 2024 jika lastPaidIPl kosong
+      const startDate = lastPaidIPl 
+          ? moment(lastPaidIPl, "YYYY-MM").add(1, 'month') 
+          : defaultStartDate;
+  
+      const options = [];
+      const startYear = startDate.year();
+      let startMonthIndex = startDate.month(); // Bulan awal
+      const endYear = startYear + 1; // Generate bulan selama 2 tahun ke depan
+  
+      for (let year = startYear; year <= endYear; year++) {
+          for (let month = startMonthIndex; month < 12; month++) {
+              const value = moment().month(month).year(year).format("YYYY-MM");
+              const label = moment().month(month).year(year).format("MMMM YYYY");
+              options.push({ value, label });
+          }
+          startMonthIndex = 0; // Setelah tahun pertama, mulai lagi dari bulan Januari
+      }
+  
+      return options;
     };
+  
   
     const optionsType = [
       { value: 'cash', label: 'Cash' },
@@ -364,7 +371,7 @@ const Confirmation = () => {
       setIsProcessing(false);
       setSelectedImage(null);
       setLastPaidIPl(null);
-      setWhatsapp(user.whatsapp_number);
+      //setWhatsapp(user.whatsapp_number);
       setWhatsappError("");
     };
 
@@ -441,9 +448,7 @@ const Confirmation = () => {
           <div  className=" flex space-x-3 justify-center mb-4">
             <Button 
             color="success"
-            onClick={() => {
-              confirmFrom()
-            }}
+            as={Link} href="/history"
             >
               Selesai
               <GrFormNextLink  className='w-5 h-5'/>
@@ -459,6 +464,16 @@ const Confirmation = () => {
 
         {showForm && 
           <>
+            <div className='flex justify-start gap-2'>
+              <Link  href="/history" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
+              <span className='text-center content-center'>Riwayat konfirmasi transfer</span>
+              <GrFormNextLink  className='w-5 h-5'/>
+              </Link >
+              <Link href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
+              <span className='text-center content-center'>Data IPL</span>
+              <GrFormNextLink  className='w-5 h-5'/>
+              </Link>
+            </div>
           <p className='py-6'>Lengkapi data yang diperlukan. Jangan sampai terlewat satupun. Setelah yakin terisi semua, jangan lupa klik tombol KIRIM.</p>
           <form onSubmit={handleSubmit} className="">
             <div className="mb-5 ">
@@ -487,12 +502,14 @@ const Confirmation = () => {
                 <Select
                 id="relatedMonths"
                 isMulti
+                isSearchable={false}
                 options={generateMonthsOptions()}
                 value={relatedMonths}
                 onChange={handleMonthChange}
-                placeholder="Pilih bulan"
-                className='bg-gray-50 text-sm z-50 w-full'
+                placeholder="Pilih periode"
+                className='bg-gray-50 text-sm z-20 w-full'
                 disabled={isProcessing}
+                noOptionsMessage={() => "Tidak ada opsi tersedia"}
                 />
                 
                 {errors.relatedMonths && <div className="text-red-500 text-xs pt-2">{errors.relatedMonths}</div>}
@@ -517,7 +534,7 @@ const Confirmation = () => {
                 <TextInput
                   id="proofOfTransfer"
                   name="proofOfTransfer"
-                  value={proofOfTransfer}
+                  value={proofOfTransfer || ""}
                   onChange={(e) => setProofOfTransfer(e.target.value)}
                   placeholder="Masukkan URL lampiran"
                   className='hidden'
@@ -567,17 +584,18 @@ const Confirmation = () => {
 
             <div className="mb-5">
                 <Label htmlFor="proofOfTransfer" className="mb-1 block">No Whatsapp</Label>
-                <span className='mb-3 block text-sm'>Kirim bukti penerimaan pembayaran.</span>
+                <span className='mb-3 block text-sm'>Untuk Menerima Konfirmasi Pembayaran.</span>
                 <TextInput 
                   id='whatsapp'
                   name="whatsapp"
                   placeholder="No Whataspp dimulai dengan 62"
                   className=" w-full md:w-72"
                   type="number"
-                  value={whatsapp}
+                  value={whatsapp || ""}
                   onChange={handleInputChangeWA}
                 />
                 <p className='text-xs pt-2 text-gray-700'>Contoh: 6283863473596</p>
+                {errors.whatsapp && <div className="text-red-500 text-xs pt-2">{errors.whatsapp}</div>}
                 {whatsappError  && <div className="text-red-500 text-xs pt-2">{whatsappError}</div>}
             </div>
 
