@@ -21,18 +21,21 @@ moment.locale('id');
 // moment.tz.setDefault('Asia/Jakarta');
 import MonthOptions from './MonthOptions';
 import Link from 'next/link';
+import { formatPeriod } from './FormatPeriod';
 
 const Report = ({ initialTransaction }) =>  {
   
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState([initialTransaction]);
-  const [totalBalance, setTotalBalance] = useState(null);
-  const [totalIncome, setTotalIncome] = useState(null);
-  const [totalExpense, setTotalExpense] = useState(null);
+  const [totalBalance, setTotalBalance] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpense, setTotalExpense] = useState(0);
+  const [totalOutstandingOverall, setTotalOutstandingOverall] = useState(0)
   const [totalIplPaguyuban, setTotalIplPaguyuban] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState(moment().format('YYYY-MM')); // Format YYYY-MM moment().format('YYYY-MM')
   const [totalIncomePeriod, setTotalIncomePeriod] = useState(0);
   const [totalExpensePeriod, setTotalExpensePeriod] = useState(0);
+  const [tatolOutstndingPeriod, setTotalOutstandingPeriod] = useState(0);
   const [opening_balance,setOpening_balance]= useState(0);
   const [expandedRows, setExpandedRows] = useState(null);
   const [skeleten, setSkeleton] = useState(true);
@@ -82,10 +85,12 @@ const Report = ({ initialTransaction }) =>  {
         setTotalBalance(dataRes.balance.final_balance);
         setTotalIncome(dataRes.balance.total_income);
         setTotalExpense(dataRes.balance.total_expense);
+        //setTotalOutstandingOverall(dataRes.balance.totalOutstandingOverall);
 
         setTotalIncomePeriod(dataRes.monthlyData[0][0].income || 0);
         setTotalExpensePeriod(dataRes.monthlyData[0][0].expense  || 0);
         setOpening_balance(dataRes.monthlyData[0][0].opening_balance  || 0)
+        setTotalOutstandingPeriod(dataRes.monthlyData[0][0].total_outstanding || 0)
 
         setTransactions(dataRes.transactions);
         setSkeleton(false);
@@ -100,6 +105,24 @@ const Report = ({ initialTransaction }) =>  {
   useEffect(() => {
     fetchReport();
   }, [selectedPeriod,fetchReport]);
+
+  const fetchOutstanding = useCallback( async () => {
+    try {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
+      });
+
+     setTotalOutstandingOverall(res.data.total_amount)
+     setLoading(false);
+    } catch (error) {
+        console.error('Error fetching houses data:', error);
+        setLoading(false);
+    }
+  },[]);
+
+  useEffect(() => {
+    fetchOutstanding();
+
+  }, [fetchOutstanding]);
   
 
 
@@ -152,7 +175,7 @@ const Report = ({ initialTransaction }) =>  {
     <>
     
     <CustomThemeProviderSecond>
-          <Card className='mb-5 shadow-none'>
+          <Card className='mb-5 shadow-sm'>
             <div className='flex flex-col lg:flex-row justify-between gap-3'>
               <div className='flex flex-col border-cyan-700 gap-3 border-2 p-3 rounded-md lg:w-1/2'>
                 <div className='flex items-center content-center gap-2  md:gap-3 '>
@@ -195,6 +218,21 @@ const Report = ({ initialTransaction }) =>  {
                 </div>
 
              </div>
+             
+            </div>
+            <div className='flex pt-3 '>
+                <div className='flex flex-col items-start content-start  gap-1  p-2  border-yellow-500 border-2 rounded-md w-full'>
+                    <div className='flex items-center content-center gap-2 '>
+                      <span className=''>
+                        <MdOutlineAccountBalanceWallet className="h-6 w-6 lg:h-7 lg:w-7 text-yellow-500" />
+                      </span>
+                      <div>
+                        <h2 className='md:text-xl text-sm font-bold tracking-[-.05em] text-yellow-500 '>{formatCurrency(totalOutstandingOverall)}</h2>
+                        {/* <h3 className="md:text-base text-sm font-light text-gray-500 dark:text-gray-400">Total Pemasukan</h3> */}
+                      </div>
+                    </div>
+                    <h3 className="md:text-base text-xs font-medium text-yellow-500 dark:text-gray-400">Total Saldo Tertunggak (Outstanding IPL)</h3>
+                </div>
             </div>
           </Card>
          
@@ -203,7 +241,7 @@ const Report = ({ initialTransaction }) =>  {
     </CustomThemeProviderSecond>
         
     <CustomThemeProviderSecond>
-        <Card className='mb-11'>
+        <Card className='mb-5 shadow-sm'>
             <div className='flex items-center justify-start gap-4 mb-4 mt-3 bg-cyan-700 rounded-md p-3 '>
                 <div>
                     <span className='font-semibold text-white'>PERIODE</span>
@@ -256,7 +294,7 @@ const Report = ({ initialTransaction }) =>  {
               </>
             ) :(
               <>
-              <div className='flex gap-1 md:gap-4 justify-between flex-col md:flex-row mb-4'>
+              <div className='flex gap-1 md:gap-4 justify-between flex-col md:flex-row mb-1'>
                   <Card className='bg-green-500 text-white w-full md:w-1/2 '>
                     <h3 className='font-bold text-sm md:text-xl flex items-start'>
                       <span><MdOutlineAccountBalanceWallet className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span>
@@ -277,9 +315,19 @@ const Report = ({ initialTransaction }) =>  {
                       </Card>
                   </div>
               </div>
+              {/* <div className='mb-4'>
+                <Card className='bg-yellow-500 text-white w-full'>
+                    <h3 className='font-bold text-sm md:text-xl flex items-start'>
+                      <span><MdOutlineAccountBalanceWallet className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span>
+                      <span className=''>Saldo Tertunggak (Outstanding IPL)</span>
+                    </h3>
+                    <span className='font-semibold text-xs md:text-lg'>{formatCurrency(tatolOutstndingPeriod)}</span>
+                    
+                  </Card>
+              </div> */}
 
               <div className="overflow-x-auto">
-                    <Table striped >
+                    <Table  >
                         <Table.Head className='' >
                             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-2/3'>Keterangan</Table.HeadCell>
                             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
@@ -288,16 +336,25 @@ const Report = ({ initialTransaction }) =>  {
                         <Table.Body className="divide-y">
                           {transactions ? (
                             <>
+                            <Table.Row>
+                              <Table.Cell colSpan="3" className='bg-gray-100 pt-2.5 pb-1.5 px-2'>
+                              <span className='flex items-center content-center'>
+                              <span>{getTypeIcon('ipl')} </span>
+                              <span className='uppercase font-bold md:text-base text-green-700 ml-2'>Pemasukan:</span>
+                              </span>
+                               
+                              </Table.Cell>
+                            </Table.Row>
                               <React.Fragment key='trx'>
                                 {transactions.ipl.length > 0 && (
                                   <>
                                   <Table.Row 
                                     className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
                                     onClick={() => handleExpandRow('ipl')}>
-                                      <Table.Cell colSpan="2" className={`${getTextColor('ipl')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
-                                        Masuk (IPL)
+                                      <Table.Cell colSpan="2" className={`${getTextColor('ipl')} pt-1 px-4  pb-2 md:px-5 text-xs md:text-base font-medium`}>
+                                        Rutin (IPL)
                                       </Table.Cell>
-                                      <Table.Cell className={`${getTextColor('ipl')} flex items-center content-center justify-around  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
+                                      <Table.Cell className={`${getTextColor('ipl')} flex items-center content-center justify-end   py-1 px-3  text-xs md:text-base font-medium`}>
                                         <span className='pr-1' >+</span>
                                         <span>{formatCurrency(transactions.totalIpl)}</span>
                                         <span className='pl-1'>{expandedRows === 'ipl' ? <IoChevronUpSharp /> : <IoChevronDownSharp />}</span>
@@ -308,21 +365,34 @@ const Report = ({ initialTransaction }) =>  {
                                       <>
                                       {transactions.ipl.map((transaction, index) => (
                                           <Table.Row key={index} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'ipl'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
-                                            <Table.Cell className={`${getTextColor('ipl')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                            <Table.Cell className={`${getTextColor('ipl')} py-1 px-4 md:py-2 md:px-5 text-xs md:text-base`}>
                                             <span className='flex items-center content-center'>
-                                              <span>{getTypeIcon('ipl')} </span>
-                                              <span className="ml-2">{transaction.description}</span>
+                                             
+                                              {/* <span>{getTypeIcon('ipl')} </span> */}
+                                        
+                                              <span className="">
+                                                {
+                                                    transaction.transaction_type === 'ipl' ? (
+                                                        <span>{`IPL ${transaction.house_id}, ${formatPeriod(transaction.related_months)}`}</span>  
+                                                    ) : (
+                                                        <span>{transaction.description}</span> 
+                                                    )
+                                                }
+                                                
+                                                </span>
                                             </span>
                                               
                                             </Table.Cell>
-                                            <Table.Cell className={`${getTextColor('ipl')} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
-                                            <Table.Cell className={`${getTextColor('ipl')} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>{formatCurrency(transaction.amount)}</Table.Cell>
+                                            <Table.Cell className={`${getTextColor('ipl')} items-center content-center py-1 px-4 md:py-2 md:px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
+                                            <Table.Cell className={`${getTextColor('ipl')} items-center content-center  justify-end py-1 px-4 md:py-2 md:px-3 text-xs md:text-base`}><span className='flex items-center content-center justify-end pr-5'>{formatCurrency(transaction.amount)}</span></Table.Cell>
                                           </Table.Row>
                                         ))}
                                         <TableRow  className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'ipl'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
-                                            <Table.Cell colSpan={3} className={`${getTextColor('ipl')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                            <span className='flex items-center content-center'>
-                                              <span className="ml-2">...</span>
+                                            <Table.Cell colSpan={3} className={`${getTextColor('ipl')} py-1 px-4  md:px-3 text-xs md:text-base`}>
+                                            <span className='flex items-center content-center justify-end'>
+                                              <span className="mb-2 font-semibold">
+                                                <a href={`/cashflow?period=${selectedPeriod}`}>Lihat semua <GrFormNextLink className='inline'/></a>
+                                                </span>
                                             </span>
                                               
                                             </Table.Cell>
@@ -334,40 +404,40 @@ const Report = ({ initialTransaction }) =>  {
                                   
                                 )}
 
-                                {transactions.income.length > 0 && (
+                                {transactions.inOther.length > 0 && (
                                   <>
                                     <Table.Row 
                                       className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
                                       onClick={() => handleExpandRow('income')}>
-                                        <Table.Cell colSpan="2" className={`${getTextColor('income')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
-                                          Masuk (Lainnya)
+                                        <Table.Cell colSpan="2" className={`${getTextColor('income')} pt-1 px-4  pb-2 md:px-5 text-xs md:text-base font-medium`}>
+                                           Lain-Lain
                                         </Table.Cell>
-                                        <Table.Cell className={`${getTextColor('income')} flex items-center content-center justify-around  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
+                                        <Table.Cell className={`${getTextColor('income')} flex items-center content-center justify-end   py-1 px-3 text-xs md:text-base font-medium`}>
                                           <span className='pr-1' >+</span>
-                                          <span>{formatCurrency(transactions.totalIncome)}</span>
+                                          <span>{formatCurrency(transactions.totalInOther)}</span>
                                           <span className='pl-1'>{expandedRows === 'income' ? <IoChevronUpSharp /> : <IoChevronDownSharp />}</span>
                                         </Table.Cell>
                                     </Table.Row>
                                     {
                                     expandedRows === 'income' && (
                                       <>
-                                      {transactions.income.map((transaction, index) => (
+                                      {transactions.inOther.map((transaction, index) => (
                                           <Table.Row key={index} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'income'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
-                                            <Table.Cell className={`${getTextColor('income')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
+                                            <Table.Cell className={`${getTextColor('income')}  py-1 px-4 md:py-2  md:px-5 text-xs md:text-base`}>
                                             <span className='flex items-center content-center'>
-                                              <span>{getTypeIcon('income')} </span>
-                                              <span className="ml-2">{transaction.description}</span>
+                                              {/* <span>{getTypeIcon('income')} </span> */}
+                                              <span className="">{transaction.description}</span>
                                             </span>
                                               
                                             </Table.Cell>
-                                            <Table.Cell className={`${getTextColor('income')} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
-                                            <Table.Cell className={`${getTextColor('income')} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>{formatCurrency(transaction.amount)}</Table.Cell>
+                                            <Table.Cell className={`${getTextColor('income')} items-center content-center  py-1 px-4 md:py-2 md:px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
+                                            <Table.Cell className={`${getTextColor('income')} items-center content-center justify-end  py-1 px-4 md:py-2 md:px-3 text-xs md:text-base`}><span className='flex items-center content-center justify-end pr-5'>{formatCurrency(transaction.amount)}</span></Table.Cell>
                                           </Table.Row>
                                         ))}
                                         <TableRow  className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'income'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
-                                            <Table.Cell colSpan={3} className={`${getTextColor('income')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                            <span className='flex items-center content-center'>
-                                              <span className="ml-2">...</span>
+                                            <Table.Cell colSpan={3} className={`${getTextColor('income')}  py-1 px-4  md:px-3 text-xs md:text-base`}>
+                                            <span className='flex items-center content-center justify-end'>
+                                              <span className="mb-2 font-semibold"><a href={`/cashflow?period=${selectedPeriod}`}>Lihat semua <GrFormNextLink className='inline'/></a></span>
                                             </span>
                                             </Table.Cell>
                                         </TableRow>
@@ -378,53 +448,214 @@ const Report = ({ initialTransaction }) =>  {
                                   
                                 )}
 
-                                {transactions.expense.length > 0 && (
-                                  <>
-                                    <Table.Row 
-                                      className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
-                                      onClick={() => handleExpandRow('expense')}>
-                                        <Table.Cell colSpan="2" className={`${getTextColor('expense')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
-                                          Keluar
-                                        </Table.Cell>
-                                        <Table.Cell className={`${getTextColor('expense')} flex items-center content-center justify-around  py-2 px-2 md:py-3 md:px-3 text-xs md:text-base font-bold`}>
-                                          <span className='pr-1' >-</span>
-                                          <span>{formatCurrency(transactions.totalExpense)}</span>
-                                          <span className='pl-1'>{expandedRows === 'expense' ? <IoChevronUpSharp /> : <IoChevronDownSharp />}</span>
-                                        </Table.Cell>
-                                    </Table.Row>
-                                    {
-                                    expandedRows === 'expense' && (
-                                      <>
-                                      {transactions.expense.map((transaction, index) => (
-                                          <Table.Row key={index} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'expense'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
-                                            <Table.Cell className={`${getTextColor('expense')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                            <span className='flex items-center content-center'>
-                                              <span>{getTypeIcon('expense')} </span>
-                                              <span className="ml-2">{transaction.description}</span>
-                                            </span>
-                                              
-                                            </Table.Cell>
-                                            <Table.Cell className={`${getTextColor('expense')} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
-                                            <Table.Cell className={`${getTextColor('expense')} items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>{formatCurrency(transaction.amount)}</Table.Cell>
-                                          </Table.Row>
-                                        ))}
-
-                                        <TableRow  className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'expense'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
-                                            <Table.Cell colSpan={3} className={`${getTextColor('expense')} py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                                            <span className='flex items-center content-center'>
-                                              <span className="ml-2">...</span>
-                                            </span>
-                                              
-                                            </Table.Cell>
-                                        </TableRow>
-                                      </>
-                                    )
-                                    }
-                                  </>
-                                  
-                                )}
                                 
+
                               </React.Fragment>
+                            {/* <Table.Row>
+                            <Table.Cell colSpan="3" className='bg-white py-1.5 px-2 md:text-base md:py-1.5 md:px-3'>
+                           
+                            </Table.Cell>
+                            </Table.Row> */}
+                            
+                            <Table.Row>
+                            <Table.Cell colSpan="3" className='bg-gray-100 pt-2.5 pb-1.5 px-2 md:text-base md:pt-2.5 md:pb-1.5 md:px-3'>
+                            <span className='flex items-center content-center'>
+                              <span>{getTypeIcon('expense')} </span>
+                              <span className='uppercase font-bold md:text-base text-red-500 ml-2'>Pengeluaran:</span>
+                            </span>
+                            </Table.Cell>
+                            </Table.Row>
+                            <React.Fragment key='trxOut'>
+                                {transactions.OutRutin.length > 0 && (
+                                  <>
+                                  <Table.Row 
+                                    className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
+                                    onClick={() => handleExpandRow('OutRutin')}>
+                                      <Table.Cell colSpan="2" className={`text-red-500  pt-1 px-4  pb-2 md:px-5 text-xs md:text-base font-medium`}>
+                                        Rutin
+                                      </Table.Cell>
+                                      <Table.Cell className={`text-red-500 flex items-center content-center justify-end  py-1 px-3 text-xs md:text-base font-medium`}>
+                                        <span className='pr-1' >-</span>
+                                        <span>{formatCurrency(transactions.totalOutRutin)}</span>
+                                        <span className='pl-1'>{expandedRows === 'OutRutin' ? <IoChevronUpSharp /> : <IoChevronDownSharp />}</span>
+                                      </Table.Cell>
+                                  </Table.Row>
+                                  {
+                                    expandedRows === 'OutRutin' && (
+                                      <>
+                                      {transactions.OutRutin.map((transaction, index) => (
+                                          <Table.Row key={index} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'OutRutin'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                          <Table.Cell className={`${getTextColor('expense')}  py-1 px-4 md:py-2  md:px-5 text-xs md:text-base`}>
+                                          <span className='flex items-center content-center'>
+                                            {/* <span>{getTypeIcon('expense')} </span> */}
+                                            <span className="">{transaction.description}</span>
+                                          </span>
+                                            
+                                          </Table.Cell>
+                                          <Table.Cell className={`${getTextColor('expense')} items-center content-center py-1 md:py-2 px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
+                                          <Table.Cell className={`${getTextColor('expense')} items-center content-center py-1 md:py-2 px-3 justify-end text-xs md:text-base`}><span className='flex items-center content-center justify-end pr-5'>{formatCurrency(transaction.amount)}</span></Table.Cell>
+                                        </Table.Row>
+                                        ))}
+                                        <TableRow  className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'OutRutin'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                            <Table.Cell colSpan={3} className={`${getTextColor('expense')} py-1 px-4  md:px-3  text-xs md:text-base`}>
+                                            <span className='flex items-center content-center justify-end'>
+                                              <span className="mb-2 font-semibold">
+                                                <a href={`/cashflow?period=${selectedPeriod}`}>Lihat semua <GrFormNextLink className='inline'/></a>
+                                                </span>
+                                            </span>
+                                              
+                                            </Table.Cell>
+                                        </TableRow>
+                                      </>
+                                    )
+                                  }
+                                  </>
+                                  
+                                )}
+
+                                {transactions.OutFasum.length > 0 && (
+                                  <>
+                                  <Table.Row 
+                                    className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
+                                    onClick={() => handleExpandRow('OutFasum')}>
+                                      <Table.Cell colSpan="2" className={`text-red-500  pt-1 px-4  pb-2 md:px-5 text-xs md:text-base font-medium`}>
+                                        Fasilitas Umum
+                                      </Table.Cell>
+                                      <Table.Cell className={`text-red-500 flex items-center content-center justify-end  py-1 px-3 text-xs md:text-base font-medium`}>
+                                        <span className='pr-1' >-</span>
+                                        <span>{formatCurrency(transactions.totalOutFasum)}</span>
+                                        <span className='pl-1'>{expandedRows === 'OutFasum' ? <IoChevronUpSharp /> : <IoChevronDownSharp />}</span>
+                                      </Table.Cell>
+                                  </Table.Row>
+                                  {
+                                    expandedRows === 'OutFasum' && (
+                                      <>
+                                      {transactions.OutFasum.map((transaction, index) => (
+                                          <Table.Row key={index} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'OutFasum'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                          <Table.Cell className={`${getTextColor('expense')}  py-1 px-4 md:py-2  md:px-5 text-xs md:text-base`}>
+                                          <span className='flex items-center content-center'>
+                                            {/* <span>{getTypeIcon('expense')} </span> */}
+                                            <span className="">{transaction.description}</span>
+                                          </span>
+                                            
+                                          </Table.Cell>
+                                          <Table.Cell className={`${getTextColor('expense')} items-center content-center py-1 px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
+                                          <Table.Cell className={`${getTextColor('expense')} items-center content-center py-1 px-3 justify-end text-xs md:text-base`}><span className='flex items-center content-center justify-end pr-5'>{formatCurrency(transaction.amount)}</span></Table.Cell>
+                                        </Table.Row>
+                                        ))}
+                                        <TableRow  className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'OutFasum'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                            <Table.Cell colSpan={3} className={`${getTextColor('expense')} py-1 px-4  md:px-3  text-xs md:text-base`}>
+                                            <span className='flex items-center content-center justify-end'>
+                                              <span className="mb-2 font-semibold">
+                                                <a href={`/cashflow?period=${selectedPeriod}`}>Lihat semua <GrFormNextLink className='inline'/></a>
+                                                </span>
+                                            </span>
+                                              
+                                            </Table.Cell>
+                                        </TableRow>
+                                      </>
+                                    )
+                                  }
+                                  </>
+                                  
+                                )}
+
+                                {transactions.OutFasos.length > 0 && (
+                                  <>
+                                  <Table.Row 
+                                    className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
+                                    onClick={() => handleExpandRow('OutFasos')}>
+                                      <Table.Cell colSpan="2" className={`text-red-500  pt-1 px-4  pb-2 md:px-5 text-xs md:text-base font-medium`}>
+                                        Fasilitas Sosial
+                                      </Table.Cell>
+                                      <Table.Cell className={`text-red-500 flex items-center content-center justify-end  py-1 px-3 text-xs md:text-base font-medium`}>
+                                        <span className='pr-1' >-</span>
+                                        <span>{formatCurrency(transactions.totalOutFasos)}</span>
+                                        <span className='pl-1'>{expandedRows === 'OutFasos' ? <IoChevronUpSharp /> : <IoChevronDownSharp />}</span>
+                                      </Table.Cell>
+                                  </Table.Row>
+                                  {
+                                    expandedRows === 'OutFasos' && (
+                                      <>
+                                      {transactions.OutFasos.map((transaction, index) => (
+                                          <Table.Row key={index} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'OutFasos'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                          <Table.Cell className={`${getTextColor('expense')}  py-1 px-4 md:py-2  md:px-5 text-xs md:text-base`}>
+                                          <span className='flex items-center content-center'>
+                                            {/* <span>{getTypeIcon('expense')} </span> */}
+                                            <span className="">{transaction.description}</span>
+                                          </span>
+                                            
+                                          </Table.Cell>
+                                          <Table.Cell className={`${getTextColor('expense')} items-center content-center py-1 px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
+                                          <Table.Cell className={`${getTextColor('expense')} items-center content-center py-1 px-3 justify-end text-xs md:text-base`}><span className='flex items-center content-center justify-end pr-5'>{formatCurrency(transaction.amount)}</span></Table.Cell>
+                                        </Table.Row>
+                                        ))}
+                                        <TableRow  className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'OutFasos'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                            <Table.Cell colSpan={3} className={`${getTextColor('expense')} py-1 px-4  md:px-3  text-xs md:text-base`}>
+                                            <span className='flex items-center content-center justify-end'>
+                                              <span className="mb-2 font-semibold">
+                                                <a href={`/cashflow?period=${selectedPeriod}`}>Lihat semua <GrFormNextLink className='inline'/></a>
+                                                </span>
+                                            </span>
+                                              
+                                            </Table.Cell>
+                                        </TableRow>
+                                      </>
+                                    )
+                                  }
+                                  </>
+                                  
+                                )}
+
+                                {transactions.OutOther.length > 0 && (
+                                  <>
+                                  <Table.Row 
+                                    className={`bg-white dark:border-gray-700 dark:bg-gray-800 cursor-pointer`}
+                                    onClick={() => handleExpandRow('OutOther')}>
+                                      <Table.Cell colSpan="2" className={`text-red-500  pt-1 px-4  pb-2 md:px-5 text-xs md:text-base font-medium`}>
+                                       Lain-Lain
+                                      </Table.Cell>
+                                      <Table.Cell className={`text-red-500 flex items-center content-center justify-end  py-1 px-3 text-xs md:text-base font-medium`}>
+                                        <span className='pr-1' >-</span>
+                                        <span>{formatCurrency(transactions.totalOutOther)}</span>
+                                        <span className='pl-1'>{expandedRows === 'OutOther' ? <IoChevronUpSharp /> : <IoChevronDownSharp />}</span>
+                                      </Table.Cell>
+                                  </Table.Row>
+                                  {
+                                    expandedRows === 'OutOther' && (
+                                      <>
+                                      {transactions.OutOther.map((transaction, index) => (
+                                          <Table.Row key={index} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'OutOther'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                          <Table.Cell className={`${getTextColor('expense')}  py-1 px-4 md:py-2  md:px-5 text-xs md:text-base`}>
+                                          <span className='flex items-center content-center'>
+                                            {/* <span>{getTypeIcon('expense')} </span> */}
+                                            <span className="">{transaction.description}</span>
+                                          </span>
+                                            
+                                          </Table.Cell>
+                                          <Table.Cell className={`${getTextColor('expense')} items-center content-center py-1 px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
+                                          <Table.Cell className={`${getTextColor('expense')} items-center content-center py-1 px-3 justify-end text-xs md:text-base`}><span className='flex items-center content-center justify-end pr-5'>{formatCurrency(transaction.amount)}</span></Table.Cell>
+                                        </Table.Row>
+                                        ))}
+                                        <TableRow  className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'OutOther'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                            <Table.Cell colSpan={3} className={`${getTextColor('expense')} py-1 px-4  md:px-3  text-xs md:text-base`}>
+                                            <span className='flex items-center content-center justify-end'>
+                                              <span className="mb-2 font-semibold">
+                                                <a href={`/cashflow?period=${selectedPeriod}`}>Lihat semua <GrFormNextLink className='inline'/></a>
+                                                </span>
+                                            </span>
+                                              
+                                            </Table.Cell>
+                                        </TableRow>
+                                      </>
+                                    )
+                                  }
+                                  </>
+                                  
+                                )}
+
+                                
+                            </React.Fragment>
                             </>
                           ) : (
                             <Table.Row>

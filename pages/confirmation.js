@@ -3,11 +3,12 @@ import {useState } from 'react';
 import Header from '../components/Header.js';
 import SideMenu from '../components/Sidebar.js';
 import Form from '../components/FormConfirmation.js'
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRequireAuth } from '../utils/authUtils.js'; 
-import { Button, Card } from 'flowbite-react';
+import { Button } from 'flowbite-react';
 import { useRouter } from 'next/router';
-const DataTbd = () => {
+
+const FormConfirm = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const currentPath = router.asPath; 
@@ -32,7 +33,7 @@ const DataTbd = () => {
 
     <Header toggleSidebar={toggleSidebar}/>
     <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-md mx-auto'>
+    <main className='max-w-screen-md mx-auto min-h-dvh'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5  mb-11'>
           <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>Konfirmasi Transfer IPL</h1>
@@ -67,4 +68,4 @@ const DataTbd = () => {
   );
 }
 
-export default DataTbd;
+export default FormConfirm;

@@ -57,6 +57,8 @@ export const useRequireAuth = (allowedRoles = ['admin', 'user', 'editor', 'super
   
       if (!session && status !== 'authenticated') {
         // Jika belum login, tetap di halaman dan tampilkan LoginCard
+        //signOut();
+        //router.push('/');
         return;
       }
       
@@ -75,7 +77,24 @@ export const useRequireAuth = (allowedRoles = ['admin', 'user', 'editor', 'super
 
 
   };
+
+  const useAuthRedirectDashboard = () => {
+    useEffect(() => {
+      if (status === 'loading') return; // Tunggu hingga session selesai dimuat
+  
+      if (!session && status !== 'authenticated') {
+        // Jika belum login, tetap di halaman dan tampilkan LoginCard
+        //signOut();
+        router.push('/');
+        return;
+      }
+      
+  
+      // Jika sudah login, tidak ada tindakan tambahan
+    }, [session, status]);
+
+  };
   
 
-  return { checkAuthAndRole, useAuthRedirect };
+  return { checkAuthAndRole, useAuthRedirect, useAuthRedirectDashboard };
 };

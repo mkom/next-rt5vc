@@ -28,8 +28,8 @@ import Link from 'next/link';
 const ITEMS_PER_PAGE = 20;
 
 const Ipl = ({ initialHouses }) => {
-  const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
-  useAuthRedirect();
+  const { useAuthRedirectDashboard } = useRequireAuth(['admin', 'editor', 'superadmin']);
+  useAuthRedirectDashboard();
   const { data: session, status } = useSession();
   const [houses, setHouses] = useState([initialHouses]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -150,7 +150,7 @@ const Ipl = ({ initialHouses }) => {
         (selectedGroupLower === '' || house?.group?.toLowerCase() === selectedGroupLower) &&
         (selectedStatus === '' || house.monthly_fees.find(status => status.month === selectedPeriod)?.status === selectedStatus) &&
         (house.monthly_fees?.length > 0 && house.monthly_status?.length > 0) &&
-        monthlyStatus && monthlyStatus.status === 'Isi'
+        monthlyStatus && (monthlyStatus.status === 'Isi' || monthlyStatus.status === 'Weekend' )
       );
     })
   : [];
@@ -220,7 +220,7 @@ const Ipl = ({ initialHouses }) => {
     
     <Header toggleSidebar={toggleSidebar}/>
     <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-md mx-auto'>
+    <main className='max-w-screen-md mx-auto min-h-dvh'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5  mb-11'>
             <h1 className='text-xl mb-4 flex font-semibold text-gray-900 sm:text-2xl dark:text-white'>
@@ -297,7 +297,7 @@ const Ipl = ({ initialHouses }) => {
                         </thead>
                         <tbody className="divide-y border-b text-xs">
                         {currentPageData.map((house, index) => (  
-                            <tr key={index} className="bg-white ">
+                            <tr key={index} className={` ${house.monthly_status.find((status) => status.month === selectedPeriod)?.status === 'Weekend' ? 'bg-purple-200':'bg-white'} `}>
                                 <td className="py-2 px-2 ">{offset + index + 1}</td>
                                 <td className="py-2 px-2">{house.house_id}</td>
                                 <td className="py-2 px-2 ">{house.resident_name}</td>

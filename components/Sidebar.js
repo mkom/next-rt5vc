@@ -2,8 +2,14 @@
 import { useRouter } from 'next/router';
 import { Sidebar } from "flowbite-react";
 import { useSession } from 'next-auth/react';
-import { IoIosHome } from "react-icons/io";
-import { HiChartPie,HiDocumentReport,HiUser, HiViewBoards } from "react-icons/hi";
+import { HiChartPie} from "react-icons/hi";
+
+import { FaHome } from "react-icons/fa";
+import { FaRegFileAlt  } from "react-icons/fa";
+import { FaWpforms } from "react-icons/fa";
+import { FaRegNewspaper  } from "react-icons/fa";
+import { FaTasks } from "react-icons/fa";
+import { FaList  } from "react-icons/fa";
 
 const SideMenu = ({ isOpen }) => {
     const { data: session } = useSession();
@@ -22,24 +28,24 @@ const SideMenu = ({ isOpen }) => {
         <Sidebar.Items >
 
             <Sidebar.ItemGroup>
-            <Sidebar.Item href="/" icon={IoIosHome}>
+            <Sidebar.Item href="/" icon={FaHome}>
                 Beranda
             </Sidebar.Item>
 
-            <Sidebar.Item href="/cashflow">
+            <Sidebar.Item href="/cashflow" icon={FaRegFileAlt }>
                 Cashflow
             </Sidebar.Item>
 
-            <Sidebar.Item href="/ipl" >
+            <Sidebar.Item href="/ipl" icon={FaTasks}>
                 IPL
             </Sidebar.Item>
-            <Sidebar.Item href="/outstanding" >
+            <Sidebar.Item href="/outstanding" icon={FaRegNewspaper}>
                 Outstanding
             </Sidebar.Item>
-            <Sidebar.Item href="/confirmation" >
+            <Sidebar.Item href="/confirmation" icon={FaWpforms}>
                 Konfirmasi Transfer
             </Sidebar.Item>
-            <Sidebar.Item href="/history" >
+            <Sidebar.Item href="/history" icon={FaList }>
                 Riwayat Pembayaran
             </Sidebar.Item>
 

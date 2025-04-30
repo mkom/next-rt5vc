@@ -27,6 +27,7 @@ const Confirmation = () => {
     const router = useRouter();
     const { useAuthRedirect } = useRequireAuth(['user','admin', 'editor', 'superadmin']);
     useAuthRedirect();
+    
     const [houseId, setHouseId] = useState('');
     const [houseName, setHouseName] = useState('');
     const [amount, setAmount] = useState('');
@@ -246,7 +247,15 @@ const Confirmation = () => {
         setNotification(true);
         setAlertMessage('Konfirmasi pembayaran Anda sudah selesai dan menunggu validasi dari Admin/Pengurus Rt 05.\r\nBukti penerimaan pembayaran akan dikirimkan setelah pembayaran Anda dinyatakan valid.');
       
-        const bodyMessage = `*Konfirmasi Transfer IPL baru!*%0A%0A*Detail:*%0A*ID Transaksi:* ${response.data.transaction_id}%0A*Oleh:* ${response.data.created_by}%0A*Input:* ${new Date(response.data.created_at).toLocaleString()}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Deskripsi:* ${response.data.description}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A*Status:* Perlu dicek`;
+        const bodyMessage = `*Konfirmasi Transfer IPL baru!*\n\n`
+            + `*Detail:*\n`
+            + `*ID Transaksi:* ${response.data.transaction_id}\n`
+            + `*Oleh:* ${response.data.created_by}\n`
+            + `*Input:* ${new Date(response.data.created_at).toLocaleString()}\n`
+            + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
+            + `*Deskripsi:* ${response.data.description}\n`
+            + `*Tanggal Pembayaran:* ${moment(response.data.date).format('DD MMM YYYY')}\n`
+            + `*Status:* Perlu dicek`;
         const number = '6281717889797'; 
 
         // Send notification to admin via the WhatsApp bot
@@ -296,10 +305,12 @@ const Confirmation = () => {
 
         });
 
+           // console.log(res.data.data)
             const dataMonthlyFees = res.data.data.monthly_fees
             const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas" || item.status === "TBD");
             const sortedPaidMonths = paidMonths.sort((a, b) => new Date(b.month) - new Date(a.month));
       
+            //console.log(sortedPaidMonths)
             // Ambil bulan terakhir yang statusnya "Lunas"
             if (sortedPaidMonths.length > 0) {
                 const lastPaidMonth = sortedPaidMonths[0].month;
@@ -514,11 +525,11 @@ const Confirmation = () => {
                 
                 {errors.relatedMonths && <div className="text-red-500 text-xs pt-2">{errors.relatedMonths}</div>}
                 
-                {relatedMonths && relatedMonths.length > 0 && 
+                {/* {relatedMonths && relatedMonths.length > 0 && feeIPl*relatedMonths.length > 0 && 
                 <>
                 <p className='text-xs pt-3 text-gray-700'>Nominal yang harus dibayarkan: <strong>{formatCurrency(feeIPl*relatedMonths.length)}</strong></p>
                 </>
-              }
+                } */}
             </div>
             <div className="mb-5 ">
                 <Label htmlFor="proofOfTransfer" className="mb-2 block">Bukti Transfer</Label>
@@ -583,7 +594,7 @@ const Confirmation = () => {
             </div>
 
             <div className="mb-5">
-                <Label htmlFor="proofOfTransfer" className="mb-1 block">No Whatsapp</Label>
+                <Label htmlFor="proofOfTransfer" className="mb-1 block">No Whatsapp Anda</Label>
                 <span className='mb-3 block text-sm'>Untuk Menerima Konfirmasi Pembayaran.</span>
                 <TextInput 
                   id='whatsapp'

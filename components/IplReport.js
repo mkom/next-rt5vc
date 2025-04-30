@@ -142,7 +142,7 @@ const IplReport = ({ initialHouses }) =>  {
         (selectedGroupLower === '' || house?.group?.toLowerCase() === selectedGroupLower) &&
         (selectedStatus === '' || house.monthly_fees.find(status => status.month === selectedPeriod)?.status === selectedStatus) &&
         ( house && house.monthly_fees?.length > 0 && house.monthly_status?.length > 0) &&
-        monthlyStatus && monthlyStatus.status === 'Isi'
+        monthlyStatus && (monthlyStatus.status === 'Isi' || monthlyStatus.status === 'Weekend' )
       );
     })
   : [];
@@ -164,17 +164,17 @@ const IplReport = ({ initialHouses }) =>  {
         )) &&
         (selectedGroupLower === '' || house?.group?.toLowerCase() === selectedGroupLower) &&
         ( house && house.monthly_fees?.length > 0 && house.monthly_status?.length > 0) &&
-        monthlyStatus && monthlyStatus.status === 'Isi'
+        monthlyStatus && (monthlyStatus.status === 'Isi' || monthlyStatus.status === 'Weekend' )
       );
     })
   : [];
 
   const monthlyStatusCount = CountHouses.reduce((acc, house) => {
-    if (!house || !house.monthly_fees) return acc; // Add this line to skip houses without monthly_fees
+    if (!house || !house.monthly_fees) return acc;
   
     const month = house.monthly_fees?.find((status) => status.month === selectedPeriod)?.month;
     if (month) {
-      acc[month] = acc[month] || { Lunas: 0, BelumBayar: 0, Tbd: 0 };
+      acc[month] = acc[month] || { Lunas: 0, BelumBayar: 0, Tbd: 0, Isi:0, Weekend: 0 };
       const status = house.monthly_fees.find((status) => status.month === selectedPeriod)?.status;
       if (status === 'Lunas') {
         acc[month].Lunas++;
@@ -183,8 +183,17 @@ const IplReport = ({ initialHouses }) =>  {
       } else if (status === 'TBD') {
         acc[month].Tbd++;
       }
+
+      const Mstatus = house.monthly_status.find((status) => status.month === selectedPeriod)?.status;
+      if (Mstatus === 'Isi') {
+        acc[month].Isi++;
+      } else if (Mstatus === 'Weekend') {
+        acc[month].Weekend++;
+      }
     }
     acc.total = acc.total || 0;
+    acc.regular =  acc[month].Isi;
+    acc.weekend =  acc[month].Weekend;
     acc.total++;
     acc.Tertib = acc[month].Lunas +  acc[month].Tbd;
     acc.TertibPercentage = (acc.Tertib / acc.total) * 100;
@@ -290,25 +299,7 @@ const IplReport = ({ initialHouses }) =>  {
 
       {skeleten ? (
         <div className=' '>
-          {/* <div className='w-full animate-pulse flex gap-1 md:gap-4 justify-start flex-row mb-4'>
-          <Card className='bg-gray-200 text-white w-1/2'>
-            <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
-              <span className='flex '>
-                <span className='text-xs lg:text-sm font-normal flex items-center bg-gray-400 w-32 h-2'></span>
-              </span>
-              
-            </h3>
-            <span className='font-semibold text-sm md:text-lg bg-gray-400 w-8 h-2'></span>
-          </Card>
-          <Card className='bg-gray-200 text-white w-1/2'>
-          <h3 className='font-bold text-sm md:text-xl flex items-start'>
-            <span className='flex '>
-              <span className='text-xs lg:text-sm font-normal flex items-center bg-gray-400 w-32 h-2'></span>
-            </span>
-          </h3>
-          <span className='font-semibold text-sm md:text-lg bg-gray-400 w-8 h-2'></span>
-          </Card>
-          </div> */}
+        
 
           <div className='animate-pulse'>
             <Button.Group className='mb-4'>
@@ -336,22 +327,31 @@ const IplReport = ({ initialHouses }) =>  {
         </div> 
       ): (
         <div>
-          <div>
+           <div>
+            {/* {console.log(monthlyStatusCount)} */}
             <Button.Group className='mb-2'>
-            <Button color="gray" size="xs" className='p-1 cst-btn'><HiHome className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Wajib IPL</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount?.total || 0}</span></Button>
-            <Button color="gray" size="xs" className='p-1 cst-btn'><AiFillLike  className="text-blue-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Tertib IPL</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount?.Tertib || 0}</span></Button>
-            <Button color="gray" size="xs" className='p-1 cst-btn'><TbCirclePercentage className="text-blue-700 sm:mr-1 h-5 w-5" /><span className='text-xs' ></span> <span color="info" className='text-xs'>{formatPercentage(monthlyStatusCount?.TertibPercentage)}</span></Button>
+            <Button color="gray" size="xs" className='p-1 cst-btn justify-center align-middle'><HiHome className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Regular:  {monthlyStatusCount?.regular || 0}</span></Button>
+            <Button color="gray" size="xs" className='p-1 cst-btn'><HiHome  className="text-purple-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Weekend: {monthlyStatusCount?.weekend || 0}</span></Button>
+            <Button color="gray" size="xs" className='p-1 cst-btn'><HiHome className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Total: {monthlyStatusCount?.total || 0}</span></Button>
             </Button.Group>
           </div>     
           <div>
+            <Button.Group className='mb-2'>
+            {/* <Button color="gray" size="xs" className='p-1 cst-btn'><HiHome className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Total</span> <span color="info" className='sm:ml-1 text-xs'>: {monthlyStatusCount?.total || 0}</span></Button> */}
+            <Button color="gray" size="xs" className='p-1 cst-btn'><IoCheckmarkDoneCircleSharp  className="text-green-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Lunas: {monthlyStatusCount?.Tertib || 0}</span></Button>
+            <Button color="gray" size="xs" className='p-1 cst-btn'><IoCloseCircle  className="text-red-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Belum Bayar: {monthlyStatusCount[selectedPeriod]?.BelumBayar || 0}</span></Button>
+            <Button color="gray" size="xs" className='p-1 cst-btn'><TbCirclePercentage className="text-blue-700 sm:mr-1 h-5 w-5" /><span className='text-xs' ></span> <span color="info" className='text-xs'>{formatPercentage(monthlyStatusCount?.TertibPercentage)}</span></Button>
+            </Button.Group>
+          </div>     
+          {/* <div>
             <Button.Group className='mb-4'>
             <Button color="gray" size="xs" className='p-1 cst-btn'><IoCheckmarkDoneCircleSharp className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Lunas</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.Lunas || 0}</span></Button>
             <Button color="gray" size="xs" className='p-1 cst-btn'><IoCloseCircle className="text-red-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Belum Bayar</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.BelumBayar || 0}</span></Button>
             <Button color="gray" size="xs" className='p-1 cst-btn'><IoBookmark className="text-green-400 sm:mr-1 h-5 w-5" /><span className='text-xs' >PGYB</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.Tbd || 0}</span></Button>
             </Button.Group>
-          </div>      
+          </div>       */}
           <div className="overflow-x-auto">
-            <Table striped className='md:block w-full'>
+            <Table striped className='md:w-4/5 w-full'>
                 <Table.Head className='' >
                     <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-2'>No</Table.HeadCell>
                     <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-24 md:w-32'>No Rumah</Table.HeadCell>
@@ -362,12 +362,12 @@ const IplReport = ({ initialHouses }) =>  {
                 <Table.Body className="divide-y border-b">
                 {currentPageData && currentPageData.length > 0? (
                     currentPageData.map((house, index) => (
-                        <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                            <Table.Cell className={`p-2  text-xs md:text-base`}>
+                        <Table.Row key={index} className={` dark:border-gray-700 dark:bg-gray-800   `} >
+                            <Table.Cell className={`p-2 ${house.monthly_status.find((status) => status.month === selectedPeriod)?.status === 'Weekend' ? 'text-purple-500':'text-gray'}   text-xs md:text-base`}>
                             {offset + index + 1}
                             </Table.Cell>
   
-                            <Table.Cell className={`p-2  text-xs md:text-base`}>
+                            <Table.Cell className={`p-2 ${house.monthly_status.find((status) => status.month === selectedPeriod)?.status === 'Weekend' ? 'text-purple-500':'text-gray'}  text-xs md:text-base`}>
                               <span className=" flex flex-wrap gap-2 item-center align-center">
                                 <span>
                                   <a href={`/ipl/${house.house_id.toLowerCase()}`} target='_blank'>
@@ -384,13 +384,13 @@ const IplReport = ({ initialHouses }) =>  {
                                {/* {monthly.occupancy_status !== 'Isi' ? <Badge color="failure" >{monthly.occupancy_status}</Badge> :'' } */}
                                </span>
                             </Table.Cell>
-                            <Table.Cell className={`p-2  text-xs md:text-base text-center`}>
+                            <Table.Cell className={`p-2 ${house.monthly_status.find((status) => status.month === selectedPeriod)?.status === 'Weekend' ? 'text-purple-500':'text-gray'} text-xs md:text-base text-center`}>
                               <span className='flex justify-center items-center content-center h-full'>
                                 {getTypeIcon(house.monthly_fees.find((status) => status.month === selectedPeriod)?.status)}
                               </span>
                             </Table.Cell>
   
-                            <Table.Cell className={`p-2  text-xs md:text-base`}>
+                            <Table.Cell className={`p-2 ${house.monthly_status.find((status) => status.month === selectedPeriod)?.status === 'Weekend' ? 'text-purple-500':'text-gray'}  text-xs md:text-base`}>
                             {
                               house.monthly_fees.find((status) => status.month === selectedPeriod)?.transaction_id?.date
                                 ? formatDate(house.monthly_fees.find((status) => status.month === selectedPeriod)?.transaction_id?.date)
@@ -445,9 +445,11 @@ const IplReport = ({ initialHouses }) =>  {
           <div className='flex items-center content-center justify-between mb-3'>
             <Button size='xs' as={Link} href="/outstanding" className='bg-red-700 '>Outstanding<GrFormNextLink  className='w-5 h-5'/></Button>
           </div>
-        
-          <Alert className='my-10' color='failure' icon={HiInformationCircle}>
-            <span className="font-medium">Apabila terdapat atau ditemukan keliruan data bisa hubungi pengurus atau ketua RT 05</span>
+          <p className='pt-4 pb-1 text-sm font-medium'>Catatan:</p>
+          <p className='text-sm'>IPL RT 005 tercatat dan terhitung mulai dari Juli 2024.</p>
+         
+          <Alert className='my-5' color='failure' icon={HiInformationCircle}>
+            <span className="font-medium">Apabila terdapat atau ditemukan keliruan data bisa hubungi pengurus atau ketua RT 05 Villa Citayam</span>
           </Alert>
         </div>
       )}

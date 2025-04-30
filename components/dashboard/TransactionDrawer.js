@@ -15,9 +15,12 @@ import moment from 'moment';
 import 'moment/locale/id';
 import id from "date-fns/locale/id";
 moment.locale('id');
+ import { useRequireAuth } from '@/utils/authUtils'; 
 
 const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transactionToEdit }) => {
-  
+  const { useAuthRedirectDashboard } = useRequireAuth(['admin', 'editor', 'superadmin']);
+  useAuthRedirectDashboard();
+
  // console.log(transactionToEdit);
   const [houseId, setHouseId] = useState('');
   const [houseName, setHouseName] = useState('');
@@ -45,6 +48,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const [lastPaidIPl, setLastPaidIPl] = useState(null);
   const [feeIPl, setFeeIPl] = useState(0);
   const [noteCancel, setNoteCancel] = useState(false);
+  const [trxCategory, setTrxCategory] = useState('');
 
   // const handleAddAttachment = () => {
   //   setAttachments([...attachments, { attachment_title: attactment_title, attachment_url: attactment_url }]);
@@ -74,8 +78,9 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
 
   useEffect(() => {
     if (transactionToEdit) {
-    
-      fetchIPlStatus(transactionToEdit.house_id.house_id);
+      //console.log(transactionToEdit)
+
+      fetchIPlStatus(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setHouseId(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setHouseName(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setAmount(transactionToEdit.amount || '');
@@ -88,6 +93,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       setPaymentDate(transactionToEdit.date || '');
       setStatus(transactionToEdit.status ? { value: transactionToEdit.status, label: transactionToEdit.status } : '');
       setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
+      setTrxCategory(transactionToEdit.transaction_category ? { value: transactionToEdit.transaction_category, label: transactionToEdit.transaction_category } : '');
     }
   }, [transactionToEdit]);
 
@@ -101,7 +107,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               Authorization: `Bearer ${session.accessToken}`,
             },
           });
-          //console.log(res.data)
+          //console.log(res)
           const dataRes = res.data;
           setHouses(dataRes.data.map(house => ({
             value: house.house_id,
@@ -119,6 +125,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   useEffect(() => {
     if (transactionType === 'ipl') {
       //console.log(relatedMonths)
+      setTrxCategory( { value: 'Rutin', label: 'Rutin' });
       if(relatedMonths.length > 0 && houseName ) {
         const monthLabels = relatedMonths.map(option => moment(option.value, "YYYY-MM").format("MMMM YYYY")).join(', ');
         const descriptionText = `IPL ${houseName} periode ${monthLabels}`;
@@ -177,6 +184,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     if (!paymentDate) newErrors.paymentDate = 'Payment date is required';
     if (!relatedMonths) newErrors.relatedMonths = 'Months is required';
     if (!paymentType) newErrors.paymentType = 'Payment Type is required';
+    if (!trxCategory) newErrors.trxCategory = 'Category Type is required';
     if (!status) newErrors.status = 'Status is required';
     if (transactionType === 'ipl' && !houseId) newErrors.houseId = 'House ID is required';
     if (paymentType === 'transfer' && !proofOfTransfer) newErrors.proofOfTransfer = 'Proof of transfer is required';
@@ -216,7 +224,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       paymentDate: paymentDate,
       status: status.value,
       attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl },
-      reason_cancellation
+      reason_cancellation,
+      transaction_category:trxCategory.value,
       
     };
 
@@ -235,6 +244,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setStatus('');
     fileInputRef.current.value = '';
     setPaymentType('');
+    setTrxCategory('');
     setIsProcessing(false); // Stop processing
     onClose();
     resetForm();
@@ -263,10 +273,14 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
         const dataMonthlyFees = res.data.data.monthly_fees
 
         // Filter data yang memiliki status "Lunas"
-        const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas");
+        const paidMonths = dataMonthlyFees.filter(item => 
+          item.status === "Lunas" || item.status === "TBD"
+        );
+        
         // Urutkan berdasarkan bulan, dari yang terbaru
         const sortedPaidMonths = paidMonths.sort((a, b) => new Date(b.month) - new Date(a.month));
     
+      
         // Ambil bulan terakhir yang statusnya "Lunas"
         if (sortedPaidMonths.length > 0) {
             const lastPaidMonth = sortedPaidMonths[0].month;
@@ -274,6 +288,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
             setFeeIPl(getFeeIPL);
             setLastPaidIPl(lastPaidMonth);
         }
+
       
     } catch (error) {
 
@@ -290,9 +305,11 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   };
 
   const generateMonthsOptions = () => {
-      if (!lastPaidIPl) return [];
+    //console.log(lastPaidIPl)
+    const lastPaid = lastPaidIPl || "2024-06";
+
       const options = [];
-      let nextMonth = moment(lastPaidIPl, "YYYY-MM").add(1, 'month'); // Bulan setelah bulan terakhir yang "Lunas"
+      let nextMonth = moment(lastPaid, "YYYY-MM").add(1, 'month'); // Bulan setelah bulan terakhir yang "Lunas"
       let startYear = nextMonth.year();
       let startMonthIndex = nextMonth.month(); // Bulan setelah bulan terakhir yang "Lunas"
       let endYear = startYear + 1; 
@@ -300,18 +317,31 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       // Generate bulan selama 2 tahun ke depan
       for (let year = startYear; year <= endYear; year++) {
           for (let month = startMonthIndex; month < 12; month++) {
-          const value = moment().month(month).year(year).format("YYYY-MM");
-          const label = moment().month(month).year(year).format("MMMM YYYY");
-          options.push({ value, label });
+            const value = moment().month(month).year(year).format("YYYY-MM");
+            const label = moment().month(month).year(year).format("MMMM YYYY");
+            // Hanya tambahkan jika bulan belum dipilih
+            if (!relatedMonths.some((m) => m.value === value)) {
+              options.push({ value, label });
+            }
+           // options.push({ value, label });
           }
           startMonthIndex = 0; // Setelah tahun pertama, mulai lagi dari bulan Januari
       }
+
+      //console.log(options)
       return options;
   };
 
   const optionsType = [
     { value: 'cash', label: 'Cash' },
     { value: 'transfer', label: 'Transfer' },
+  ]
+
+  const optionsCategory = [
+    { value: 'Rutin', label: 'Rutin' },
+    { value: 'Lain - Lain', label: 'Lain - Lain' },
+    { value: 'Fasilitas Sosial', label: 'Fasilitas Sosial' },
+    { value: 'Fasilitas Umum', label: 'Fasilitas Umum' },
   ]
 
   const optionsStatus = [
@@ -333,6 +363,10 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setPaymentType(e);
   };
 
+  const handleCatChange = (e) => {
+    setTrxCategory(e);
+  };
+
   const resetForm = () => {
     setHouseId('');
     setAmount('');
@@ -350,6 +384,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setSelectedImage(null);
     setLastPaidIPl(null);
     setStatus('');
+    setTrxCategory('');
   };
 
  
@@ -438,6 +473,21 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
           </div>
 
           <div className="mb-6 mt-3">
+            <Label htmlFor="category" className="mb-2 block">Kategori</Label>
+             
+              <Select
+                id="category"
+                isSearchable={false}
+                options={optionsCategory}
+                value={trxCategory}
+                onChange={handleCatChange}
+                placeholder="Kategori"
+                className='bg-gray-50 text-sm'
+              />
+            {errors.trxCategory && <div className="text-red-500 text-sm">{errors.trxCategory}</div>}
+          </div>
+
+          <div className="mb-6 mt-3">
             <Label htmlFor="amount" className="mb-2 block">Jumlah</Label>
             <TextInput
               id="amount"
@@ -454,6 +504,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
             <Label htmlFor="payment_type" className="mb-2 block">Tipe Pembayaran</Label>
               <Select
                 id="payment_type"
+                isSearchable={false}
                 options={optionsType}
                 value={paymentType}
                 onChange={handleTypeChange}
@@ -588,7 +639,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
           }
          
 
-          <div className='flex gap-2'>
+          <div className='flex gap-2 pb-24'>
             <Button 
             type="submit" 
             color={transactionType === 'ipl' ? 'success' : transactionType === 'income' ? 'blue' : 'failure'}

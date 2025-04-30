@@ -36,7 +36,7 @@ const Tbd = ({ initialHousesPaid }) =>  {
     try {
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
       });
-     // console.log(res.data)
+      //console.log(res.data)
      setDataOutStanding(res.data.data);
      setTotalHouses(res.data.total);
      setTotalAmount(res.data.total_amount)
@@ -46,7 +46,6 @@ const Tbd = ({ initialHousesPaid }) =>  {
         setLoading(false);
     }
   },[]);
-
 
   useEffect(() => {
     fetchOutstanding();
@@ -85,8 +84,8 @@ const Tbd = ({ initialHousesPaid }) =>  {
       <div className="overflow-x-auto">
           <Table striped className='block w-full'>
               <Table.Head className='' >
-                  <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-4'>No</Table.HeadCell>
-                  <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-7 md:w-32'>No Rumah</Table.HeadCell>
+                  <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white '>No</Table.HeadCell>
+                  <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-7 md:w-28'>No Rumah</Table.HeadCell>
                   <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white'>Periode</Table.HeadCell>
                   {/* <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell> */}
                   <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white'>Total</Table.HeadCell>
@@ -100,16 +99,20 @@ const Tbd = ({ initialHousesPaid }) =>  {
                           </Table.Cell>
 
                           <Table.Cell className={`p-2  text-xs md:text-base`}>
-                            <span className="">{data.house}</span>
+                            <span className="">{data.house_id}</span>
                           </Table.Cell>
                           <Table.Cell className={`p-2  text-xs md:text-base`}>
-                            <span className="flex flex-wrap gap-2">
-                              {data.periods.map((period, subindex) => (
-                              <Badge key={subindex} color="failure">
-                                {moment(period, 'YYYY-MM').format('MMMM YYYY')}
-                                {/* {subindex < data.periods.length - 1 ? ', ' : ''} */}
-                              </Badge>
-                              ))}
+                            <span className="flex flex-wrap gap-1">
+                              {data.periods.map((period, subindex) => {
+                                const status = data.monthly_status.find((status) => status.month === period)?.status;
+                                const badgeColor = status === 'Weekend' ? 'pink' : 'failure';
+
+                                return (
+                                  <Badge key={subindex} color={badgeColor} size="xs">
+                                    {moment(period, 'YYYY-MM').format('MMMM YYYY')}
+                                  </Badge>
+                                );
+                              })}
                             </span>
                           </Table.Cell>
                           {/* <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base `}>
@@ -155,7 +158,7 @@ export const getServerSideProps = async (context) => {
     // }
   
     try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/tbd`, {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
             // headers: {
             //     Authorization: `Bearer ${session.accessToken}`,
             // },
