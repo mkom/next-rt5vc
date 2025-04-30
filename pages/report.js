@@ -1,11 +1,13 @@
 import Head from 'next/head';
 import Header from '../components/Header';
 import SideMenu from '../components/Sidebar';
+import Report from '../components/Report';
 import { useState } from 'react';
 import { FaWpforms } from "react-icons/fa";
 import { FaRegNewspaper  } from "react-icons/fa";
 import { FaTasks } from "react-icons/fa";
-import Report from '../components/Report';
+import Link from 'next/link';
+
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => {
@@ -26,29 +28,31 @@ export default function Home() {
 
     <Header toggleSidebar={toggleSidebar}/>
     <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-md mx-auto -m-h-screen'>
+    <main className='max-w-screen-md mx-auto min-h-dvh'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5'>
           <div className='flex items-start md:items-center flex-col md:flex-row content-start md:content-center mb-4 justify-between gap-2'>
-            <h1 className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white order-last md:order-first'>RT 005 RW 011 VILLA CITAYAM</h1>
+            <h1 className='text-xl font-bold text-gray-900 sm:text-2xl dark:text-white order-last md:order-first'>LAPORAN KEUANGAN RT 05 VILLA CITAYAM</h1>
           </div>
+         
           <Report/>
+
           <div className='flex flex-row justify-between md:justify-start gap-2 mb-14'>
-            <a href="/confirmation" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm px-4 py-2'>
+            <Link href="/confirmation" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-md shadow-sm px-4 py-2'>
               <FaWpforms className='w-6 h-6 mr-1' />
               <span className='text-center content-center'>Form Konfirmasi</span>
               {/* <GrFormNextLink  className='w-5 h-5'/> */}
-            </a>
-            <a href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium  text-xs rounded-md shadow-sm px-4 py-2 '>
+            </Link>
+            <Link href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium  text-xs rounded-md shadow-sm px-4 py-2 '>
               <FaTasks  className='w-4 h-4 mr-1' />  
               <span className='text-center content-center'>IPL</span>
               {/* <GrFormNextLink  className='w-5 h-5'/> */}
-            </a>
-            <a href="/outstanding" className='flex items-center content-center bg-red-700 text-white font-medium  text-xs rounded-md shadow-sm px-4 py-2 '>
+            </Link>
+            <Link href="/outstanding" className='flex items-center content-center bg-red-700 text-white font-medium  text-xs rounded-md shadow-sm px-4 py-2 '>
               <FaRegNewspaper  className='w-6 h-6 mr-1' />
               <span className='text-center content-center'>Outstanding</span>
               {/* <GrFormNextLink  className='w-5 h-5'/> */}
-            </a>
+            </Link>
             
           </div>
         </section>

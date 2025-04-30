@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useRequireAuth } from '../../utils/authUtils.js'; 
 import { IoPrism } from "react-icons/io5";
 import {TextInput,Drawer,Dropdown } from "flowbite-react";
-import { Card, Button, Table,Alert } from 'flowbite-react';
+import { Card, Button, Table, Alert, Modal } from 'flowbite-react';
 import Header from '../../components/Header';
 import SideMenu from '../../components/dashboard/Sidebar'
 import Spinner from '../../components/Spinner';
@@ -19,16 +19,19 @@ import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
 import 'moment/locale/id';
+import 'moment-timezone';
 moment.locale('id');
 import YearOptions from '../../components/YearOptions.js';
 import Link from 'next/link';
 import { Breadcrumb } from "flowbite-react";
 import { HiHome } from "react-icons/hi";
 import Head from 'next/head';
+import Image from "next/image";
 
 const IplDetail = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { query } = useRouter();
+  const id = query.id;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState(moment().format('YYYY'));
@@ -39,7 +42,10 @@ const IplDetail = () => {
   const [housesFee, setHousesFee] = useState([]);
   const [outstandingCount, setOutstandingCount] = useState(0);
   const [isClient, setIsClient] = useState(false);
-
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState(null);
+  const [loadingImg, setLoadingImg] = useState(false);
+ 
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -52,30 +58,37 @@ const IplDetail = () => {
     router.back(); // Navigasi ke halaman sebelumnya
   };
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(amount);
+  };
+  
+
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-  
-    // Extract day, month, and year
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-    const year = String(date.getFullYear()).slice(-2); // Get last two digits of the year
-  
-    // Format the date as DD/MM/YY
-    return `${day}/${month}/${year}`;
+  // Gunakan timezone Asia/Jakarta
+      const date = moment.tz(dateString, 'Asia/Jakarta');
+      return date.format('DD/MM/YY'); // Format sesuai kebutuhan
   };
 
 
   const fetchHouses = useCallback (async () => {
+ 
+    // if (!id || typeof id !== 'string') {
+    //   console.error('Invalid ID:', id);
+    //   setLoading(false);
+    //   return; // Hentikan eksekusi jika ID tidak valid
+    // }
+
+    const ID = id.toUpperCase();
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${id.toUpperCase()}`, {
-          // headers: {
-          //   Authorization: `Bearer ${session.accessToken}`,
-          // },
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${ID}`, {
+         
       });
       
-      //
-      //console.log(res.data.data)
-      // setHouses(res.data.data);
+    
       setHousesStatus(res.data.data.monthly_status)
       setHousesFee(res.data.data.monthly_fees)
       setOutstandingCount(res.data.data.outstanding_count)
@@ -90,10 +103,11 @@ const IplDetail = () => {
 
 
   useEffect(() => {
-    if (session) {
-        fetchHouses();
+    if(id) {
+      fetchHouses();
     }
-  }, [session,fetchHouses]);
+   
+  }, [id]);
 
   // Daftar bulan
   const months = [
@@ -132,16 +146,17 @@ const IplDetail = () => {
 
     // Logika output berdasarkan kondisi
     if (periodMonth < "2024-07") {
-        return { status: "-", transactionDate: "-", proofOfTransfer: "-" }; // Bulan lebih kecil dari 2024-07
+        return { status: "-", transactionDate: "-", proofOfTransfer: "-", _id:"" }; // Bulan lebih kecil dari 2024-07
     } else if (periodMonth > currentMonth && feeData.status === "Belum Bayar") {
-        return { status: "-", transactionDate: "-", proofOfTransfer: "-" }; // Bulan lebih besar dari bulan sekarang dan status "Belum Bayar"
+        return { status: "-", transactionDate: "-", proofOfTransfer: "-", _id:"" }; // Bulan lebih besar dari bulan sekarang dan status "Belum Bayar"
     } else {
         // Ambil status, tanggal transaksi, dan proof_of_transfer
         const status = feeData.status;
+        const period =  moment(feeData.month, "YYYY-MM").format("MMMM YYYY");
         const transactionDate = feeData.transaction_id ? feeData.transaction_id.date : "-";
         const proofOfTransfer = feeData.transaction_id ? feeData.transaction_id.proof_of_transfer : "-";
         const paymentType = feeData.transaction_id ? feeData.transaction_id.payment_type : "-";
-        return { status, transactionDate, proofOfTransfer,paymentType }; // Kembalikan data jika memenuhi syarat
+        return { status, transactionDate, proofOfTransfer,paymentType,period }; // Kembalikan data jika memenuhi syarat
     }
   }
 
@@ -192,6 +207,24 @@ const IplDetail = () => {
     }
   };
 
+  const openModal = (selectedPeriod,month) => {
+    const feeStatus = findFeeStatus(selectedPeriod, month);
+    //console.log(feeStatus); // Cetak hasil
+    setSelectedDetail(feeStatus)
+    setModalIsOpen(true);
+    setLoadingImg(true);
+  };
+
+  const closeModal = () => {
+      setModalIsOpen(false);
+      setSelectedDetail(null);
+      setLoadingImg(false);
+  };
+
+  const handleImageLoad = () => {
+      setLoadingImg(false); 
+  };
+
   if (loading) {
     return <Spinner />;
   }
@@ -208,7 +241,7 @@ const IplDetail = () => {
     </Head>
      <Header toggleSidebar={toggleSidebar}/>
      <SideMenu isOpen={isSidebarOpen}/>
-     <main className='max-w-screen-md mx-auto'>
+     <main className='max-w-screen-md mx-auto min-h-dvh'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5  mb-11'>
             <Breadcrumb aria-label="Default breadcrumb" className='mb-4'>
@@ -274,14 +307,14 @@ const IplDetail = () => {
                   <Table striped className=' w-full' >
                       <Table.Head className='w-full' >
                           <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white '>Periode</Table.HeadCell>
-                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white text-center'>Status</Table.HeadCell>
                           <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white '>Lampiran</Table.HeadCell>
+                          <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white '>Detail</Table.HeadCell>
                       </Table.Head>
                       <Table.Body className="divide-y border-b">
                       
                       {months.map((month, index) => {
-                        const { status, transactionDate, proofOfTransfer,paymentType } = findFeeStatus(selectedPeriod, month);
+                        const { status, transactionDate, proofOfTransfer,paymentType,selectedID } = findFeeStatus(selectedPeriod, month);
                         const { statusHouse} = findStatus(selectedPeriod, month, housesStatus);
                         return (
                           <Table.Row key={index}>
@@ -301,12 +334,13 @@ const IplDetail = () => {
                               }
                             </Table.Cell>
                             <Table.Cell className='text-left py-2 px-2  md:text-base'>
-                              {proofOfTransfer && proofOfTransfer !== '-' ? (
+                            
+                              {status === "Lunas" && transactionDate !== '-' ? (
                                 <span className='flex items-center'>
-                                <Button  as={Link} href={proofOfTransfer} target='_blank' color="gray" size="xs" className=' rounded-md focus:ring-0'>View</Button>
+                                  <Button color="gray" onClick={() => openModal(selectedPeriod, month)} size="xs" className=' rounded-md focus:ring-0'>View</Button>
                                 </span>
                               ):(
-                                <>{paymentType == 'cash' ? 'Cash' :'-' }</>
+                                <>-</>
                               )}
                               
                             </Table.Cell>
@@ -316,6 +350,71 @@ const IplDetail = () => {
                       </Table.Body>
                   </Table>
                 </div>
+                <Modal show={modalIsOpen} position="center" size="3xl" dismissible  onClose={closeModal}>
+                  <Modal.Header className='p-3 items-center justify-start'>
+                      <span className='block'>Detail</span>
+                      {/* {selectedDetail && (
+                          <span className='block text-xs gray-700'>ID: {selectedDetail.transaction_id}</span>
+                      )} */}
+                      
+                  </Modal.Header>
+                  <Modal.Body className='p-3'>
+                    {selectedDetail && (
+                      <>
+                        <div className='flex items-start content-start pb-2 mb-2 border-b'>
+                            <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Tanggal</span><span>:</span></div>
+                            <div className='w-10/12'><span  className='capitalize'>{formatDate(selectedDetail.transactionDate)}</span></div>
+                        </div>
+                        <div className='flex items-start content-start pb-2 mb-2 border-b'>
+                            <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Periode</span><span>:</span></div>
+                            <div className='w-10/12'><span  className='capitalize'>{selectedDetail.period}</span></div>
+                        </div>
+                        {/* <div className='flex items-start content-start pb-2 mb-2 border-b'>
+                            <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>IPL RW</span><span>:</span></div>
+                            <div className='w-10/12'><span  className='capitalize'>{formatCurrency(50000)}</span></div>
+                        </div>
+                        <div className='flex items-start content-start pb-2 mb-2 border-b'>
+                            <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Kas RT</span><span>:</span></div>
+                            <div className='w-10/12'><span  className='capitalize'>{formatCurrency(20000)}</span></div>
+                        </div> */}
+
+                        <div className='flex items-start content-start pb-2 mb-2 border-b'>
+                            <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Total</span><span>:</span></div>
+                            <div className='w-10/12'><span  className='capitalize'>{formatCurrency(70000)}</span></div>
+                        </div>
+
+                        <div className="mt-5">
+                          {selectedDetail.proofOfTransfer !== '' ? (
+                                  <div className='w-1/2 relative'>
+                                  <div className="relative w-full h-auto">
+                                    {loadingImg && (
+                                        <div className="animate-pulse flex justify-center items-center">
+                                        {/* Skeleton Loader */}
+                                        <div className="w-full h-40 bg-gray-300 rounded-lg"></div>
+                                        </div>
+                                    )}
+                                  <Image
+                                  className='w-full h-auto relative'
+                                  width={0} 
+                                  height={0}
+                                  sizes="100vw"
+                                  onLoad={handleImageLoad}
+                                  src={selectedDetail.proofOfTransfer}  
+                                  alt="Lampiran" /> 
+                                  </div>
+                                  </div>
+                          ) : (
+                              <></>
+                          )}
+                          </div>
+                        </>
+                    )}
+                  </Modal.Body>
+                  <Modal.Footer>
+                  </Modal.Footer>
+                </Modal>
+
+
                 <p className='pt-4 pb-1 text-sm font-medium'>Catatan:</p>
                 <p className='text-sm'>IPL RT 005 tercatat dan terhitung mulai dari Juli 2024.</p>
             </section>

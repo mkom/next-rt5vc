@@ -21,6 +21,7 @@ import MonthOptions from './MonthOptions';
 import Image from "next/image";
 import Link from 'next/link';
 import { FaExternalLinkAlt } from "react-icons/fa";
+import { formatPeriod } from './FormatPeriod';
 
 
 const ITEMS_PER_PAGE = 20;
@@ -36,6 +37,10 @@ const AllCashflow = ({ initialTransaction }) =>  {
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [loadingImg, setLoadingImg] = useState(false);
     const { period, page,s, ...rest } = router.query;
+    const [selectedTransactionType, setSelectedTransactionType] = useState(null);
+    // const [selectedCat, setSelectedCat] = useState(null);
+    // const [selectedType, setSelectedType] = useState(null);
+
 
     useEffect(() => {
         const { s,period } = router.query;
@@ -67,7 +72,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
   
           });
           const dataRes = res.data;
-             //console.log(dataRes)
+            // console.log(dataRes)
           const transactionsData =  dataRes.data.transactions.sort((a, b) => {
             return new Date(b.date) - new Date(a.date);
           });
@@ -87,6 +92,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
     }, [fetchTransactions]);
   
     const handleSearchChange = (event) => {
+        setSelectedTransactionType(null)
         setCurrentPage(0);
         const query = event.target.value;
         const queryObj = { ...router.query };
@@ -101,8 +107,17 @@ const AllCashflow = ({ initialTransaction }) =>  {
             pathname: '/cashflow',
             query: { ...queryObj, s: query,page: undefined },
         });
+
+       
         setSearchTerm(query);
     };
+
+    const optionsCategory = [
+        { value: 'Rutin', label: 'Rutin' },
+        { value: 'Lain - Lain', label: 'Lain-Lain' },
+        { value: 'Fasilitas Sosial', label: 'Fasilitas Sosial' },
+        { value: 'Fasilitas Umum', label: 'Fasilitas Umum' },
+      ]
 
     const handleMonthChange = (selectedOption) => {
         setCurrentPage(0);
@@ -119,28 +134,39 @@ const AllCashflow = ({ initialTransaction }) =>  {
         });
         setSelectedPeriod(query);
     };
+
+    const handleTransactionTypeToggle = (type) => {
+        setCurrentPage(0);
+        setSelectedTransactionType(prevType => (prevType === type ? null : type));
+    };
   
-    
+  
     const filteredTransactions = transactions.filter(transaction => {
-        // Ensure the transaction has a 'date' before formatting it
         const transactionMonth = transaction && transaction.date ? moment(transaction.date).format('YYYY-MM') : null;
-        
-        // Check if the transaction matches the selected period (if it's set)
         const matchesPeriod = selectedPeriod ? transactionMonth === selectedPeriod : true;
-        
-        // Check if the transaction matches the search term in description or additional_note_mutasi_bca
+
         const matchesSearchTerm = 
             (transaction && transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (transaction && transaction.additional_note_mutasi_bca && transaction.additional_note_mutasi_bca.toLowerCase().includes(searchTerm.toLowerCase()));
+            (transaction && transaction.transaction_id && transaction.transaction_id.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        // Return true only if both the period and search term conditions are met
-        return matchesPeriod && matchesSearchTerm;
+        const matchesTransactionType = selectedTransactionType 
+            ? (selectedTransactionType === 'incomeAndIpl'
+                ? transaction.transaction_type === 'income' || transaction.transaction_type === 'ipl'   
+                : transaction.transaction_type === selectedTransactionType)
+            : true;
+
+       
+
+        // const matchesCategory = transaction?.transaction_category === 'Rutin' && transaction?.transaction_type === 'ipl'
+        
+
+       return matchesPeriod && matchesSearchTerm && matchesTransactionType;
     });
     
   
     const offset = currentPage * ITEMS_PER_PAGE;
     const currentPageData = filteredTransactions.slice(offset, offset + ITEMS_PER_PAGE);
-  
+
     const handlePageClick = (data) => {
         const page = data.selected;
         const queryObj = { ...router.query };
@@ -179,6 +205,51 @@ const AllCashflow = ({ initialTransaction }) =>  {
       }
     };
 
+    const CategoryLabel = (selectedTransaction) => {
+     
+        const { transaction_type, transaction_category } = selectedTransaction;
+    
+        if (transaction_type === 'ipl') {
+            return "Pemasukan Rutin";
+        }
+
+        if (transaction_type === 'income' && transaction_category === 'Rutin') {
+            return "Pemasukan Rutin";
+        }
+
+
+        if (transaction_type === 'income' && transaction_category === 'Lain - Lain') {
+            return "Pemasukan Lain-Lain";
+        }
+
+        if (transaction_type === 'income' && transaction_category === 'Fasilitas Sosial') {
+            return "Pemasukan Sosial";
+        }
+
+        if (transaction_type === 'income' && transaction_category === 'Fasilitas Umum') {
+            return "Pemasukan Fasilitas Umum";
+        }
+
+        if (transaction_type === 'expense' && transaction_category === 'Rutin') {
+            return "Pengeluaran Rutin";
+        }
+
+        if (transaction_type === 'expense' && transaction_category === 'Lain - Lain') {
+            return "Pengeluaran Lain - Lain";
+        }
+
+        if (transaction_type === 'expense' && transaction_category === 'Fasilitas Sosial') {
+            return "Pengeluaran Fasilitas Sosial";
+        }
+
+        if (transaction_type === 'expense' && transaction_category === 'Fasilitas Umum') {
+            return "Pengeluaran Fasilitas Umum";
+        }
+
+        return ''; 
+            
+    }
+
     const openModal = (id) => {
         // Temukan transaksi berdasarkan id
         const transaction = currentPageData.find((trans) => trans._id === id);
@@ -200,8 +271,17 @@ const AllCashflow = ({ initialTransaction }) =>  {
     if (loading) {
       return <Spinner />;
     }
+
+    const filteredTransactions2 = transactions.filter(transaction => {
+        const transactionMonth = transaction && transaction.date ? moment(transaction.date).format('YYYY-MM') : null;
+        const matchesPeriod = selectedPeriod ? transactionMonth === selectedPeriod : true;
+        
+       return matchesPeriod;
+    });
+
+    const getAmount = searchTerm ? filteredTransactions : filteredTransactions2;
   
-    const totalAmount = filteredTransactions.reduce((acc, transaction) => {
+    const totalAmount = getAmount.reduce((acc, transaction) => {
         if (transaction.transaction_type === 'ipl' && transaction.status === 'berhasil' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
         } else if (transaction.transaction_type === 'expense'  && transaction.status === 'berhasil') {
@@ -210,14 +290,14 @@ const AllCashflow = ({ initialTransaction }) =>  {
         return acc;
     }, 0);
 
-    const totalIncome = filteredTransactions.reduce((acc, transaction) => {
+    const totalIncome = getAmount.reduce((acc, transaction) => {
         if (transaction.transaction_type === 'ipl' && transaction.status === 'berhasil' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
         } 
         return acc;
     }, 0);
 
-    const totalexpense = filteredTransactions.reduce((acc, transaction) => {
+    const totalexpense = getAmount.reduce((acc, transaction) => {
         if (transaction.transaction_type === 'expense' && transaction.status === 'berhasil'  && transaction.status === 'berhasil') {
         return acc + transaction.amount;
         } 
@@ -231,45 +311,67 @@ const AllCashflow = ({ initialTransaction }) =>  {
     return (
         <>
         
-        <div className="max-w-md mb-4 flex justify-between content-center items-center gap-3">
+        <div className="max-w-md mb-4 flex flex-col content-start items-start gap-3">
             <CustomThemeProviderSecond>
-            <TextInput 
-            id='searchtrx'
-            name="searchtrx"
-            placeholder="Cari"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="w-3/5 bg-white"
-            icon={HiOutlineSearch} 
-            sizing="md"
-            
-            />
+                <div className='w-full'>
+                    <TextInput 
+                    id='searchtrx'
+                    name="searchtrx"
+                    placeholder="Cari"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    className="w-full bg-white"
+                    icon={HiOutlineSearch} 
+                    sizing="md"
+                    />
+                </div>
 
-            <Select
-                id="relatedMonths"
-                options={MonthOptions()}
-                defaultValue={router.query.period ? MonthOptions().find(option => option.value === router.query.period) : null}
-                onChange={handleMonthChange}
-                isSearchable={false}
-                isClearable={true} 
-                placeholder={<div>Pilih Bulan</div>}
-                className=' rounded-md w-3/5'
-            />
+                <div className='w-full flex gap-2 '>
+                    <Select
+                        id="relatedMonths"
+                        options={MonthOptions()}
+                        defaultValue={router.query.period ? MonthOptions().find(option => option.value === router.query.period) : null}
+                        onChange={handleMonthChange}
+                        isSearchable={false}
+                        isClearable={true} 
+                        placeholder={<div>Pilih Bulan</div>}
+                        className=' rounded-md w-full'
+                    />
+
+                    {/* <Select
+                    id="category"
+                    options={optionsCategory}
+                    defaultValue={router.query.cat ?optionsCategory.find(option => option.value === router.query.cat) : null}
+                    // onChange={handleMonthChange}
+                    isSearchable={false}
+                    isClearable={true} 
+                    placeholder={<div>Pilih Kategori</div>}
+                    className=' rounded-md w-2/4'
+                    /> */}
+                </div>
+           
+
+            
             </CustomThemeProviderSecond>
         </div>
         
         <div className='mb-2 flex justify-between content-start items-start md:content-center md:items-center flex-col md:flex-row'> 
             <div>
-            <Button.Group className='mb-2'>
-                <Button color="gray" size="xs" className='p-1 cst-btn'>
-                    <FaRegArrowAltCircleDown  className="text-green-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5 " /><span className='text-green-700 text-xs md:text-sm'>{formatCurrency( totalIncome?totalIncome: 0)}</span>
+            <Button.Group 
+            className={`mb-2`}>
+                <Button 
+                    onClick={() => handleTransactionTypeToggle('incomeAndIpl')}
+                    color={`${selectedTransactionType === 'incomeAndIpl' ? 'success' : 'gray'}`} size="md" className='p-2 cst-btn min-w-32 justify-start'>
+                    <FaRegArrowAltCircleDown  className={`${selectedTransactionType === 'incomeAndIpl' ? 'text-white' : 'text-green-700'} mr-1 h-5 w-5  `} /><span className={`${selectedTransactionType === 'incomeAndIpl' ? 'text-white' : 'text-green-700'} `}>{totalIncome ? formatCurrency( totalIncome) :'-'}</span>
                 </Button>
-                <Button color="gray" size="xs" className='p-1 cst-btn'>
-                    <FaRegArrowAltCircleUp className="text-red-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5" /><span className='text-red-700 text-xs md:text-sm'>{formatCurrency( totalexpense?totalexpense: 0)}</span>
+                <Button
+                    onClick={() => handleTransactionTypeToggle('expense')}
+                    color={`${selectedTransactionType === 'expense' ? 'failure' : 'gray'}`} size="md" className='p-2 cst-btn  min-w-32 justify-start '>
+                    <FaRegArrowAltCircleUp className={`${selectedTransactionType === 'expense' ? 'text-white' : 'text-red-700'} mr-1 h-5 w-5`} /><span className={`${selectedTransactionType === 'expense' ? 'text-white' : 'text-red-700'}`}>{totalexpense ? formatCurrency( totalexpense) :'-'}</span>
                 </Button>
             </Button.Group>
             </div> 
-            <span className='text-xs order'>Last Update: { moment(lastUpdate).tz('Asia/Jakarta').format('D/M/YYYY, HH:mm')}</span>
+            <span className='text-xs order'>Last Update: { moment(lastUpdate).tz('Asia/Jakarta').format('DD/MM/YYYY, HH:mm')}</span>
         </div>
 
         <div className='overflow-x-auto'>
@@ -277,7 +379,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
             <Table.Head>
             <Table.HeadCell className='py-2 pl-2 pr-0 md:text-base md:py-3 md:pl-2 md:pr-0 bg-cyan-600 text-white'>No</Table.HeadCell>
             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-3/4'>Keterangan</Table.HeadCell>
-            <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
+            <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Nominal</Table.HeadCell>
             {/* <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Nominal</Table.HeadCell> */}
             {/* <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tipe</Table.HeadCell> */}
             <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Detail</Table.HeadCell>
@@ -293,17 +395,26 @@ const AllCashflow = ({ initialTransaction }) =>  {
                     <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
                         <span className='flex items-start content-start'>
                         <span className='pt-1'>{getTypeIcon(transaction.transaction_type)} </span>
-                        <span className="ml-2">{transaction.description}</span> 
+                       
+                        <span className="ml-2">
+                           {
+                                transaction.transaction_type === 'ipl' ? (
+                                    <span>{`IPL ${transaction.house_id.house_id}, ${formatPeriod(transaction.related_months)}`}</span>  
+                                ) : (
+                                    <span>{transaction.description}</span> 
+                                )
+                            }
+                        </span> 
                         {transaction.description.includes('#IPLPaguyuban') && <span className="ml-2 text-red-500"><MdMotionPhotosPaused className='text-red-600 h-4 w-4 md:h-5 md:w-5' /></span>}
                         </span>
                     </Table.Cell>
 
-                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatDate(transaction.date)}</Table.Cell>
+                    {/* <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatDate(transaction.date)}</Table.Cell> */}
                     
-                    {/* <Table.Cell className={`flex items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                    <Table.Cell className={`flex items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
                         <span className='pr-1' >{transaction.transaction_type === 'ipl' ? `+` : transaction.transaction_type  === 'income' ? '+' : transaction.transaction_type  === 'expense' ? '-' : ''}</span>
                         <span>{formatCurrency(transaction.amount)}</span>
-                    </Table.Cell> */}
+                    </Table.Cell>
                     
                     {/* <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
                         <span className='capitalize'>{transaction.payment_type} </span>
@@ -325,7 +436,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
                 <Modal.Header>
                     <span className='block'>Detail</span>
                     {selectedTransaction && (
-                        <span className='block text-xs gray-700'>ID: {selectedTransaction._id}</span>
+                        <span className='block text-xs gray-700'>ID: {selectedTransaction.transaction_id}</span>
                     )}
                     
                 </Modal.Header>
@@ -337,7 +448,11 @@ const AllCashflow = ({ initialTransaction }) =>  {
                             <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Kategori</span><span>:</span></div>
                             <div className='w-10/12'>
                                 <span className='flex flex-wrap mt-1'>
-                                    <Badge color={selectedTransaction.transaction_type  === 'expense' ? 'failure' : 'info'}> {selectedTransaction.transaction_type  === 'expense' ? 'Keluar' : 'Masuk'}</Badge>
+                                    <Badge color={selectedTransaction.transaction_type  === 'expense' ? 'failure' : 'info'}> 
+                                        {CategoryLabel(selectedTransaction)}
+
+                                        {/* {selectedTransaction.transaction_type  === 'expense' ? 'Keluar' : 'Masuk'} */}
+                                    </Badge>
                                 </span>
                             </div>
                         </div>

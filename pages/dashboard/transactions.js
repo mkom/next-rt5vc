@@ -28,8 +28,8 @@ const ITEMS_PER_PAGE = 15;
 
 
 const Transaction = ({ initialTransaction }) =>  {
-  const { useAuthRedirect } = useRequireAuth(['admin', 'editor', 'superadmin']);
-  useAuthRedirect();
+  const { useAuthRedirectDashboard } = useRequireAuth(['admin', 'editor', 'superadmin']);
+  useAuthRedirectDashboard();
   
   const [transactions, setTransactions] = useState([initialTransaction]);
   const [reTransactions, setReTransactions] = useState([initialTransaction])
@@ -123,19 +123,41 @@ const Transaction = ({ initialTransaction }) =>  {
       );
 
     
-      let IPLUrl = `${baseUrl}/ipl/${response.data.house.house_id.toLowerCase()}`;
+      let IPLUrl = `${baseUrl}/ipl/${response.data.house? response.data.house.house_id.toLowerCase() : ''}`;
     
       //console.log(IPLUrl)
       let bodyMessage;
       let number;
 
-      if(response.data.status === 'berhasil') {
-         bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0ACek IPL *${response.data.house.house_id}:* ${IPLUrl} %0A%0ATerima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
-         number = response.data.whatsapp_notification; // Replace with the actual admin phone number
-      } else if(response.data.status === 'gagal') {
-         bodyMessage = `*Konfirmasi Pembayaran IPL Gagal!*%0A%0ASetelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu Dibatalkan.%0A%0A*Detail:*%0A*ID:* ${response.data.transaction_id}%0A*Deskripsi:*%0A${response.data.description}%0A*Jumlah:* ${formatCurrency(response.data.amount)}%0A*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}%0A%0A*Alasan Pembatalan:*%0A ${response.data.additional_note}%0A%0ADemikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.%0A%0A*Hormat Kami*%0ART 005 VIlla Citayam.%0A`;
-         number = response.data.whatsapp_notification; // Replace with the actual admin phone number
-      } else {
+      if (response.data.status === 'berhasil') {
+        bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*\n\n`
+            + `Setelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.\n\n`
+            + `*Detail:*\n`
+            + `*ID:* ${response.data.transaction_id}\n`
+            + `*Deskripsi:*\n${response.data.description}\n`
+            + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
+            + `*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}\n`
+            + (response.data.house ? `\n*Cek IPL:* ${response.data.house.house_id} ${IPLUrl}\n\n` : '')  
+            + `Terima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.\n\n`
+            + `*Hormat Kami*\n`
+            + `RT 005 Villa Citayam.\n`;
+    
+        number = response.data.whatsapp_notification; // Nomor penerima pesan
+    } else if (response.data.status === 'gagal') {
+        bodyMessage = `*Konfirmasi Pembayaran IPL Gagal!*\n\n`
+            + `Setelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu Dibatalkan.\n\n`
+            + `*Detail:*\n`
+            + `*ID:* ${response.data.transaction_id}\n`
+            + `*Deskripsi:*\n${response.data.description}\n`
+            + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
+            + `*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}\n\n`
+            + `*Alasan Pembatalan:*\n${response.data.additional_note}\n\n`
+            + `Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.\n\n`
+            + `*Hormat Kami*\n`
+            + `RT 005 Villa Citayam.\n`;
+    
+        number = response.data.whatsapp_notification; // Nomor penerima pesan
+    } else {
 
       }
 
@@ -197,7 +219,7 @@ const Transaction = ({ initialTransaction }) =>  {
         const dataRes = res.data;
         //console.log(dataRes)
         const transactionsData =  dataRes.data.transactions.sort((a, b) => {
-          return new Date(b.date) - new Date(a.date);
+          return new Date(b.created_at) - new Date(a.created_at);
         });
 
         setTransactions(transactionsData);
@@ -221,11 +243,20 @@ const Transaction = ({ initialTransaction }) =>  {
     setSearchTerm(event.target.value);
   };
 
-  const filteredTransactions = transactions.filter(transaction => 
-    (transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (transaction.transaction_id && transaction.transaction_id.toLowerCase().includes(searchTerm.toLowerCase())) && 
-    (selectedType === '' || transaction.transaction_type === selectedType)
-  );
+  const handleTypeChange = (selectedOption) => {
+    setSelectedType(selectedOption.value);
+    setCurrentPage(0);
+  };
+
+  const filteredTransactions = transactions.filter(transaction => {
+       
+      const matchesType = selectedType ? transaction.transaction_type === selectedType : true;
+      const matchesSearchTerm = 
+        (transaction && transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (transaction && transaction.transaction_id && transaction.transaction_id.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+      return matchesType && matchesSearchTerm;
+  });
 
   const offset = currentPage * ITEMS_PER_PAGE;
   const currentPageData = filteredTransactions.slice(offset, offset + ITEMS_PER_PAGE);
@@ -238,11 +269,11 @@ const Transaction = ({ initialTransaction }) =>  {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'berhasil':
-        return <FaCheckCircle className="text-green-500" />;
+        return <FaCheckCircle className="text-green-500 h-4 w-4" />;
       case 'gagal':
-        return <FaTimesCircle className="text-red-500" />;
+        return <FaTimesCircle className="text-red-500 h-4 w-4" />;
       case 'sedang dicek':
-        return <FaHourglassHalf className="text-yellow-500" />;
+        return <FaHourglassHalf className="text-yellow-500 h-4 w-4" />;
       default:
         return null;
     }
@@ -251,9 +282,9 @@ const Transaction = ({ initialTransaction }) =>  {
   const getTypeIcon = (type) => {
     switch (type) {
       case 'income':
-        return <FaRegArrowAltCircleDown  className="text-blue-700 h-4 w-4 md:h-5 md:w-5 " />;
+        return <FaRegArrowAltCircleDown  className="text-blue-700 h-3 w-3 md:h-5 md:w-5 " />;
       case 'expense':
-        return <FaRegArrowAltCircleUp  className="text-red-700 h-4 w-4 md:h-5 md:w-5 " />;
+        return <FaRegArrowAltCircleUp  className="text-red-700 h-3 w-3 md:h-5 md:w-5 " />;
       case 'ipl':
         return <FaExchangeAlt  className="text-green-700  h-3 w-3 md:h-4 md:w-4 " />;
       default:
@@ -363,10 +394,7 @@ const Transaction = ({ initialTransaction }) =>  {
     { value: 'expense', label: 'Keluar' },
   ]
 
-  const handleTypeChange = (selectedOption) => {
-    setSelectedType(selectedOption.value);
-    setCurrentPage(0);
-  };
+  
 
  // console.log(transactions)
 
@@ -375,7 +403,7 @@ const Transaction = ({ initialTransaction }) =>  {
    
     <Header toggleSidebar={toggleSidebar}/>
     <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-md mx-auto'>
+    <main className='max-w-screen-md mx-auto min-h-dvh'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5  mb-11'>
         {showAlert && (
@@ -449,64 +477,79 @@ const Transaction = ({ initialTransaction }) =>  {
                     <MdOutlineAccountBalanceWallet  className="text-blue-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5 " /><span className='text-blue-700 text-xs md:text-sm'>{formatCurrency( totalAmount?totalAmount: 0)}</span>
                 </Button>
                 <Button color="gray" size="xs" className='p-1 cst-btn'>
-                    <FaRegArrowAltCircleDown  className="text-green-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5 " /><span className='text-green-700 text-xs md:text-sm'>{formatCurrency( totalIncome?totalIncome: 0)}</span>
+                    <FaRegArrowAltCircleDown 
+                    className="text-green-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5 " />
+                    <span className='text-green-700 text-xs md:text-sm'>
+                      {formatCurrency( totalIncome?totalIncome: 0)}
+                    </span>
                 </Button>
                 <Button color="gray" size="xs" className='p-1 cst-btn'>
                     <FaRegArrowAltCircleUp className="text-red-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5" /><span className='text-red-700 text-xs md:text-sm'>{formatCurrency( totalexpense?totalexpense: 0)}</span>
                 </Button>
             </Button.Group>
             </div> 
-            <span className='text-xs order'>Last Update: { moment(lastUpdate).tz('Asia/Jakarta').format('D/M/YYYY, HH:mm')}</span>
+            <span className='text-xs order'>Last Update: { moment(lastUpdate).tz('Asia/Jakarta').format('DD/MM/YYYY, HH:mm')}</span>
         </div>
 
 
           <div className='overflow-x-auto'>
             <Table hoverable>
               <Table.Head>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 w-4'>No</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3 w-3/4'>Keterangan</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tanggal</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Nominal</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tipe</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Status</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>
+                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3 w-4'>No</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3 w-3/4'>Keterangan</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3'>Tanggal</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3'>Nominal</Table.HeadCell>
+                {/* <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tipe</Table.HeadCell> */}
+                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3'>Status</Table.HeadCell>
+                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3'>
                     <span className="sr-only">Edit</span>
                 </Table.HeadCell>
               </Table.Head>
               <Table.Body className="divide-y">
                 
                 {currentPageData.map((transaction, index) => ( 
-                  <Table.Row key={index} className="py-2 px-2 md:py-3 md:px-3 text-xs md:text-base">
-                    <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base w-4`}>
-                    {offset + index + 1}
-                    </Table.Cell>
-
-                    <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                  <Table.Row key={index} className="items-start content-start py-2 px-1 md:py-3 md:px-3 text-xs md:text-base">
+                    <Table.Cell className={`items-start content-start  py-2 px-1 md:py-3 md:px-3 text-xs md:text-base w-4`}>
                       <span className='flex items-start content-start'>
-                        <span>{getTypeIcon(transaction.transaction_type)} </span>
-                        <span className="ml-2">{transaction.description}</span> 
+                      {offset + index + 1}
                       </span>
                     </Table.Cell>
-                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatDate(transaction.date)}</Table.Cell>
-                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatCurrency(transaction.amount)}</Table.Cell>
+
+                    <Table.Cell className={`py-2 px-1 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                      <span className='flex items-start content-start gap-y-3'>
+                      <span>{transaction.description}</span> 
+                      {/* <span>{getTypeIcon(transaction.transaction_type)} </span>
+                         {
+                              transaction.transaction_type === 'ipl' ? (
+                                  <span>{`IPL ${transaction.house_id.house_id}, ${transaction.related_months.length} Periode`}</span>  
+                              ) : (
+                                  <span>{transaction.description}</span> 
+                              )
+                          } */}
+
+
+                      </span>
+                    </Table.Cell>
+                    <Table.Cell className={`items-start content-start py-2 px-1 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatDate(transaction.date)}</Table.Cell>
+                    <Table.Cell className={`items-start content-start py-2 px-1 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatCurrency(transaction.amount)}</Table.Cell>
                     
-                    <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                    {/* <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
                       <span className='flex items-center'>
                         {transaction.payment_type} 
                       </span>
-                    </Table.Cell>
-                    <Table.Cell className={`items-center flex justify-center content-center py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                      <span className='flex items-center'>
+                    </Table.Cell> */}
+                    <Table.Cell className={`items-center flex justify-center content-center py-2 px-1 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
+                      <span className='flex items-center content-start'>
                         {getStatusIcon(transaction.status)} 
                       </span>
                     </Table.Cell>
-                    <Table.Cell className='py-2 px-2 md:py-3 md:px-3 text-xs md:text-base'>
+                    <Table.Cell className='py-2 px-1 md:py-3 md:px-3 text-xs md:text-base'>
                       <Dropdown  className="relative z-50 cursor-pointer" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4 cursor-pointer" /></span>}>
                         <Dropdown.Item onClick={() => {
                           handleEditTransaction(transaction._id);
                           setCurrentTransactionType(transaction.transaction_type);
                         } }><FaRegEdit className='mr-1'/><span>Edit</span></Dropdown.Item>
-                        <Dropdown.Item><FaEye className='mr-1'/><span>View</span></Dropdown.Item>
+                        {/* <Dropdown.Item><FaEye className='mr-1'/><span>View</span></Dropdown.Item> */}
                         <Dropdown.Item onClick={() => handleDeleteTransaction(transaction._id)} ><FaRegTrashAlt className='mr-1' /><span>Delete</span></Dropdown.Item>
                       </Dropdown>
 
@@ -519,9 +562,9 @@ const Transaction = ({ initialTransaction }) =>  {
           </div>
           <nav className='py-6'>
           <ReactPaginate
-                previousLabel={'Previous'}
-                nextLabel={'Next'}
-                breakLabel={'...'}
+                previousLabel={'<<'}
+                nextLabel={'>>'}
+                breakLabel={'..'}
                 pageCount={Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE)}
                 marginPagesDisplayed={2}
                 pageRangeDisplayed={5}

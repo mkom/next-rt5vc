@@ -4,11 +4,7 @@ const MonthOptions = (monthly) => {
   const startYear = 2024;
   const endYear = moment().year();
   const currentMonth = moment().month();
-
-
- // console.log(monthly)
-
- const options = [];
+  const options = [];
 
   for (let year = startYear; year <= endYear; year++) {
     let startMonth;
@@ -27,8 +23,7 @@ const MonthOptions = (monthly) => {
       });
     }
   }
-
-  return options;
+  return options.reverse();
 };
 
 // const MonthOptions = () => {

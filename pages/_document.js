@@ -1,6 +1,13 @@
 import { Html, Head, Main, NextScript } from "next/document";
+import { useState } from 'react';
+import Footer from "@/components/Footer";
 
 export default function Document() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <Html lang="en">
       <Head>
@@ -20,8 +27,10 @@ export default function Document() {
         />
       </Head>
       <body>
-        <Main />
+       
+        <Main/>
         <NextScript />
+        <Footer/>
       </body>
     </Html>
   );
