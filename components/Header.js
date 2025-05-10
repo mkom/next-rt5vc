@@ -28,7 +28,7 @@ const Header = ({ toggleSidebar }) => {
   return (
     <>
       <nav className="fixed top-0 z-50 w-full backdrop-blur flex-none transition-colors duration-500 lg:z-50 border-b border-slate-900/10 dark:border-slate-50/[0.06] bg-white/95 supports-backdrop-blur:bg-white/60 dark:bg-transparent" >
-        <div className="max-w-screen-md flex flex-wrap items-center justify-between mx-auto px-4 py-2">
+        <div className="max-w-screen-lg flex flex-wrap items-center justify-between mx-auto px-4 py-2">
           <div className="flex justify-center flex-wrap items-center">
           <HiMenuAlt1 onClick={toggleSidebar} className="h-9 w-9 cursor-pointer mr-3" />
           <a href="/" className="flex items-center space-x-2">

@@ -45,6 +45,14 @@ const SideMenu = ({ isOpen }) => {
                 Ipl
             </Sidebar.Item>
             <Sidebar.Item
+             href="/dashboard/bills" 
+             icon={FaCalendarCheck}
+             className={pathname === '/dashboard/bills' ? 'text-gray-900 bg-gray-100' : ''}
+             >
+                Tagihan 
+            </Sidebar.Item>
+            
+            <Sidebar.Item
              href="/dashboard/setorrw" 
              icon={FaCalendarCheck}
              className={pathname === '/dashboard/setorrw' ? 'text-gray-900 bg-gray-100' : ''}

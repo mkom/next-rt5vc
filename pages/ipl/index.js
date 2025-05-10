@@ -25,7 +25,7 @@ const Ipl = () => {
     </Head>
     <SideMenu isOpen={isSidebarOpen}/>
     <Header toggleSidebar={toggleSidebar}/>
-    <main className='max-w-screen-md mx-auto min-h-dvh'>
+    <main className='max-w-screen-lg mx-auto min-h-dvh'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5  mb-11'>
           <Breadcrumb aria-label="Default breadcrumb" className='mb-3'>

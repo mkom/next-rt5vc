@@ -26,7 +26,7 @@ export default function Home() {
 
     <Header toggleSidebar={toggleSidebar}/>
     <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-md mx-auto -m-h-screen'>
+    <main className='max-w-screen-lg mx-auto -m-h-screen'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5'>
           <div className='flex items-start md:items-center flex-col md:flex-row content-start md:content-center mb-4 justify-between gap-2'>

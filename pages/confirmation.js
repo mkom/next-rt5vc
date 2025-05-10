@@ -33,7 +33,7 @@ const FormConfirm = () => {
 
     <Header toggleSidebar={toggleSidebar}/>
     <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-md mx-auto min-h-dvh'>
+    <main className='max-w-screen-lg mx-auto min-h-dvh'>
       <div className='w-full'>
         <section className='mt-14 px-3 py-5  mb-11'>
           <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>Konfirmasi Transfer IPL</h1>
