@@ -6,6 +6,7 @@ import 'moment/locale/id';
 moment.locale('id');
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import Image from 'next/image';
 
 function LetterPreview({data}){
     //console.log(data);
@@ -106,7 +107,7 @@ function LetterPreview({data}){
             <div ref={printRef} className="p-6 mb-10  bg-white text-black max-w-screen-lg mx-auto text-sm">
                 <header className="border-b-4 pb-4 mb-8 flex items-center justify-around gap-12">
                     <div className=" w-[130px]">
-                        <img src="/images/rt005.png" className="w-full h-auto"/>
+                        <Image src="/images/rt005.png" className="w-full h-auto" width={130} height={100} alt="RT 005 Logo"/>
                     </div>
                     <div className="text-center">
                         <h1 className="text-3xl font-extrabold uppercase">Rukun Tetangga 005 Rukun Warga 011</h1>

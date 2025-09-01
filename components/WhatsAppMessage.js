@@ -174,11 +174,11 @@ function WhatsAppMessage({ data }) {
             <div className="mt-4 text-sm text-gray-600">
                 <p><strong>Tips:</strong></p>
                 <ul className="list-disc list-inside mt-2">
-                    <li>Pilih "Lengkap" untuk pesan formal atau "Singkat" untuk pesan praktis</li>
+                    <li>Pilih &quot;Lengkap&quot; untuk pesan formal atau &quot;Singkat&quot; untuk pesan praktis</li>
                     <li>Masukkan nomor WhatsApp tujuan (format: 08xxx atau 628xxx)</li>
-                    <li>Klik "Salin Pesan" untuk menyalin ke clipboard</li>
-                    <li>Klik "WhatsApp Web" untuk membuka di browser</li>
-                    <li>Klik "WhatsApp Mobile" untuk membuka aplikasi WhatsApp</li>
+                    <li>Klik &quot;Salin Pesan&quot; untuk menyalin ke clipboard</li>
+                    <li>Klik &quot;WhatsApp Web&quot; untuk membuka di browser</li>
+                    <li>Klik &quot;WhatsApp Mobile&quot; untuk membuka aplikasi WhatsApp</li>
                 </ul>
                 
                 {phoneNumber && (

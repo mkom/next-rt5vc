@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Select from 'react-select';
 import AsyncSelect from 'react-select/async';
 import { TextInput } from 'flowbite-react';
@@ -24,7 +24,7 @@ const Autocomplete = ({ value, onChange, options, onSelect }) => {
   const [inputValue, setInputValue] = useState("");
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     // Simulasi pemuatan data
     //await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -32,11 +32,11 @@ const Autocomplete = ({ value, onChange, options, onSelect }) => {
     if (options) {
       setIsLoading(false); // Hanya nonaktifkan loading jika value ada
     }
-  };
+  }, [options]);
 
   useEffect(() => {
     loadData();
-  }, [options]); // Jalankan ulang saat value berubah
+  }, [loadData]); // Jalankan ulang saat value berubah
 
   const handleInputChange = (value) => {
     setInputValue(value);

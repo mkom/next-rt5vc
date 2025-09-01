@@ -1,6 +1,6 @@
 import {useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { useState,useEffect} from 'react';
+import { useState,useEffect, useCallback} from 'react';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -19,34 +19,7 @@ const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,i
 
 
 
-    const handleDataRange = (update) => {
-        setDateRange(update);
-       
-        if(update[0] === null && update[1] === null) {
-            //console.log(initialTransaction)
-            
-            setTransactions(initialTransaction);
-            const query = { ...router.query };
-            delete query.startDate;
-            delete query.endDate;
-            router.push({
-                pathname: '/cashflow',
-                query: query,
-            });
-            
-        } else {
-            handleFilter(update[0], update[1]);
-            const startDate = moment(update[0]).format('YYYY-MM-DD');
-            const endDate = moment(update[1]).format('YYYY-MM-DD');
-            
-            router.push({
-                pathname: '/cashflow',
-                query: { ...router.query, startDate: `${startDate}`, endDate:`${endDate}`, page:undefined },
-            });
-        }
-    } 
-
-    const handleFilter = async (startDate,endDate) => {
+    const handleFilter = useCallback(async (startDate,endDate) => {
        
         try {
             const startDateAdjusted = new Date(startDate);
@@ -74,13 +47,40 @@ const FilterCashflow = ({ setTransactions, initialTransaction,initialStartDate,i
         } catch (error) {
             console.error('Error fetching filtered transactions:', error);
         }
-    };
+    }, [setCurrentPage, setTransactions]);
+
+    const handleDataRange = useCallback((update) => {
+        setDateRange(update);
+       
+        if(update[0] === null && update[1] === null) {
+            //console.log(initialTransaction)
+            
+            setTransactions(initialTransaction);
+            const query = { ...router.query };
+            delete query.startDate;
+            delete query.endDate;
+            router.push({
+                pathname: '/cashflow',
+                query: query,
+            });
+            
+        } else {
+            handleFilter(update[0], update[1]);
+            const startDate = moment(update[0]).format('YYYY-MM-DD');
+            const endDate = moment(update[1]).format('YYYY-MM-DD');
+            
+            router.push({
+                pathname: '/cashflow',
+                query: { ...router.query, startDate: `${startDate}`, endDate:`${endDate}`, page:undefined },
+            });
+        }
+    }, [initialTransaction, router, setTransactions, handleFilter]);
 
     useEffect(() => {
         if(router.query.startDate && router.query.endDate) {
             handleDataRange(dateRange);
         }
-    }, [router.query.startDate, router.query.endDate]);
+    }, [router.query.startDate, router.query.endDate, dateRange, handleDataRange]);
 
     return (
         <DatePicker

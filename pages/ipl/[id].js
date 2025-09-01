@@ -99,7 +99,7 @@ const IplDetail = () => {
     setLoading(false);
   }
    
-  },[session, id])
+  },[id])
 
 
   useEffect(() => {
@@ -107,7 +107,7 @@ const IplDetail = () => {
       fetchHouses();
     }
    
-  }, [id]);
+  }, [id, fetchHouses]);
 
   // Daftar bulan
   const months = [

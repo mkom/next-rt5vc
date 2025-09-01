@@ -325,7 +325,7 @@ const Confirmation = () => {
             //setLoading(false);
         }
        
-    },[houseId])
+    },[])
 
     const handleMonthChange = (selectedOptions) => {
       setRelatedMonths(selectedOptions || []);

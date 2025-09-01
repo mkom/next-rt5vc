@@ -95,7 +95,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
       setTrxCategory(transactionToEdit.transaction_category ? { value: transactionToEdit.transaction_category, label: transactionToEdit.transaction_category } : '');
     }
-  }, [transactionToEdit]);
+  }, [transactionToEdit, fetchIPlStatus]);
 
 
   useEffect(() => {
@@ -296,7 +296,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
         //setLoading(false);
     }
    
-  },[houseId])
+  },[])
  
 
   const handleMonthChange = (selectedOptions) => {
