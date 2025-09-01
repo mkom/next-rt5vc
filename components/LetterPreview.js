@@ -136,9 +136,9 @@ function LetterPreview({data}){
                     <table className="w-full border border-gray-400 text-sm mb-6">
                         <thead>
                         <tr className="bg-gray-100">
-                            <th className="border p-2 text-left w-4">No</th>
-                            <th className="border p-2 text-left w-[80%]">Periode</th>
-                            <th className="border p-2 text-right">Jumlah</th>
+                            <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ccc' }} className="border p-2 text-left w-4">No</th>
+                            <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ccc' }} className="border p-2 text-left w-[80%]">Periode</th>
+                            <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ccc' }} className="border p-2 text-right">Jumlah</th>
                         </tr>
                         </thead>
                         <tbody>

@@ -81,7 +81,7 @@ const Ipl = ({ initialHouses }) => {
                 },
             });
             
-           //console.log(res.data)
+            //console.log(res.data)
             setHouses(res.data.data);
             setLoading(false);
         } catch (error) {
@@ -193,16 +193,21 @@ const Ipl = ({ initialHouses }) => {
         const { month, status, fee } = monthlyFee;
 
         // Inisialisasi objek untuk setiap bulan jika belum ada
-        acc[month] = acc[month] || { Lunas: 0, BelumBayar: 0, Tbd: 0, totalFeeCollected: 0 };
+        acc[month] = acc[month] || { Lunas: 0, BelumBayar: 0, Tbd: 0, BayarSebagian: 0, totalFeeCollected: 0 };
 
         // Hitung berdasarkan status
         if (status === 'Lunas') {
             acc[month].Lunas++;
-            acc[month].totalFeeCollected += fee || 0; // Akumulasi total fee dari yang sudah lunas
+            // Akumulasi total fee dari yang sudah lunas dan bayar sebagian
+            acc[month].totalFeeCollected += fee || 0;
         } else if (status === 'Belum Bayar') {
             acc[month].BelumBayar++;
         } else if (status === 'TBD') {
             acc[month].Tbd++;
+        } 
+        else if (status === 'Bayar Sebagian') {
+           acc[month].totalFeeCollected += fee || 0;
+            acc[month].BayarSebagian++;
         }
     }
 
@@ -244,6 +249,7 @@ const Ipl = ({ initialHouses }) => {
                   <Button color="gray" size="xs" className='p-1 cst-btn'><IoCheckmarkDoneCircleSharp className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Lunas</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.Lunas || 0}</span></Button>
                   <Button color="gray" size="xs" className='p-1 cst-btn'><IoCloseCircle className="text-red-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Belum Bayar</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.BelumBayar || 0}</span></Button>
                   <Button color="gray" size="xs" className='p-1 cst-btn'><IoBookmark className="text-green-400 sm:mr-1 h-5 w-5" /><span className='text-xs' >PGYB</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.Tbd || 0}</span></Button>
+                  <Button color="gray" size="xs" className='p-1 cst-btn'><IoPrism className="text-orange-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Bayar Sebagian</span> <span color="info" className='sm:ml-1 text-xs'>/ {monthlyStatusCount[selectedPeriod]?.BayarSebagian || 0}</span></Button>
                   </Button.Group>
                 </div>   
                 <span className='font-semibold block mt-3'>{formatCurrency(monthlyStatusCount[selectedPeriod]?.totalFeeCollected || 0)}</span>
@@ -312,6 +318,8 @@ const Ipl = ({ initialHouses }) => {
                                 <td className="py-2 px-2  ">
                                     {
                                       house.monthly_fees.find((status) => status.month === selectedPeriod)?.status === 'Lunas' ?
+                                      formatCurrency( house.monthly_fees.find((status) => status.month === selectedPeriod)?.fee)
+                                      : house.monthly_fees.find((status) => status.month === selectedPeriod)?.status === 'Bayar Sebagian' ?
                                       formatCurrency( house.monthly_fees.find((status) => status.month === selectedPeriod)?.fee)
                                       : '-'
                                     }

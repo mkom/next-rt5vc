@@ -1,4 +1,4 @@
-import { useEffect,useState,useCallback } from 'react';
+import { useEffect,useState,useCallback,useRef } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import Spinner from './Spinner';
@@ -25,6 +25,9 @@ import ReactPaginate from 'react-paginate';
 import MonthOptions from './MonthOptions';
 const ITEMS_PER_PAGE = 20;
 
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+
 const IplReport = ({ initialHouses }) =>  {
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState(moment().format('YYYY-MM'));
@@ -36,6 +39,7 @@ const IplReport = ({ initialHouses }) =>  {
   const [skeleten, setSkeleton] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
+   const printRef = useRef();
 
   useEffect(() => {
     const { period } = router.query;
@@ -218,6 +222,133 @@ const IplReport = ({ initialHouses }) =>  {
 
   const formatPercentage = (value) => (value || 0).toFixed(2) + '%';
 
+ // console.log(filteredHouses)
+  const [currentDay, setCurrentDay] = useState(0);
+  useEffect(() => {
+    const today = new Date();
+    setCurrentDay(today.getDate());
+  }, []);
+
+  
+
+  const generatePDF = () => {
+    const currentDate = new Date();
+    const formattedDate = currentDate.toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const formattedTime = currentDate.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const today = new Date();
+    const currentDay = today.getDate();
+
+    const docDefinition = {
+      content: [
+      {
+        text: `Laporan IPL RT 005 RW 011 Periode ${moment(selectedPeriod, 'YYYY-MM').format('MMMM YYYY')}`,
+        style: 'header'
+      },
+      {
+        text: `Tanggal: ${formattedDate} ${formattedTime} WIB`,
+        style: 'content',
+      },
+      {
+        columns: [
+        {
+          text: `Lunas: ${monthlyStatusCount?.Tertib || 0}`,
+          style: 'subheader'
+        },
+        ...(currentDay >= 10
+          ? [{
+              text: `Belum Bayar: ${monthlyStatusCount[selectedPeriod]?.BelumBayar || 0}`,
+              style: 'subheader'
+            }]
+          : []),
+        {
+          text: `Persentase: ${formatPercentage(monthlyStatusCount?.TertibPercentage)}`,
+          style: 'subheader'
+        }
+        ]
+      },
+      {
+        table: {
+        widths: ['auto', 'auto', '*', 'auto', 'auto'],
+        body: [
+          ['No', 'No Rumah', 'Nama', 'Status', 'Tanggal'],
+          ...filteredHouses.map((data, index) => {
+            
+            let status = data.monthly_fees.find((status) => status.month === selectedPeriod)?.status;
+            if (status === 'Belum Bayar' && currentDay < 10) {
+            status = '-';
+            }
+          const statusStyle = status === 'Belum Bayar' ? { color: 'red' } : status === 'Bayar Sebagian' ? { color: 'orange' } : {};
+            return [
+            offset + index + 1,
+            {
+              columns: [
+                { text: data.house_id, style: 'tableCell' },
+                (data.outstanding_count != 0 || data.future_count != 0) && {
+                  stack: [
+                    data.outstanding_count != 0 && {
+                      text: `-${data.outstanding_count}`,
+                      color: 'red',
+                      fontSize: 8,
+                      margin: [0, 0, 0, 0],
+                    },
+                    data.future_count != 0 && {
+                      text: `+${data.future_count}`,
+                      color: 'blue',
+                      fontSize: 8,
+                      margin: [0, 0, 0, 0],
+                    }
+                  ].filter(Boolean),
+                  width: 'auto',
+                  margin: [0, 0, 0, 0],
+                }
+              ].filter(Boolean),
+              margin: [0, 1, 0, 2],
+              pageBreak: 'avoid',
+            },
+            data.resident_name,
+            { text: status || '-', style: statusStyle },
+            data.monthly_fees.find((status) => status.month === selectedPeriod)?.transaction_id?.date
+              ? formatDate(data.monthly_fees.find((status) => status.month === selectedPeriod)?.transaction_id?.date)
+              : '-',
+            ];
+          }),
+        ]
+        },
+        layout: 'lightHorizontalLines'
+      }
+      ],
+      styles: {
+      header: {
+        fontSize: 18,
+        bold: true,
+        margin: [0, 0, 0, 5]
+      },
+      content: { 
+        fontSize: 12,
+        margin: [0, 0, 0, 10]
+      },
+      subheader: {
+        fontSize: 14,
+        italics: true,
+        margin: [0, 0, 0, 10]
+      }
+      }
+    };
+
+    const timestamp = moment().format('YYYYMMDD_HHmmss');
+    pdfMake.createPdf(docDefinition).download(`IPL_Report_RT005_RW011_Period_${moment(selectedPeriod, 'YYYY-MM').format('MMMM_YYYY')}_${timestamp}.pdf`);
+  };
+    
+
   if (loading) {
     return <Spinner />;
   }
@@ -225,8 +356,9 @@ const IplReport = ({ initialHouses }) =>  {
   return (
     <>
     <CustomThemeProviderSecond>
-      
+    <Button onClick={generatePDF} size='xs' className='bg-green-700 '>Download</Button>
       <div className=' mb-4 mt-3 bg-cyan-700 rounded-md p-3 pb-5'>
+        
           <div className='flex justify-between flex-col md:flex-row  md:items-center md:content-center gap-2'>
             <div className='md:w-1/3'>
                 <span className='font-semibold text-white'>Periode</span>
@@ -296,6 +428,7 @@ const IplReport = ({ initialHouses }) =>  {
           </div>
          
       </div>
+     
 
       {skeleten ? (
         <div className=' '>
@@ -336,11 +469,21 @@ const IplReport = ({ initialHouses }) =>  {
             </Button.Group>
           </div>     
           <div>
-            <Button.Group className='mb-2'>
-            {/* <Button color="gray" size="xs" className='p-1 cst-btn'><HiHome className="text-green-700 sm:mr-1 h-5 w-5" /> <span className='text-xs'>Total</span> <span color="info" className='sm:ml-1 text-xs'>: {monthlyStatusCount?.total || 0}</span></Button> */}
-            <Button color="gray" size="xs" className='p-1 cst-btn'><IoCheckmarkDoneCircleSharp  className="text-green-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Lunas: {monthlyStatusCount?.Tertib || 0}</span></Button>
-            <Button color="gray" size="xs" className='p-1 cst-btn'><IoCloseCircle  className="text-red-700 sm:mr-1 h-5 w-5" /><span className='text-xs'>Belum Bayar: {monthlyStatusCount[selectedPeriod]?.BelumBayar || 0}</span></Button>
-            <Button color="gray" size="xs" className='p-1 cst-btn'><TbCirclePercentage className="text-blue-700 sm:mr-1 h-5 w-5" /><span className='text-xs' ></span> <span color="info" className='text-xs'>{formatPercentage(monthlyStatusCount?.TertibPercentage)}</span></Button>
+            <Button.Group className='mb-2'> 
+              <Button color="gray" size="xs" className='p-1 cst-btn'>
+                <IoCheckmarkDoneCircleSharp  className="text-green-700 sm:mr-1 h-5 w-5" />
+                <span className='text-xs'>Lunas: {monthlyStatusCount?.Tertib || 0}</span>
+              </Button>
+              {currentDay >= 10 && (
+                <Button color="gray" size="xs" className='p-1 cst-btn'>
+                  <IoCloseCircle className="text-red-700 sm:mr-1 h-5 w-5" />
+                  <span className='text-xs'>Belum Bayar: {monthlyStatusCount[selectedPeriod]?.BelumBayar || 0}</span>
+                </Button>
+              )}
+              <Button color="gray" size="xs" className='p-1 cst-btn'>
+                <TbCirclePercentage className="text-blue-700 sm:mr-1 h-5 w-5" />
+                <span className='text-xs' ></span> <span color="info" className='text-xs'>{formatPercentage(monthlyStatusCount?.TertibPercentage)}</span>
+              </Button>
             </Button.Group>
           </div>     
           {/* <div>
@@ -351,10 +494,11 @@ const IplReport = ({ initialHouses }) =>  {
             </Button.Group>
           </div>       */}
           <div className="overflow-x-auto">
-            <Table striped className='md:w-4/5 w-full'>
+            <Table striped className='w-full'>
                 <Table.Head className='' >
                     <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-2'>No</Table.HeadCell>
-                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-24 md:w-32'>No Rumah</Table.HeadCell>
+                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white '>No Rumah</Table.HeadCell>
+                    <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white'>Nama</Table.HeadCell>
                     <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white text-center'>Status</Table.HeadCell>
                     <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-28 '>Tanggal</Table.HeadCell>
                     {/* <Table.HeadCell className='p-2 md:text-base  bg-cyan-600 text-white w-14 '></Table.HeadCell> */}
@@ -384,9 +528,34 @@ const IplReport = ({ initialHouses }) =>  {
                                {/* {monthly.occupancy_status !== 'Isi' ? <Badge color="failure" >{monthly.occupancy_status}</Badge> :'' } */}
                                </span>
                             </Table.Cell>
+                            <Table.Cell className={`p-2 ${house.monthly_status.find((status) => status.month === selectedPeriod)?.status === 'Weekend' ? 'text-purple-500':'text-gray'} text-xs md:text-base text-left`}>
+                             {house.resident_name}
+                            </Table.Cell>
                             <Table.Cell className={`p-2 ${house.monthly_status.find((status) => status.month === selectedPeriod)?.status === 'Weekend' ? 'text-purple-500':'text-gray'} text-xs md:text-base text-center`}>
                               <span className='flex justify-center items-center content-center h-full'>
-                                {getTypeIcon(house.monthly_fees.find((status) => status.month === selectedPeriod)?.status)}
+                                {(() => {
+                                  const today = new Date();
+                                  const currentDay = today.getDate();
+                                  const status = house.monthly_fees.find((s) => s.month === selectedPeriod)?.status;
+
+                                  if (status !== 'Belum Bayar' || currentDay >= 10) {
+                                    return (
+                                      <span className='flex justify-center items-center content-center h-full'>
+                                        {getTypeIcon(status)}
+                                      </span>
+                                    );
+                                  } else {
+                                     return (
+                                      <span className='flex justify-center items-center content-center h-full'>
+                                        -
+                                      </span>
+                                     )
+                                  }
+
+                                  return null;
+                                })()}
+
+                                {/* {getTypeIcon(house.monthly_fees.find((status) => status.month === selectedPeriod)?.status)} */}
                               </span>
                             </Table.Cell>
   
@@ -444,6 +613,7 @@ const IplReport = ({ initialHouses }) =>  {
 
           <div className='flex items-center content-center justify-between mb-3'>
             <Button size='xs' as={Link} href="/outstanding" className='bg-red-700 '>Outstanding<GrFormNextLink  className='w-5 h-5'/></Button>
+           
           </div>
           <p className='pt-4 pb-1 text-sm font-medium'>Catatan:</p>
           <p className='text-sm'>IPL RT 005 tercatat dan terhitung mulai dari Juli 2024.</p>

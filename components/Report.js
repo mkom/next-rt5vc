@@ -80,7 +80,7 @@ const Report = ({ initialTransaction }) =>  {
               period: selectedPeriod
           }
         });
-        //console.log(res.data)
+        console.log(res.data)
         const dataRes = res.data.data;
         setTotalBalance(dataRes.balance.final_balance);
         setTotalIncome(dataRes.balance.total_income);
@@ -244,7 +244,7 @@ const Report = ({ initialTransaction }) =>  {
         <Card className='mb-5 shadow-sm'>
             <div className='flex items-center justify-start gap-4 mb-4 mt-3 bg-cyan-700 rounded-md p-3 '>
                 <div>
-                    <span className='font-semibold text-white'>PERIODE</span>
+                    <span className='font-semibold text-white'>BULAN</span>
                 </div>
                 <Select
                     id="relatedMonths"
@@ -363,30 +363,63 @@ const Report = ({ initialTransaction }) =>  {
                                   {
                                     expandedRows === 'ipl' && (
                                       <>
-                                      {transactions.ipl.map((transaction, index) => (
-                                          <Table.Row key={index} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'ipl'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
+                                      {(() => {
+                                        // Group transactions by period
+                                        const groupedByPeriod = {};
+                                        transactions.ipl.forEach(transaction => {
+                                          const monthsCount = transaction.related_months.length;
+                                          const amountPerMonth = transaction.amount / monthsCount;
+                                          
+                                          transaction.related_months.forEach(period => {
+                                            if (!groupedByPeriod[period]) {
+                                              groupedByPeriod[period] = {
+                                                transactions: [],
+                                                total: 0,
+                                                latestDate: null,
+                                                count: 0
+                                              };
+                                            }
+                                            
+                                            // Only add transaction to array if not already present (to avoid duplicates)
+                                            const existingTransaction = groupedByPeriod[period].transactions.find(t => t._id === transaction._id);
+                                            if (!existingTransaction) {
+                                              groupedByPeriod[period].transactions.push(transaction);
+                                              groupedByPeriod[period].count += 1;
+                                            }
+                                            
+                                            groupedByPeriod[period].total += amountPerMonth;
+                                            
+                                            // Find latest transaction date for this period
+                                            const transactionDate = new Date(transaction.date);
+                                            if (!groupedByPeriod[period].latestDate || transactionDate > groupedByPeriod[period].latestDate) {
+                                              groupedByPeriod[period].latestDate = transactionDate;
+                                            }
+                                          });
+                                        });
+
+                                        // Sort periods chronologically
+                                        const sortedPeriods = Object.keys(groupedByPeriod).sort((a, b) => new Date(a + '-01') - new Date(b + '-01'));
+
+                                        return sortedPeriods.map((period, index) => (
+                                          <Table.Row key={`period-${period}-${index}`} className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'ipl'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
                                             <Table.Cell className={`${getTextColor('ipl')} py-1 px-4 md:py-2 md:px-5 text-xs md:text-base`}>
-                                            <span className='flex items-center content-center'>
-                                             
-                                              {/* <span>{getTypeIcon('ipl')} </span> */}
-                                        
-                                              <span className="">
-                                                {
-                                                    transaction.transaction_type === 'ipl' ? (
-                                                        <span>{`IPL ${transaction.house_id}, ${formatPeriod(transaction.related_months)}`}</span>  
-                                                    ) : (
-                                                        <span>{transaction.description}</span> 
-                                                    )
-                                                }
-                                                
+                                              <span className='flex items-center content-center'>
+                                                <span className="">
+                                                  Pembayaran IPL {formatPeriod([period])} ({groupedByPeriod[period].count})
                                                 </span>
-                                            </span>
-                                              
+                                              </span>
                                             </Table.Cell>
-                                            <Table.Cell className={`${getTextColor('ipl')} items-center content-center py-1 px-4 md:py-2 md:px-3 text-xs md:text-base`}>{formatDate(transaction.date)}</Table.Cell>
-                                            <Table.Cell className={`${getTextColor('ipl')} items-center content-center  justify-end py-1 px-4 md:py-2 md:px-3 text-xs md:text-base`}><span className='flex items-center content-center justify-end pr-5'>{formatCurrency(transaction.amount)}</span></Table.Cell>
+                                            <Table.Cell className={`${getTextColor('ipl')} items-center content-center py-1 px-4 md:py-2 md:px-3 text-xs md:text-base`}>
+                                              {formatDate(groupedByPeriod[period].latestDate)}
+                                            </Table.Cell>
+                                            <Table.Cell className={`${getTextColor('ipl')} items-center content-center  justify-end py-1 px-4 md:py-2 md:px-3 text-xs md:text-base`}>
+                                              <span className='flex items-center content-center justify-end pr-5'>
+                                                {formatCurrency(groupedByPeriod[period].total)}
+                                              </span>
+                                            </Table.Cell>
                                           </Table.Row>
-                                        ))}
+                                        ));
+                                      })()}
                                         <TableRow  className={`bg-white dark:border-gray-700 dark:bg-gray-800 transition-all duration-500 ease-in-out overflow-hidden ${expandedRows === 'ipl'? 'max-h-screen opacity-100': 'max-h-0 opacity-0'}`}>
                                             <Table.Cell colSpan={3} className={`${getTextColor('ipl')} py-1 px-4  md:px-3 text-xs md:text-base`}>
                                             <span className='flex items-center content-center justify-end'>
