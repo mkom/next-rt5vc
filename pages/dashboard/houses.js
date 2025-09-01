@@ -439,6 +439,14 @@ const Houses = ({ initialHouses }) => {
                         onChange={handleInputChange}
                         className="mb-4"
                     />
+
+                    <label className="block mb-2 text-sm font-medium text-gray-700">WhatsApp</label>
+                    <TextInput
+                        name="whatsapp_number"
+                        value={editData?.whatsapp_number || ''}
+                        onChange={handleInputChange}
+                        className="mb-4"
+                    />
                     
                     <label className="block mb-2 text-sm font-medium text-gray-700">Status</label>
                       <select

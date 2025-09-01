@@ -11,13 +11,14 @@ import SideMenu from '../../components/dashboard/Sidebar'
 import Spinner from '../../components/Spinner';
 import { HiOutlineSearch } from "react-icons/hi";
 import {FaCalendarCheck } from 'react-icons/fa';
-import { FaRegEnvelope } from "react-icons/fa";
+import { FaRegEnvelope, FaWhatsapp } from "react-icons/fa";
 import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
 import 'moment/locale/id';
 moment.locale('id');
 import CustomThemeProviderSecond from '../../components/CustomThemeSecond';
 import LetterPreview from '@/components/LetterPreview.js';
+import WhatsAppMessage from '@/components/WhatsAppMessage.js';
 
 
 const ITEMS_PER_PAGE = 30;
@@ -30,7 +31,9 @@ const Bills = ({ initialHouses }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(true);  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [loading, setLoading] = useState(true);  
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isWhatsAppDrawerOpen, setIsWhatsAppDrawerOpen] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [totalHouses, setTotalHouses] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -53,6 +56,7 @@ const Bills = ({ initialHouses }) => {
             const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
             });
             const sorted = res.data.data.sort((a, b) => b.total_fee - a.total_fee);
+            //console.log(sorted);
             setHouses(sorted);
             setTotalHouses(res.data.total);
             setTotalAmount(res.data.total_amount)
@@ -102,6 +106,11 @@ const Bills = ({ initialHouses }) => {
   const handleEditClick = (data) => {
    // setEditData(house);
     setIsDrawerOpen(true);
+    setDetailData(data);
+  };
+
+  const handleWhatsAppClick = (data) => {
+    setIsWhatsAppDrawerOpen(true);
     setDetailData(data);
   };
   //console.log(detailData);
@@ -188,7 +197,14 @@ const Bills = ({ initialHouses }) => {
                             <td className="py-2 px-2 ">
                               <Button.Group className=''>
                               {/* <Button color="gray" size="xs" className=''>Detail</Button> */}
-                              <Button color="gray" size="xs" className='rounded-md' onClick={() => handleEditClick(house)}>Buat Surat</Button>
+                              <Button color="gray" size="xs" className='' onClick={() => handleEditClick(house)}>
+                                <FaRegEnvelope className="mr-1 h-4 w-4" />
+                                <span>Surat</span>
+                              </Button>
+                              <Button color="gray" size="xs" className='' onClick={() => handleWhatsAppClick(house)}>
+                                <FaWhatsapp className="mr-1 h-4 w-4" />
+                                WhatsApp
+                              </Button>
                               {/* <Button color="gray" size="xs" target='_blank' as={Link} href={`/ipl/${house.house_id.toLowerCase()}`}>Surat</Button> */}
                               </Button.Group>
                               </td>
@@ -228,6 +244,13 @@ const Bills = ({ initialHouses }) => {
             <Drawer className='py-4 px-7 top-0 z-50 w-full ' open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} position="right">
             <Drawer.Header title="Preview" titleIcon={FaRegEnvelope}/>
                <LetterPreview data={detailData}/>
+            </Drawer>
+            )}
+
+            {detailData && (
+            <Drawer className='py-4 px-7 top-0 z-50 w-full ' open={isWhatsAppDrawerOpen} onClose={() => setIsWhatsAppDrawerOpen(false)} position="right">
+            <Drawer.Header title="Pesan WhatsApp" titleIcon={() => <span>💬</span>}/>
+               <WhatsAppMessage data={detailData}/>
             </Drawer>
             )}
 
