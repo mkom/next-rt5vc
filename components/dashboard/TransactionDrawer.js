@@ -77,7 +77,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   }, [formattedMonths]);
 
   const fetchIPlStatus = useCallback (async (currentHouseId) => {
-    
+     
     try {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`, {
 
@@ -123,14 +123,14 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       setAttachmentTitle(transactionToEdit.attachment.attachment_title || '');
       setAttachmentUrl(transactionToEdit.attachment.attachment_url || '');
       setAdditional_note_mutasi_bca(transactionToEdit.additional_note_mutasi_bca || '');
-      setProofOfTransfer(transactionToEdit.proof_of_transfer || '');
+      setProofOfTransfer(Array.isArray(transactionToEdit.proof_of_transfer) ? transactionToEdit.proof_of_transfer[0] : transactionToEdit.proof_of_transfer || '');
       //setRelatedMonths(formattedMonths || []);
       setPaymentDate(transactionToEdit.date || '');
       setStatus(transactionToEdit.status ? { value: transactionToEdit.status, label: transactionToEdit.status } : '');
       setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
       setTrxCategory(transactionToEdit.transaction_category ? { value: transactionToEdit.transaction_category, label: transactionToEdit.transaction_category } : '');
     }
-  }, [transactionToEdit, fetchIPlStatus]);
+  }, [transactionToEdit]);
 
 
   useEffect(() => {
@@ -205,7 +205,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
 
   useEffect(() => {
     if (transactionToEdit) {
-      setUploadUrl(transactionToEdit.proof_of_transfer);
+      setUploadUrl(Array.isArray(transactionToEdit.proof_of_transfer) ? transactionToEdit.proof_of_transfer[0] : transactionToEdit.proof_of_transfer);
     }
   }, [transactionToEdit]);
 
@@ -297,7 +297,9 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setHouseName(selectedHouse.label)
     fetchIPlStatus(currentHouseId);
   };
-   
+  
+ 
+
   const handleMonthChange = (selectedOptions) => {
     setRelatedMonths(selectedOptions || []);
     setAmount(feeIPl*selectedOptions.length)
@@ -377,9 +379,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setRelatedMonths([]);
     setPaymentDate(new Date());
     setPaymentType('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    fileInputRef.current.value = '';
     setErrors({});
     setIsProcessing(false);
     setSelectedImage(null);
@@ -388,7 +388,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setTrxCategory('');
   };
 
-  
+  //console.log('transactionToEdit', transactionToEdit)
+ 
   return (
     <Drawer
       open={isOpen}
@@ -476,15 +477,15 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
           <div className="mb-6 mt-3">
             <Label htmlFor="category" className="mb-2 block">Kategori</Label>
              
-             <Select
-               id="category"
-               isSearchable={false}
-               options={optionsCategory}
-               value={trxCategory}
-               onChange={handleCatChange}
-               placeholder="Kategori"
-               className='bg-gray-50 text-sm'
-             />
+              <Select
+                id="category"
+                isSearchable={false}
+                options={optionsCategory}
+                value={trxCategory}
+                onChange={handleCatChange}
+                placeholder="Kategori"
+                className='bg-gray-50 text-sm'
+              />
             {errors.trxCategory && <div className="text-red-500 text-sm">{errors.trxCategory}</div>}
           </div>
 
@@ -502,110 +503,167 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
           </div>
 
           <div className="mb-6 mt-3">
-            <Label htmlFor="paymentType" className="mb-2 block">Tipe Pembayaran</Label>
-            <Select
-              id="paymentType"
-              isSearchable={false}
-              options={optionsType}
-              value={paymentType}
-              onChange={handleTypeChange}
-              placeholder="Tipe Pembayaran"
-              className='bg-gray-50 text-sm'
-            />
+            <Label htmlFor="payment_type" className="mb-2 block">Tipe Pembayaran</Label>
+              <Select
+                id="payment_type"
+                isSearchable={false}
+                options={optionsType}
+                value={paymentType}
+                onChange={handleTypeChange}
+                placeholder="Cash atau Transfer"
+                className='bg-gray-50 text-sm'
+              />
             {errors.paymentType && <div className="text-red-500 text-sm">{errors.paymentType}</div>}
           </div>
 
-          {paymentType && paymentType.value === 'transfer' && (
-            <div className="mb-6 mt-3">
-              <Label htmlFor="proofOfTransfer" className="mb-2 block">Bukti Transfer</Label>
-              <FileInput
-                id="proofOfTransfer"
-                onChange={handleFileChange}
+          <div className="mb-6 mt-3">
+              <Label htmlFor="proofOfTransfer" className="mb-2 block">Lampiran</Label>
+              <FileInput 
+                id="file" 
+                onChange={handleFileChange} 
+                accept=".jpg,.png,.pdf,.jpeg"
                 ref={fileInputRef}
-                accept="image/*"
               />
-              {errors.proofOfTransfer && <div className="text-red-500 text-sm">{errors.proofOfTransfer}</div>}
+              
+              <TextInput
+                id="proofOfTransfer"
+                name="proofOfTransfer"
+                value={proofOfTransfer}
+                onChange={(e) => setProofOfTransfer(e.target.value)}
+                placeholder="Masukkan URL lampiran"
+                className='hidden'
+              />
               {selectedImage && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600">File yang dipilih: {selectedImage.name}</p>
-                </div>
-              )}
-              {proofOfTransfer && typeof proofOfTransfer === 'string' && (
-                <div className="mt-2">
-                  <img src={proofOfTransfer} alt="Bukti Transfer" className="max-w-xs h-auto" />
-                </div>
-              )}
+              <Image
+                src={URL.createObjectURL(selectedImage)}
+                alt="Preview"
+                width={250}
+                height={250}
+                className="p-8"
+              />
+            )}
+              {errors.proofOfTransfer && <div className="text-red-500 text-sm">{errors.proofOfTransfer}</div>}
+              {proofOfTransfer && !selectedImage &&
+                <Image className='p-8' width={250} height={250} src={proofOfTransfer}  alt="image 1" /> 
+              }
             </div>
-          )}
 
           <div className="mb-6 mt-3">
             <Label htmlFor="paymentDate" className="mb-2 block">Tanggal Pembayaran</Label>
-            <div className="relative">
+            <div className='flex items-center w-72 relative border border-gray-300 rounded-md shadow-sm bg-gray-50'>
+            <FaCalendarAlt className="absolute h-5 w-5 left-2 z-50 top-1/2 transform -translate-y-1/2 text-gray-500" />
             <DatePicker
+              locale={id}
               id="paymentDate"
+              name="paymentDate"
               selected={paymentDate}
               onChange={(date) => setPaymentDate(date)}
-              dateFormat="dd/MM/yyyy"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              dateFormat="dd MMMM yyyy"
+              calendarClassName="light-blue-stripes"
               placeholderText="Pilih tanggal"
-              showYearDropdown
-              scrollableMonthYearDropdown
+              className="block w-full pl-8 text-sm text-gray-900  border-gray-300 border-none rounded-md py-2 px-4 focus:ring-0 bg-gray-50"
             />
-             <div className="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-3">
-                <FaCalendarAlt className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            </div>
             </div>
             {errors.paymentDate && <div className="text-red-500 text-sm">{errors.paymentDate}</div>}
+            
           </div>
 
           <div className="mb-6 mt-3">
-            <Label htmlFor="status" className="mb-2 block">Status</Label>
-            <Select
-              id="status"
-              isSearchable={false}
-              options={optionsStatus}
-              value={status}
-              onChange={handleStatusChange}
-              placeholder="Status"
-              className='bg-gray-50 text-sm'
+            <Label htmlFor="additional_note_mutasi_bca" className="mb-2 block">Catatan</Label>
+            <Textarea
+              id="additional_note_mutasi_bca"
+              name="additional_note_mutasi_bca"
+              value={additional_note_mutasi_bca}
+              onChange={(e) => setAdditional_note_mutasi_bca(e.target.value)}
+              placeholder="Catatan tambahan"
             />
+            
+          </div>
+
+          <div className="mb-6 mt-3">
+            <Label htmlFor="payment_type" className="mb-2 block">Status</Label>
+              <Select
+                id="status"
+                isSearchable={false}
+                options={optionsStatus}
+                value={status}
+                onChange={handleStatusChange}
+                placeholder="Status"
+                className='bg-gray-50 text-sm'
+              />
             {errors.status && <div className="text-red-500 text-sm">{errors.status}</div>}
           </div>
 
-          {noteCancel && (
-            <div className="mb-6 mt-3">
-              <Label htmlFor="reason_cancellation" className="mb-2 block">Alasan Pembatalan</Label>
-              <Textarea
-                id="reason_cancellation"
-                value={reason_cancellation}
-                onChange={(e) => setReason_cancellation(e.target.value)}
-                placeholder="Masukkan alasan pembatalan"
-              />
-            </div>
-          )}
-
-          <div className="mb-6 mt-3">
-            <Label htmlFor="additional_note_mutasi_bca" className="mb-2 block">Catatan Tambahan</Label>
+        {noteCancel && status.value === 'gagal' && 
+        
+        <div className="mb-6 mt-3">
+            <Label htmlFor="cancel_note" className="mb-2 block">Alasan pembatalan</Label>
             <Textarea
-              id="additional_note_mutasi_bca"
-              value={additional_note_mutasi_bca}
-              onChange={(e) => setAdditional_note_mutasi_bca(e.target.value)}
-              placeholder="Masukkan catatan tambahan (opsional)"
+              id="cancel_note"
+              name="cancel_note"
+              value={reason_cancellation}
+              onChange={(e) => setReason_cancellation(e.target.value)}
+              placeholder="Catatan tambahan"
             />
+            
           </div>
+        }
+          
 
-          <div className="flex gap-2">
-            <Button type="submit" isProcessing={isProcessing} color="success">
+          {transactionType !== 'ipl' && 
+            <Card>
+            <h3>Dokumen tambahan</h3>
+              <div className=" mt-3">
+                <Label htmlFor="attactment_title" className="mb-2 block">Judul Dokumen</Label>
+                <TextInput
+                  id="attactment_title"
+                  name="attactment_title"
+                  type="text"
+                  value={attachmentTitle}
+                  onChange={(e) => setAttachmentTitle(e.target.value)}
+                  placeholder="Judul"
+                />
+              
+              </div>
+              <div className="mb-6">
+                <Label htmlFor="attactment_url" className="mb-2 block">Url Dokumen</Label>
+                <TextInput
+                  id="attactment_url"
+                  name="attactment_url"
+                  type="text"
+                  value={attachmentUrl}
+                  onChange={(e) => setAttachmentUrl(e.target.value)}
+                  placeholder="Link Url"
+                />
+              
+              </div>
+            </Card>
+          }
+         
+
+          <div className='flex gap-2 pb-24'>
+            <Button 
+            type="submit" 
+            color={transactionType === 'ipl' ? 'success' : transactionType === 'income' ? 'blue' : 'failure'}
+            disabled={isProcessing}
+            >
+              {isProcessing && <AiOutlineLoading className="h-5 w-5 animate-spin mr-2" />}
+              {transactionType === 'ipl' && <FaExchangeAlt className="mr-2 h-5 w-5" />}
+              {transactionType === 'income' && <FaRegArrowAltCircleDown className="mr-2 h-5 w-5" />}
+              {transactionType === 'expense' && <FaRegArrowAltCircleUp className="mr-2 h-5 w-5" />}
               Simpan
             </Button>
-            <Button type="button" color="gray" onClick={() => {
-              resetForm();
-              onClose();
-            }}>
+            <Button
+              type="button"
+              color="gray"
+              onClick={() => {
+                resetForm();
+                onClose();
+              }}
+            >
               Batal
             </Button>
           </div>
-
         </form>
       </Drawer.Items>
     </Drawer>
