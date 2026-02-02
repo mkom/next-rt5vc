@@ -164,7 +164,7 @@ const Transaction = ({ initialTransaction }) =>  {
       if(number) {
         try {
           await axios.post(
-            `${process.env.NEXT_PUBLIC_WABOTAPI_URL}/send`,
+          `${process.env.NEXT_PUBLIC_WABOTAPI_URL}/send`,
             {to: number, message: bodyMessage},
             {
               headers: {
