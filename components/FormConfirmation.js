@@ -261,8 +261,8 @@ const Confirmation = () => {
         // Send notification to admin via the WhatsApp bot
         try {
           await axios.post(
-            `${process.env.NEXT_PUBLIC_WABOTAPI_URL}/send`,
-              {to: number, message: bodyMessage},
+            `${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`,
+              {number, bodyMessage},
             {
               headers: {
                 'Content-Type': 'application/json',
