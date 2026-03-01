@@ -523,6 +523,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                 onChange={handleFileChange} 
                 accept=".jpg,.png,.pdf,.jpeg"
                 ref={fileInputRef}
+                multiple
               />
               
               <TextInput
