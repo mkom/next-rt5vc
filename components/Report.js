@@ -80,7 +80,7 @@ const Report = ({ initialTransaction }) =>  {
               period: selectedPeriod
           }
         });
-        console.log(res.data)
+       // console.log(res.data)
         const dataRes = res.data.data;
         setTotalBalance(dataRes.balance.final_balance);
         setTotalIncome(dataRes.balance.total_income);

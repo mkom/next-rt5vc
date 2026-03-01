@@ -336,10 +336,48 @@ const Transaction = ({ initialTransaction }) =>  {
           },
         }
       );
+
+      // Kirim notifikasi WA jika tipe IPL dan ada nomor WA
+      // Gunakan transactionData.whatsapp_notification karena backend mungkin tidak mengembalikan field ini
+      const waNumber = response.data.whatsapp_notification || transactionData.whatsapp_notification;
+      console.log('[handleDrawerSubmit] transactionData.transaction_type:', transactionData.transaction_type);
+      console.log('[handleDrawerSubmit] waNumber (from response || transactionData):', waNumber);
+     
+      if (transactionData.transaction_type === 'ipl' && waNumber) {
+        const number = waNumber;
+        const houseIdForUrl = response.data.house?.house_id || transactionData.houseId || '';
+        let IPLUrl = `${baseUrl}/ipl/${houseIdForUrl.toLowerCase()}`;
+        const bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*\n\n`
+            + `Setelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.\n\n`
+            + `*Detail:*\n`
+            + `*ID:* ${response.data.transaction_id}\n`
+            + `*Deskripsi:*\n${response.data.description}\n`
+            + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
+            + `*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}\n`
+            + (houseIdForUrl ? `\n*Cek IPL:* ${houseIdForUrl} ${IPLUrl}\n\n` : '')
+            + `Terima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.\n\n`
+            + `*Hormat Kami*\n`
+            + `RT 005 Villa Citayam.\n`;
+       // console.log('[handleDrawerSubmit] Sending WA to:', number);
+        //console.log('[handleDrawerSubmit] WA bodyMessage:', bodyMessage);
+        try {
+          const waRes = await axios.post(
+            `${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`,
+            { number, bodyMessage },
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+          //console.log('[handleDrawerSubmit] WA sent successfully:', waRes.data);
+        } catch (waError) {
+          // WA notification failure should not block the main flow
+          //console.error('[handleDrawerSubmit] WA send failed:', waError?.response?.data || waError.message);
+        }
+      } else {
+        console.log('[handleDrawerSubmit] WA not sent. Condition not met (type ipl + waNumber required).');
+      }
+
       setAlertType('success');
       setAlertMessage('Transaksi berhasil ditambahkan');
       setShowAlert(true);
-     // alert('Transaksi berhasil ditambahkan');
       // Refresh data atau navigasi sesuai kebutuhan
       fetchTransactions();
     } catch (error) {

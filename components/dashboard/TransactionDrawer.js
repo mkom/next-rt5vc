@@ -49,6 +49,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const [feeIPl, setFeeIPl] = useState(0);
   const [noteCancel, setNoteCancel] = useState(false);
   const [trxCategory, setTrxCategory] = useState('');
+  const [noWa, setNowa] = useState('');
 
   // const handleAddAttachment = () => {
   //   setAttachments([...attachments, { attachment_title: attactment_title, attachment_url: attactment_url }]);
@@ -129,6 +130,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       setStatus(transactionToEdit.status ? { value: transactionToEdit.status, label: transactionToEdit.status } : '');
       setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
       setTrxCategory(transactionToEdit.transaction_category ? { value: transactionToEdit.transaction_category, label: transactionToEdit.transaction_category } : '');
+      // keep WA in sync when editing an existing transaction
+      setNowa(transactionToEdit.whatsapp_notification || '');
     }
   }, [transactionToEdit]);
 
@@ -142,11 +145,12 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               Authorization: `Bearer ${session.accessToken}`,
             },
           });
-          //console.log(res)
+         // console.log(res)
           const dataRes = res.data;
           setHouses(dataRes.data.map(house => ({
             value: house.house_id,
-            label: house.house_id
+            label: house.house_id,
+            whatsapp_number: house.whatsapp_number,
           })));
         } catch (error) {
           console.error('Error fetching houses data:', error);
@@ -261,7 +265,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl },
       reason_cancellation,
       transaction_category:trxCategory.value,
-      
+      whatsapp_notification: noWa,
     };
 
     //console.log(newTransaction)
@@ -294,7 +298,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     resetForm();
     const currentHouseId = selectedHouse.value;
     setHouseId(selectedHouse.value);
-    setHouseName(selectedHouse.label)
+    setHouseName(selectedHouse.label);
+    setNowa(selectedHouse?.whatsapp_number || '');
     fetchIPlStatus(currentHouseId);
   };
   
@@ -386,6 +391,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setLastPaidIPl(null);
     setStatus('');
     setTrxCategory('');
+    setNowa('');
   };
 
   //console.log('transactionToEdit', transactionToEdit)
@@ -437,6 +443,12 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                   <>
                   <p className='text-xs pt-2 text-gray-700'>IPL Terakhir : {moment(lastPaidIPl,("YYYY-MM")).format("MMMM YYYY")}</p>
                   </>
+                }
+                {noWa &&
+                  <div className='flex flex-wrap gap-3 justify-start'>
+                    <div className="text-xs">Whatsapp :</div>
+                    <div className="text-xs">{noWa}</div>
+                  </div>
                 }
               </div>
               

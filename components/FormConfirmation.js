@@ -105,11 +105,11 @@ const Confirmation = () => {
                 Authorization: `Bearer ${session.accessToken}`,
               },
             });
-            //console.log(res.data)
             const dataRes = res.data;
             setHouses(dataRes.data.map(house => ({
               value: house.house_id,
-              label: house.house_id
+              label: house.house_id,
+              whatsapp_number: house.whatsapp_number
             })));
             
             setLoading(false);
@@ -290,12 +290,37 @@ const Confirmation = () => {
     const handleHouseChange = (newValue) => {
       setHouseId(newValue);
     };
+
+    const fetchLastTransactionWhatsapp = async (currentHouseId) => {
+      try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`);
+        const allTransactions = res.data?.data?.transactions || [];
+        // Filter transaksi by house_id dan urutkan dari terbaru
+        const houseTransactions = allTransactions
+          .filter(t => {
+            const txHouseId = t.house_id?.house_id || t.houseId || t.house_id;
+            return typeof txHouseId === 'string' && txHouseId.toUpperCase() === currentHouseId.toUpperCase();
+          })
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        if (houseTransactions.length > 0 && houseTransactions[0].whatsapp_notification) {
+          setWhatsapp(houseTransactions[0].whatsapp_notification);
+        }
+      } catch (error) {
+        console.error('Error fetching last transaction whatsapp:', error);
+      }
+    };
   
     const handleHouseSelect = (selectedHouse) => {
       resetForm();
       const currentHouseId = selectedHouse.value;
       setHouseId(selectedHouse.value);
-      setHouseName(selectedHouse.label)
+      setHouseName(selectedHouse.label);
+      if (selectedHouse.whatsapp_number) {
+        setWhatsapp(selectedHouse.whatsapp_number);
+      } else {
+        fetchLastTransactionWhatsapp(currentHouseId);
+      }
       fetchIPlStatus(currentHouseId);
     }
 
@@ -305,7 +330,6 @@ const Confirmation = () => {
 
         });
 
-           // console.log(res.data.data)
             const dataMonthlyFees = res.data.data.monthly_fees
             const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas" || item.status === "TBD");
             const sortedPaidMonths = paidMonths.sort((a, b) => new Date(b.month) - new Date(a.month));
