@@ -1,6 +1,7 @@
 // components/TransactionDrawer.js
 import { getSession, useSession } from 'next-auth/react';
-import { useState, useEffect, useRef,useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Image from "next/image";
 import { Drawer, Button, Input, FileInput, Textarea, Label, TextInput, Dropdown,Alert, Card } from 'flowbite-react';
 import {FaCalendarAlt, FaMoneyBill, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa';
@@ -43,7 +44,9 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const fileInputRef = useRef(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentType, setPaymentType] = useState('');
-  const [selectedImage, setSelectedImage] = useState();
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [zoomedFile, setZoomedFile] = useState(null); // { src, isPdf }
+  const filePreviewUrls = useMemo(() => selectedFiles.map(f => URL.createObjectURL(f)), [selectedFiles]);
   const [formattedMonths, setFormattedMonths] =useState([]);
   const [lastPaidIPl, setLastPaidIPl] = useState(null);
   const [feeIPl, setFeeIPl] = useState(0);
@@ -175,14 +178,15 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   }, [houseId, relatedMonths, transactionType,houseName]);
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        setProofOfTransfer(file); // Set file for upload
-        setSelectedImage(e.target.files[0]);
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+        setSelectedFiles(prev => {
+            const merged = [...prev, ...files];
+            setProofOfTransfer(merged[0]); // for validation
+            return merged;
+        });
+        fileInputRef.current.value = '';
     }
-    
-    //console.log( selectedImage)
-    //console.log(proofOfTransfer)
   };
 
   const handleFileUpload = async (file) => {
@@ -209,7 +213,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
 
   useEffect(() => {
     if (transactionToEdit) {
-      setUploadUrl(Array.isArray(transactionToEdit.proof_of_transfer) ? transactionToEdit.proof_of_transfer[0] : transactionToEdit.proof_of_transfer);
+      setUploadUrl(Array.isArray(transactionToEdit.proof_of_transfer) ? transactionToEdit.proof_of_transfer : transactionToEdit.proof_of_transfer);
     }
   }, [transactionToEdit]);
 
@@ -236,10 +240,14 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setIsProcessing(true); // Start processing
 
     let proofOfTransferUrl = uploadUrl;
-    // If proofOfTransfer is a file that needs to be uploaded
-    if (proofOfTransfer && proofOfTransfer instanceof File) {
-      proofOfTransferUrl = await handleFileUpload(proofOfTransfer);
-      if (!proofOfTransferUrl) return; // Abort if upload fails
+    if (selectedFiles.length > 0) {
+      const urls = [];
+      for (const file of selectedFiles) {
+        const url = await handleFileUpload(file);
+        if (!url) return; // Abort if any upload fails
+        urls.push(url);
+      }
+      proofOfTransferUrl = urls;
     }
 
     const convertStringToArray = (dateString) => {
@@ -278,6 +286,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setAttachmentUrl('');
     setAdditional_note_mutasi_bca('')
     setProofOfTransfer('');
+    setSelectedFiles([]);
     setRelatedMonths([]);
     setPaymentDate(new Date());
     setStatus('');
@@ -303,7 +312,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     fetchIPlStatus(currentHouseId);
   };
   
- 
 
   const handleMonthChange = (selectedOptions) => {
     setRelatedMonths(selectedOptions || []);
@@ -387,16 +395,25 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     fileInputRef.current.value = '';
     setErrors({});
     setIsProcessing(false);
-    setSelectedImage(null);
+    setSelectedFiles([]);
     setLastPaidIPl(null);
     setStatus('');
     setTrxCategory('');
     setNowa('');
   };
 
+  const toDisplayUrl = (url) => {
+    if (!url) return url;
+    if (url.includes('drive.google.com') || url.includes('lh3.googleusercontent.com')) {
+      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+
   //console.log('transactionToEdit', transactionToEdit)
- 
+
   return (
+    <>
     <Drawer
       open={isOpen}
       onClose={() => {
@@ -541,24 +558,64 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               <TextInput
                 id="proofOfTransfer"
                 name="proofOfTransfer"
-                value={proofOfTransfer}
+                value={typeof proofOfTransfer === 'string' ? proofOfTransfer : ''}
                 onChange={(e) => setProofOfTransfer(e.target.value)}
                 placeholder="Masukkan URL lampiran"
                 className='hidden'
               />
-              {selectedImage && (
-              <Image
-                src={URL.createObjectURL(selectedImage)}
-                alt="Preview"
-                width={250}
-                height={250}
-                className="p-8"
-              />
-            )}
+              {selectedFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedFiles.map((file, i) => {
+                    const isPdf = file.type === 'application/pdf';
+                    const src = filePreviewUrls[i];
+                    const removeFile = (e) => {
+                      e.stopPropagation();
+                      setSelectedFiles(prev => {
+                        const updated = prev.filter((_, idx) => idx !== i);
+                        setProofOfTransfer(updated[0] ?? '');
+                        return updated;
+                      });
+                    };
+                    return (
+                      <div key={i} className="relative">
+                        {isPdf ? (
+                          <div onClick={() => setZoomedFile({ src, isPdf: true })}
+                            className="w-[120px] h-[120px] flex flex-col items-center justify-center border rounded cursor-pointer bg-gray-50 text-gray-500 text-xs gap-1">
+                            <span className="text-3xl">📄</span>
+                            <span className="truncate w-full text-center px-1">{file.name}</span>
+                          </div>
+                        ) : (
+                          <img src={src} alt={`Preview ${i + 1}`}
+                            className="w-[120px] h-[120px] object-cover p-2 rounded border cursor-zoom-in"
+                            onClick={() => setZoomedFile({ src, isPdf: false })} />
+                        )}
+                        <button onClick={removeFile}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none">×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {errors.proofOfTransfer && <div className="text-red-500 text-sm">{errors.proofOfTransfer}</div>}
-              {proofOfTransfer && !selectedImage &&
-                <Image className='p-8' width={250} height={250} src={proofOfTransfer}  alt="image 1" /> 
-              }
+              {selectedFiles.length === 0 && uploadUrl && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(Array.isArray(uploadUrl) ? uploadUrl : uploadUrl.split(/,(?=https?:\/\/)/).map(u => u.trim())).map((url, i) => {
+                    const isPdf = url.toLowerCase().includes('.pdf');
+                    const displayUrl = toDisplayUrl(url);
+                    return isPdf ? (
+                      <div key={i} onClick={() => setZoomedFile({ src: url, isPdf: true })}
+                        className="w-[120px] h-[120px] flex flex-col items-center justify-center border rounded cursor-pointer bg-gray-50 text-gray-500 text-xs gap-1">
+                        <span className="text-3xl">📄</span>
+                        <span className="text-center px-1">PDF</span>
+                      </div>
+                    ) : (
+                      <img key={i} src={displayUrl} alt={`image ${i + 1}`}
+                        className="w-[120px] h-[120px] object-cover p-2 rounded border cursor-zoom-in"
+                        onClick={() => setZoomedFile({ src: displayUrl, isPdf: false })} />
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
           <div className="mb-6 mt-3">
@@ -680,6 +737,31 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
         </form>
       </Drawer.Items>
     </Drawer>
+
+    {zoomedFile && createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80">
+        <button
+          onClick={() => setZoomedFile(null)}
+          className="absolute top-4 right-4 text-white text-3xl leading-none font-bold hover:text-gray-300"
+        >×</button>
+        {zoomedFile.isPdf ? (
+          <iframe
+            src={zoomedFile.src}
+            className="w-[90vw] h-[90vh] rounded shadow-lg bg-white"
+            title="PDF Preview"
+          />
+        ) : (
+          <img
+            src={zoomedFile.src}
+            alt="Zoom"
+            className="max-w-[90vw] max-h-[90vh] rounded shadow-lg"
+            onClick={() => setZoomedFile(null)}
+          />
+        )}
+      </div>,
+      document.body
+    )}
+    </>
   );
 };
 

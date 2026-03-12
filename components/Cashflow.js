@@ -1,4 +1,5 @@
-import { useCallback, useEffect,useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import ReactPaginate from 'react-paginate';
@@ -18,7 +19,6 @@ import 'moment-timezone';
 moment.locale('id');
 //import moment from 'moment-timezone';
 import MonthOptions from './MonthOptions';
-import Image from "next/image";
 import Link from 'next/link';
 import { FaExternalLinkAlt } from "react-icons/fa";
 import { formatPeriod } from './FormatPeriod';
@@ -35,7 +35,7 @@ const AllCashflow = ({ initialTransaction }) =>  {
     const router = useRouter();
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
-    const [loadingImg, setLoadingImg] = useState(false);
+    const [zoomedFile, setZoomedFile] = useState(null);
     const { period, page,s, ...rest } = router.query;
     const [selectedTransactionType, setSelectedTransactionType] = useState(null);
     // const [selectedCat, setSelectedCat] = useState(null);
@@ -251,21 +251,22 @@ const AllCashflow = ({ initialTransaction }) =>  {
     }
 
     const openModal = (id) => {
-        // Temukan transaksi berdasarkan id
         const transaction = currentPageData.find((trans) => trans._id === id);
         setSelectedTransaction(transaction);
         setModalIsOpen(true);
-        setLoadingImg(true);
     };
 
     const closeModal = () => {
         setModalIsOpen(false);
         setSelectedTransaction(null);
-        setLoadingImg(false);
     };
 
-    const handleImageLoad = () => {
-        setLoadingImg(false); 
+    const toDisplayUrl = (url) => {
+        if (!url) return url;
+        if (url.includes('drive.google.com') || url.includes('lh3.googleusercontent.com')) {
+            return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+        }
+        return url;
     };
   
     if (loading) {
@@ -492,27 +493,27 @@ const AllCashflow = ({ initialTransaction }) =>  {
                         
                         
                         <div className="mt-5">
-                        {selectedTransaction.proof_of_transfer !== '' ? (
-                                <div className='w-1/2 relative'>
-                                <div className="relative w-full h-auto">
-                                {loadingImg && (
-                                    <div className="animate-pulse flex justify-center items-center">
-                                    {/* Skeleton Loader */}
-                                    <div className="w-full h-40 bg-gray-300 rounded-lg"></div>
-                                    </div>
-                                )}
-                                <Image
-                                className='w-full h-auto relative'
-                                width={0} 
-                                height={0}
-                                sizes="100vw"
-                                onLoad={handleImageLoad}
-                                src={selectedTransaction.proof_of_transfer}  
-                                alt="Lampiran" /> 
-                                </div>
-                                </div>
-                        ) : (
-                            <></>
+                        {selectedTransaction.proof_of_transfer && selectedTransaction.proof_of_transfer !== '' && (
+                            <div className="flex flex-wrap gap-2">
+                                {(Array.isArray(selectedTransaction.proof_of_transfer)
+                                    ? selectedTransaction.proof_of_transfer
+                                    : selectedTransaction.proof_of_transfer.split(/,(?=https?:\/\/)/).map(u => u.trim())
+                                ).map((url, i) => {
+                                    const isPdf = url.toLowerCase().includes('.pdf');
+                                    const displayUrl = toDisplayUrl(url);
+                                    return isPdf ? (
+                                        <div key={i} onClick={() => setZoomedFile({ src: url, isPdf: true })}
+                                            className="w-[120px] h-[120px] flex flex-col items-center justify-center border rounded cursor-pointer bg-gray-50 text-gray-500 text-xs gap-1">
+                                            <span className="text-3xl">📄</span>
+                                            <span className="text-center px-1">PDF</span>
+                                        </div>
+                                    ) : (
+                                        <img key={i} src={displayUrl} alt={`Lampiran ${i + 1}`}
+                                            className="w-[120px] h-[120px] object-cover rounded border cursor-zoom-in"
+                                            onClick={() => setZoomedFile({ src: displayUrl, isPdf: false })} />
+                                    );
+                                })}
+                            </div>
                         )}
                         </div>
 
@@ -596,6 +597,19 @@ const AllCashflow = ({ initialTransaction }) =>  {
         />
         </nav> */}
 
+        {zoomedFile && createPortal(
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80">
+                <button onClick={() => setZoomedFile(null)}
+                    className="absolute top-4 right-4 text-white text-3xl leading-none font-bold hover:text-gray-300">×</button>
+                {zoomedFile.isPdf ? (
+                    <iframe src={zoomedFile.src} className="w-[90vw] h-[90vh] rounded shadow-lg bg-white" title="PDF Preview" />
+                ) : (
+                    <img src={zoomedFile.src} alt="Zoom" className="max-w-[90vw] max-h-[90vh] rounded shadow-lg"
+                        onClick={() => setZoomedFile(null)} />
+                )}
+            </div>,
+            document.body
+        )}
         </>
     );
 }
