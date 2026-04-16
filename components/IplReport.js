@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import Spinner from './Spinner';
@@ -24,136 +24,6 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 
 const zoneOptions = ZONE_OPTIONS.map((o, i) => i === 0 ? { ...o, label: 'Semua' } : o);
 const statusOptions = STATUS_IPL_OPTIONS.map((o, i) => i === 0 ? { ...o, label: 'Semua' } : o);
-const START_MONTH = "2024-07";
-
-// ============================================================================
-// PAYMENT BALANCE CALCULATION UTILITIES
-// ============================================================================
-
-/**
- * Normalizes month string to YYYY-MM format
- * Handles formats like '2024-7' -> '2024-07', '2024-12' stays as is
- * Returns null if format is invalid
- *
- * @param {string} monthStr - Input month string
- * @returns {string|null} Normalized month or null if invalid
- */
-const normalizeMonth = (monthStr) => {
-  if (!monthStr || typeof monthStr !== 'string') return null;
-
-  // Match YYYY-M or YYYY-MM format
-  const match = monthStr.match(/^(\d{4})-(\d{1,2})$/);
-  if (!match) return null;
-
-  const year = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10);
-
-  // Validate year and month ranges
-  if (year < 2000 || year > 2100 || month < 1 || month > 12) return null;
-
-  // Format with leading zero
-  return `${year}-${month.toString().padStart(2, '0')}`;
-};
-
-/**
- * Computes payment balance from start date to end date
- *
- * Logic:
- * - expectedMonths = number of months from startDate to endDate (inclusive)
- * - paidMonths = count of months with status 'Lunas' or 'TBD' (including future payments)
- * - balance = paidMonths - expectedMonths
- *
- * Return values for UI:
- * - outstanding_count = Math.abs(balance) when balance < 0 (tunggakan)
- * - future_count = balance when balance > 0 (sudah bayar lebih)
- *
- * Data normalization:
- * - Removes duplicate entries (keeps the one with paid status if duplicates exist)
- * - Filters out entries with invalid month formats
- * - Includes future payments (months after endDate) in paidMonths count
- * - Excludes payments before startDate from paidMonths count
- *
- * @param {Array} monthlyFees - Array of { month: 'YYYY-MM', status: string, ... }
- * @param {string} startDate - Start month in 'YYYY-MM' format (e.g., '2024-07')
- * @param {string} endDate - End month in 'YYYY-MM' format (e.g., '2025-04')
- * @returns {Object} { balance, outstanding_count, future_count, paidMonths, expectedMonths }
- */
-const computePaymentBalance = (monthlyFees, startDate, endDate) => {
-  // Default result for invalid input
-  const defaultResult = { balance: 0, outstanding_count: 0, future_count: 0, paidMonths: 0, expectedMonths: 0 };
-
-  // Validate inputs
-  if (!Array.isArray(monthlyFees) || monthlyFees.length === 0) {
-    // Calculate expected months even with no payment data
-    const start = normalizeMonth(startDate);
-    const end = normalizeMonth(endDate);
-    if (!start || !end) return defaultResult;
-
-    const startMoment = moment(start, 'YYYY-MM');
-    const endMoment = moment(end, 'YYYY-MM');
-    const expectedMonths = Math.max(0, endMoment.diff(startMoment, 'months') + 1);
-
-    return {
-      balance: -expectedMonths,
-      outstanding_count: expectedMonths,
-      future_count: 0,
-      paidMonths: 0,
-      expectedMonths
-    };
-  }
-
-  // Normalize start and end dates
-  const normalizedStart = normalizeMonth(startDate);
-  const normalizedEnd = normalizeMonth(endDate);
-
-  if (!normalizedStart || !normalizedEnd) return defaultResult;
-
-  const startMoment = moment(normalizedStart, 'YYYY-MM');
-  const endMoment = moment(normalizedEnd, 'YYYY-MM');
-
-  // Calculate expected months (inclusive)
-  const expectedMonths = Math.max(0, endMoment.diff(startMoment, 'months') + 1);
-
-  // Process monthly fees: normalize and remove duplicates
-  const monthMap = new Map();
-
-  monthlyFees.forEach(fee => {
-    const normalizedMonth = normalizeMonth(fee.month);
-    if (!normalizedMonth) return; // Skip invalid formats
-
-    const monthMoment = moment(normalizedMonth, 'YYYY-MM');
-
-    // Skip payments before start date - they don't count toward paidMonths
-    if (monthMoment.isBefore(startMoment)) return;
-
-    const isPaid = fee.status === 'Lunas' || fee.status === 'TBD';
-
-    // If duplicate exists, prioritize paid status
-    if (monthMap.has(normalizedMonth)) {
-      const existing = monthMap.get(normalizedMonth);
-      if (!existing.isPaid && isPaid) {
-        monthMap.set(normalizedMonth, { month: normalizedMonth, isPaid });
-      }
-    } else {
-      monthMap.set(normalizedMonth, { month: normalizedMonth, isPaid });
-    }
-  });
-
-  // Count paid months (including future payments)
-  let paidMonths = 0;
-  monthMap.forEach(({ isPaid }) => {
-    if (isPaid) paidMonths++;
-  });
-
-  // Calculate balance
-  const balance = paidMonths - expectedMonths;
-
-  // Calculate outstanding_count and future_count for UI
-  const outstanding_count = balance < 0 ? Math.abs(balance) : 0;
-  const future_count = balance > 0 ? balance : 0;
-
-  return { balance, outstanding_count, future_count, paidMonths, expectedMonths };
-};
 
 const IplReport = ({ initialHouses }) =>  {
   const [loading, setLoading] = useState(true);
@@ -172,24 +42,6 @@ const IplReport = ({ initialHouses }) =>  {
         setSelectedPeriod(period);
     }
   }, [router.query]);
-
-  // Calculate payment balances for all houses using useMemo for immediate availability
-  const houseBalances = useMemo(() => {
-    const currentMonth = moment().format('YYYY-MM');
-    const balances = {};
-
-    houses.forEach(house => {
-      if (house?.house_id) {
-        balances[house.house_id] = computePaymentBalance(
-          house.monthly_fees,
-          START_MONTH,
-          currentMonth
-        );
-      }
-    });
-
-    return balances;
-  }, [houses]);
 
   const handleMonthChange = (selectedOption) => {
     setSelectedPeriod(selectedOption.value);
@@ -477,9 +329,9 @@ const IplReport = ({ initialHouses }) =>  {
               const statusStr = monthStatus?.status;
               const isWeekend = house.monthly_status.find((status) => status.month === selectedPeriod)?.status === 'Weekend';
 
-              // Get pre-calculated balance from state
-              const balanceData = houseBalances[house.house_id] || { outstanding_count: 0, future_count: 0 };
-              const { outstanding_count, future_count } = balanceData;
+              // Use outstanding_count and future_count from backend
+              const outstanding_count = house.outstanding_count || 0;
+              const future_count = house.future_count || 0;
 
               // Status Styling
               let statusBadge = "bg-base-200 text-base-content/60";
