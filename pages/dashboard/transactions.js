@@ -1,51 +1,49 @@
-import CustomThemeProviderSecond from '../../components/CustomThemeSecond';
 import { getSession, useSession } from 'next-auth/react';
-import { useCallback, useEffect,useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
-import { useRequireAuth } from '../../utils/authUtils.js'; 
-import ReactPaginate from 'react-paginate';
 import Select from 'react-select';
-import Header from '../../components/Header';
-import SideMenu from '../../components/dashboard/Sidebar';
+import { selectStyles } from '../../utils/selectStyles';
 import TransactionDrawer from '../../components/dashboard/TransactionDrawer';
 import Spinner from '../../components/Spinner';
-import { HiOutlineExclamationCircle } from "react-icons/hi";
-import { Card, Button,TextInput,Drawer, Table,Dropdown, Alert,Modal } from "flowbite-react";
-import { HiOutlineSearch } from "react-icons/hi";
-import {  FaCheckCircle, FaTimesCircle, FaHourglassHalf,FaRegEdit,FaEye,FaRegTrashAlt } from 'react-icons/fa';
-import { FaRegArrowAltCircleDown } from "react-icons/fa";
-import { FaRegArrowAltCircleUp } from "react-icons/fa";
-import { FaEllipsisH } from "react-icons/fa";
-import { FaExchangeAlt } from "react-icons/fa";
-import { MdOutlineAccountBalanceWallet } from "react-icons/md";
+import DashboardLayout from '../../components/layouts/DashboardLayout';
+import SearchInput from '../../components/ui/SearchInput';
+import Pagination from '../../components/ui/Pagination';
+import ConfirmModal from '../../components/ui/ConfirmModal';
+import Alert from '../../components/ui/Alert';
+import ResponsiveTable from '../../components/ui/ResponsiveTable';
+import { formatCurrency, formatDate } from '../../utils/format';
+import { getTransactionStatusIcon } from '../../utils/statusIcons';
+import { FaExchangeAlt, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp, FaRegEdit, FaRegTrashAlt, FaEllipsisH } from 'react-icons/fa';
+import { MdOutlineAccountBalanceWallet } from 'react-icons/md';
 import FilterTransactions from '../../components/dashboard/FilterTransactions';
+import { ITEMS_PER_PAGE } from '../../utils/constants';
 import moment from 'moment';
-import 'moment/locale/id';
 import 'moment-timezone';
-moment.locale('id');
 
-const ITEMS_PER_PAGE = 15;
+const buildIPLSuccessMessage = (txData, baseUrl) => {
+  const houseId = txData.house?.house_id || '';
+  const IPLUrl = `${baseUrl}/ipl/${houseId.toLowerCase()}`;
+  return `*Konfirmasi Pembayaran IPL Berhasil!*\n\n`
+    + `Setelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.\n\n`
+    + `*Detail:*\n*ID:* ${txData.transaction_id}\n*Deskripsi:*\n${txData.description}\n`
+    + `*Jumlah:* ${formatCurrency(txData.amount)}\n`
+    + `*Tanggal Pembayaran:* ${moment(txData.date).format('DD MMM YYYY')}\n`
+    + (houseId ? `\n*Cek IPL:* ${houseId} ${IPLUrl}\n\n` : '')
+    + `Terima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam.\n\n*Hormat Kami*\nRT 005 Villa Citayam.\n`;
+};
 
-
-const Transaction = ({ initialTransaction }) =>  {
-  const { useAuthRedirectDashboard } = useRequireAuth(['admin', 'editor', 'superadmin']);
-  useAuthRedirectDashboard();
-  
-  const [transactions, setTransactions] = useState([initialTransaction]);
-  const [reTransactions, setReTransactions] = useState([initialTransaction])
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const Transaction = ({ initialTransaction }) => {
+  const [transactions, setTransactions] = useState(initialTransaction ?? []);
+  const [reTransactions, setReTransactions] = useState(initialTransaction ?? []);
   const [loading, setLoading] = useState(true);
   const { data: session, status } = useSession();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentTransactionType, setCurrentTransactionType] = useState('');
-
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState('success');
-  
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [transactionIdToDelete, setTransactionIdToDelete] = useState(null);
   const [transactionToEdit, setTransactionToEdit] = useState(null);
@@ -54,37 +52,24 @@ const Transaction = ({ initialTransaction }) =>  {
   const [baseUrl, setBaseUrl] = useState('');
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setBaseUrl(window.location.origin);
-    }
+    if (typeof window !== 'undefined') setBaseUrl(window.location.origin);
   }, []);
 
-  const handleDeleteTransaction = async (transactionId) => {
-    //console.log(transactionId)
+  const handleDeleteTransaction = (transactionId) => {
     setTransactionIdToDelete(transactionId);
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
     try {
-      const response = await axios.delete(
+      await axios.delete(
         `${process.env.NEXT_PUBLIC_API_URL}/transactions/delete/${transactionIdToDelete}`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${session.accessToken}` } }
       );
-      setAlertType('success');
-      setAlertMessage('Transaksi berhasil dihapus');
-      setShowAlert(true);
-      handleAlertTimeout(3000);
+      showNotification('success', 'Transaksi berhasil dihapus');
       fetchTransactions();
     } catch (error) {
-      setAlertType('failure');
-      setAlertMessage('Gagal menghapus transaksi');
-      setShowAlert(true);
-      handleAlertTimeout(3000);
+      showNotification('error', 'Gagal menghapus transaksi');
       console.error('Error deleting transaction:', error);
     } finally {
       setShowDeleteModal(false);
@@ -95,13 +80,8 @@ const Transaction = ({ initialTransaction }) =>  {
     try {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/transactions/${transactionId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${session.accessToken}` } }
       );
-
       setTransactionToEdit(response.data);
       setIsDrawerOpen(true);
     } catch (error) {
@@ -111,585 +91,323 @@ const Transaction = ({ initialTransaction }) =>  {
 
   const handleUpdateTransaction = async (transactionData) => {
     try {
-      
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/transactions/update/${transactionToEdit._id}`,
         transactionData,
-        {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${session.accessToken}` } }
       );
 
-    
-      let IPLUrl = `${baseUrl}/ipl/${response.data.house? response.data.house.house_id.toLowerCase() : ''}`;
-    
-      //console.log(IPLUrl)
-      let bodyMessage;
-      let number;
+      let bodyMessage, number;
 
       if (response.data.status === 'berhasil') {
-        bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*\n\n`
-            + `Setelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.\n\n`
-            + `*Detail:*\n`
-            + `*ID:* ${response.data.transaction_id}\n`
-            + `*Deskripsi:*\n${response.data.description}\n`
-            + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
-            + `*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}\n`
-            + (response.data.house ? `\n*Cek IPL:* ${response.data.house.house_id} ${IPLUrl}\n\n` : '')  
-            + `Terima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.\n\n`
-            + `*Hormat Kami*\n`
-            + `RT 005 Villa Citayam.\n`;
-    
-        number = response.data.whatsapp_notification; // Nomor penerima pesan
-    } else if (response.data.status === 'gagal') {
+        bodyMessage = buildIPLSuccessMessage(response.data, baseUrl);
+        number = response.data.whatsapp_notification;
+      } else if (response.data.status === 'gagal') {
         bodyMessage = `*Konfirmasi Pembayaran IPL Gagal!*\n\n`
-            + `Setelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu Dibatalkan.\n\n`
-            + `*Detail:*\n`
-            + `*ID:* ${response.data.transaction_id}\n`
-            + `*Deskripsi:*\n${response.data.description}\n`
-            + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
-            + `*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}\n\n`
-            + `*Alasan Pembatalan:*\n${response.data.additional_note}\n\n`
-            + `Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.\n\n`
-            + `*Hormat Kami*\n`
-            + `RT 005 Villa Citayam.\n`;
-    
-        number = response.data.whatsapp_notification; // Nomor penerima pesan
-    } else {
-
+          + `Setelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu Dibatalkan.\n\n`
+          + `*Detail:*\n*ID:* ${response.data.transaction_id}\n*Deskripsi:*\n${response.data.description}\n`
+          + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
+          + `*Tanggal Pembayaran:* ${moment(response.data.date).format('DD MMM YYYY')}\n\n`
+          + `*Alasan Pembatalan:*\n${response.data.additional_note}\n\n`
+          + `Demikian informasi yang dapat kami sampaikan.\n\n*Hormat Kami*\nRT 005 Villa Citayam.\n`;
+        number = response.data.whatsapp_notification;
       }
 
-      if(number) {
+      if (number) {
         try {
-          await axios.post(
-          `${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`,
-             {number, bodyMessage},
-            {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-          
-        } catch (error) {
-        // console.error(error.response ? error.response.data : error);
-        }
+          await axios.post(`${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`, { number, bodyMessage }, {
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } catch (_) {}
       }
 
-      //console.log(response);
-      setAlertType('success');
-      setAlertMessage('Transaksi berhasil diupdate');
-      setShowAlert(true);
-      handleAlertTimeout(3000);
+      showNotification('success', 'Transaksi berhasil diupdate');
       fetchTransactions();
     } catch (error) {
-      setAlertType('failure');
-      setAlertMessage('Gagal mengupdate transaksi');
-      setShowAlert(true);
-      handleAlertTimeout(3000);
+      showNotification('error', 'Gagal mengupdate transaksi');
       console.error('Error updating transaction:', error);
     }
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-  // Gunakan timezone Asia/Jakarta
-      const date = moment.tz(dateString, 'Asia/Jakarta');
-      return date.format('DD/MM/YY'); // Format sesuai kebutuhan
-  };
-
-  const fetchTransactions = useCallback( async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
-
-        });
-        const dataRes = res.data;
-        //console.log(dataRes)
-        const transactionsData =  dataRes.data.transactions.sort((a, b) => {
-          return new Date(b.created_at) - new Date(a.created_at);
-        });
-
-        setTransactions(transactionsData);
-        setReTransactions(transactionsData);
-        setLastUpdate(res.data.lastUpdate);
-        setLoading(false);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
+      const sorted = res.data.data.transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setTransactions(sorted);
+      setReTransactions(sorted);
+      setLastUpdate(res.data.lastUpdate);
+      setLoading(false);
     } catch (error) {
-        console.error('Error fetching houses data:', error);
-        setLoading(false);
+      console.error('Error fetching transactions:', error);
+      setLoading(false);
     }
-  },[]);
+  }, [session]);
 
   useEffect(() => {
-    if (session) {
-        fetchTransactions();
-    }
-
-  }, [session, status,fetchTransactions]);
-
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
-  };
+    if (session) fetchTransactions();
+  }, [session, fetchTransactions]);
 
   const handleTypeChange = (selectedOption) => {
     setSelectedType(selectedOption.value);
     setCurrentPage(0);
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-       
-      const matchesType = selectedType ? transaction.transaction_type === selectedType : true;
-      const matchesSearchTerm = 
-        (transaction && transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (transaction && transaction.transaction_id && transaction.transaction_id.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-      return matchesType && matchesSearchTerm;
+  const filteredTransactions = transactions.filter(t => {
+    const matchesType = selectedType ? t.transaction_type === selectedType : true;
+    const matchesSearch =
+      t?.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t?.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesType && matchesSearch;
   });
 
   const offset = currentPage * ITEMS_PER_PAGE;
   const currentPageData = filteredTransactions.slice(offset, offset + ITEMS_PER_PAGE);
 
-  const handlePageClick = (data) => {
-    setCurrentPage(data.selected);
-  };
-
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'berhasil':
-        return <FaCheckCircle className="text-green-500 h-4 w-4" />;
-      case 'gagal':
-        return <FaTimesCircle className="text-red-500 h-4 w-4" />;
-      case 'sedang dicek':
-        return <FaHourglassHalf className="text-yellow-500 h-4 w-4" />;
-      default:
-        return null;
-    }
-  };
-
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'income':
-        return <FaRegArrowAltCircleDown  className="text-blue-700 h-3 w-3 md:h-5 md:w-5 " />;
-      case 'expense':
-        return <FaRegArrowAltCircleUp  className="text-red-700 h-3 w-3 md:h-5 md:w-5 " />;
-      case 'ipl':
-        return <FaExchangeAlt  className="text-green-700  h-3 w-3 md:h-4 md:w-4 " />;
-      default:
-        return null;
-    }
+  const showNotification = (type, message) => {
+    setAlertType(type);
+    setAlertMessage(message);
+    setShowAlert(true);
   };
 
   const getTextColor = (type) => {
-    switch (type) {
-      case 'income':
-        return "text-blue-700";
-      case 'expense':
-        return "text-red-700";
-      case 'ipl':
-        return "text-green-700";
-      default:
-        return null;
-    }
+    if (type === 'income') return 'text-primary';
+    if (type === 'expense') return 'text-error';
+    if (type === 'ipl') return 'text-success';
+    return '';
   };
 
-  const handlePaymentClick = () => {
-    setCurrentTransactionType('ipl');
-    setTransactionToEdit(null);
-    setIsDrawerOpen(true);
-  };
-
-  const handleIncomeClick = () => {
-    setCurrentTransactionType('income');
-    setTransactionToEdit(null);
-    setIsDrawerOpen(true);
-  };
-
-  const handleExpenseClick = () => {
-    setCurrentTransactionType('expense');
-    setTransactionToEdit(null);
-    setIsDrawerOpen(true);
-  };
-
-  const handleDrawerSubmit = async (transactionData) => {
-    //console.log(transactionData)
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/transactions/create`, 
-        transactionData, // Hanya data yang dikirim dalam body
-        {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`, // Tempatkan headers di opsi konfigurasi
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      // Kirim notifikasi WA jika tipe IPL dan ada nomor WA
-      // Gunakan transactionData.whatsapp_notification karena backend mungkin tidak mengembalikan field ini
-      const waNumber = response.data.whatsapp_notification || transactionData.whatsapp_notification;
-      console.log('[handleDrawerSubmit] transactionData.transaction_type:', transactionData.transaction_type);
-      console.log('[handleDrawerSubmit] waNumber (from response || transactionData):', waNumber);
-     
-      if (transactionData.transaction_type === 'ipl' && waNumber) {
-        const number = waNumber;
-        const houseIdForUrl = response.data.house?.house_id || transactionData.houseId || '';
-        let IPLUrl = `${baseUrl}/ipl/${houseIdForUrl.toLowerCase()}`;
-        const bodyMessage = `*Konfirmasi Pembayaran IPL Berhasil!*\n\n`
-            + `Setelah kami melakukan pengecekan, kami informasikan bahwa pembayaran IPL Bapak/Ibu telah berhasil masuk ke sistem kami.\n\n`
-            + `*Detail:*\n`
-            + `*ID:* ${response.data.transaction_id}\n`
-            + `*Deskripsi:*\n${response.data.description}\n`
-            + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
-            + `*Tanggal Pembayaran:* ${moment(response.data.date).locale('id').format('DD MMM YYYY')}\n`
-            + (houseIdForUrl ? `\n*Cek IPL:* ${houseIdForUrl} ${IPLUrl}\n\n` : '')
-            + `Terima kasih telah melakukan pembayaran IPL RT 05 RW 11, Villa Citayam. Demikian informasi yang dapat kami sampaikan. Apabila ada pertanyaan lebih lanjut, silakan menghubungi kami.\n\n`
-            + `*Hormat Kami*\n`
-            + `RT 005 Villa Citayam.\n`;
-       // console.log('[handleDrawerSubmit] Sending WA to:', number);
-        //console.log('[handleDrawerSubmit] WA bodyMessage:', bodyMessage);
-        try {
-          const waRes = await axios.post(
-            `${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`,
-            { number, bodyMessage },
-            { headers: { 'Content-Type': 'application/json' } }
-          );
-          //console.log('[handleDrawerSubmit] WA sent successfully:', waRes.data);
-        } catch (waError) {
-          // WA notification failure should not block the main flow
-          //console.error('[handleDrawerSubmit] WA send failed:', waError?.response?.data || waError.message);
-        }
-      } else {
-        console.log('[handleDrawerSubmit] WA not sent. Condition not met (type ipl + waNumber required).');
-      }
-
-      setAlertType('success');
-      setAlertMessage('Transaksi berhasil ditambahkan');
-      setShowAlert(true);
-      // Refresh data atau navigasi sesuai kebutuhan
-      fetchTransactions();
-    } catch (error) {
-      setAlertType('failure');
-      setAlertMessage('Gagal menambahkan transaksi');
-      setShowAlert(true);
-      console.error('Error creating transaction:', error);
-    }
-  };
-  
-  const handleAlertDismiss = () => {
-    handleAlertTimeout(0);
-  };
-
-  const handleAlertTimeout = (timeoutDuration) => {
-    setTimeout(() => {
-      setShowAlert(false);
-    }, timeoutDuration);
-  };
-
-  if (loading) {
-    return <Spinner />;
-  }
-
-  const totalAmount = filteredTransactions.reduce((acc, transaction) => {
-      if (transaction.transaction_type === 'ipl' && transaction.status === 'berhasil' || transaction.transaction_type === 'income'  && transaction.status === 'berhasil') {
-      return acc + transaction.amount;
-      } else if (transaction.transaction_type === 'expense'  && transaction.status === 'berhasil') {
-      return acc - transaction.amount;
-      }
-      return acc;
+  const totalAmount = filteredTransactions.reduce((acc, t) => {
+    if ((t.transaction_type === 'ipl' || t.transaction_type === 'income') && t.status === 'berhasil') return acc + t.amount;
+    if (t.transaction_type === 'expense' && t.status === 'berhasil') return acc - t.amount;
+    return acc;
   }, 0);
 
-  const totalIncome = filteredTransactions.reduce((acc, transaction) => {
-      if (transaction.transaction_type === 'ipl' && transaction.status === 'berhasil' || transaction.transaction_type === 'income' && transaction.status === 'berhasil') {
-      return acc + transaction.amount;
-      } 
-      return acc;
-  }, 0);
+  const totalIncome = filteredTransactions.reduce((acc, t) =>
+    (t.transaction_type === 'ipl' || t.transaction_type === 'income') && t.status === 'berhasil' ? acc + t.amount : acc, 0);
 
-  const totalexpense = filteredTransactions.reduce((acc, transaction) => {
-      if (transaction.transaction_type === 'expense' && transaction.status === 'berhasil') {
-      return acc + transaction.amount;
-      } 
-      return acc;
-  }, 0);
+  const totalExpense = filteredTransactions.reduce((acc, t) =>
+    t.transaction_type === 'expense' && t.status === 'berhasil' ? acc + t.amount : acc, 0);
 
   const TrxType = [
     { value: '', label: 'Semua Type' },
     { value: 'ipl', label: 'IPL' },
     { value: 'income', label: 'Masuk' },
     { value: 'expense', label: 'Keluar' },
-  ]
+  ];
 
-  
+  if (loading) return <Spinner />;
 
- // console.log(transactions)
+  const columns = [
+    { label: 'No', className: 'w-8' },
+    { label: 'Keterangan' },
+    { label: 'Tanggal' },
+    { label: 'Nominal' },
+    { label: 'Status', className: 'text-center' },
+    { label: '' },
+  ];
+
+  const renderMobileCard = (transaction, index) => (
+    <div className={`${getTextColor(transaction.transaction_type)}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="flex-shrink-0">{getTransactionStatusIcon(transaction.status)}</span>
+          <span className="text-sm font-medium truncate">{transaction.description}</span>
+        </div>
+        <div className="dropdown dropdown-end">
+          <label tabIndex={0} className="btn btn-ghost btn-xs">
+            <FaEllipsisH className="h-3 w-3" />
+          </label>
+          <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-50 w-36 p-1 shadow border border-base-200">
+            <li>
+              <button onClick={() => { handleEditTransaction(transaction._id); setCurrentTransactionType(transaction.transaction_type); }}>
+                <FaRegEdit /> Edit
+              </button>
+            </li>
+            <li>
+              <button className="text-error" onClick={() => handleDeleteTransaction(transaction._id)}>
+                <FaRegTrashAlt /> Hapus
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div className="flex items-center justify-between mt-1 text-xs text-base-content/60">
+        <span>{formatDate(transaction.date)}</span>
+        <span className={`font-medium ${getTextColor(transaction.transaction_type)}`}>{formatCurrency(transaction.amount)}</span>
+      </div>
+    </div>
+  );
+
+  const renderDesktopRow = (transaction, index) => (
+    <tr key={index} className={getTextColor(transaction.transaction_type)}>
+      <td className="text-xs">{offset + index + 1}</td>
+      <td className="text-xs md:text-sm">{transaction.description}</td>
+      <td className="text-xs whitespace-nowrap">{formatDate(transaction.date)}</td>
+      <td className="text-xs whitespace-nowrap">{formatCurrency(transaction.amount)}</td>
+      <td className="text-center">
+        <span className="flex justify-center">{getTransactionStatusIcon(transaction.status)}</span>
+      </td>
+      <td>
+        <div className="dropdown dropdown-end">
+          <label tabIndex={0} className="btn btn-ghost btn-xs">
+            <FaEllipsisH className="h-3 w-3" />
+          </label>
+          <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-50 w-36 p-1 shadow border border-base-200">
+            <li>
+              <button onClick={() => { handleEditTransaction(transaction._id); setCurrentTransactionType(transaction.transaction_type); }}>
+                <FaRegEdit /> Edit
+              </button>
+            </li>
+            <li>
+              <button className="text-error" onClick={() => handleDeleteTransaction(transaction._id)}>
+                <FaRegTrashAlt /> Hapus
+              </button>
+            </li>
+          </ul>
+        </div>
+      </td>
+    </tr>
+  );
 
   return (
     <>
-   
-    <Header toggleSidebar={toggleSidebar}/>
-    <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-md mx-auto min-h-dvh'>
-      <div className='w-full'>
-        <section className='mt-14 px-3 py-5  mb-11'>
-        {showAlert && (
-            <Alert className='' color={alertType === 'success' ? 'success' : 'failure'} onDismiss={handleAlertDismiss}>
-                <span className="font-medium">{alertMessage}</span>
-            </Alert>
-        )}
-          <h1 className='text-xl mb-4 font-semibold text-gray-900 sm:text-2xl dark:text-white'>Data Transaksi</h1>
+      <Alert
+        show={showAlert}
+        type={alertType}
+        message={alertMessage}
+        onClose={() => setShowAlert(false)}
+      />
 
-          <Card className='w-full mb-10'>
-            <h3 className='font-semibold mb-3'>Buat Transaksi Baru</h3>
-              <div className='flex flex-wrap gap-2'>
-              <Button size="sm" color="success" onClick={handlePaymentClick}>
-                <FaExchangeAlt  className="mr-2 h-5 w-5" />
-                IPL
-              </Button>
+      <h1 className="text-xl font-bold mb-4">Data Transaksi</h1>
 
-              <Button size="sm" color="blue" onClick={handleIncomeClick}>
-                <FaRegArrowAltCircleDown  className="mr-2 h-5 w-5" />
-                Masuk
-              </Button>
-              <Button size="sm" color="failure" onClick={handleExpenseClick}>
-                Keluar
-                <FaRegArrowAltCircleUp  className="ml-2 h-5 w-5" />
-              </Button>
-              </div>
-          </Card>
-
-          <TransactionDrawer
-            isOpen={isDrawerOpen}
-            onClose={() => (setIsDrawerOpen(false),setCurrentTransactionType(''))}
-            onSubmit={transactionToEdit ? handleUpdateTransaction : handleDrawerSubmit}
-            transactionType={currentTransactionType}
-            transactionToEdit={transactionToEdit}
-          />
-
-          <div className="max-w-xl mb-4 flex w-full">
-
-          <CustomThemeProviderSecond>
-            <TextInput 
-                name="name"
-                placeholder="Cari"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="mr-2 w-1/3"
-                icon={HiOutlineSearch} 
-              />
-
-              <FilterTransactions className="w-1/3" setTransactions={setTransactions} initialTransaction={reTransactions} />
-
-              <Select
-                id="type"
-                options={TrxType}
-                value={TrxType.find(option => option.value === selectedType)}
-                onChange={handleTypeChange}
-                placeholder="Type"
-                className='bg-gray-50  rounded-md w-1/3  ml-2'
-                
-              />
-
-          </CustomThemeProviderSecond>
-
-            
-
+      {/* New transaction buttons */}
+      <div className="card bg-base-100 shadow-sm border border-base-200 mb-6">
+        <div className="card-body p-4">
+          <h3 className="font-semibold mb-3">Buat Transaksi Baru</h3>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn btn-success btn-sm gap-2" onClick={() => { setCurrentTransactionType('ipl'); setTransactionToEdit(null); setIsDrawerOpen(true); }}>
+              <FaExchangeAlt className="h-4 w-4" /> IPL
+            </button>
+            <button className="btn btn-primary btn-sm gap-2" onClick={() => { setCurrentTransactionType('income'); setTransactionToEdit(null); setIsDrawerOpen(true); }}>
+              <FaRegArrowAltCircleDown className="h-4 w-4" /> Masuk
+            </button>
+            <button className="btn btn-error btn-sm gap-2" onClick={() => { setCurrentTransactionType('expense'); setTransactionToEdit(null); setIsDrawerOpen(true); }}>
+              <FaRegArrowAltCircleUp className="h-4 w-4" /> Keluar
+            </button>
           </div>
-
-          <div className='mb-2 flex justify-between content-start items-start md:content-center md:items-center flex-col md:flex-row'> 
-            <div>
-            <Button.Group className='mb-2'>
-                <Button color="gray" size="xs" className='p-1 cst-btn'>
-                    <MdOutlineAccountBalanceWallet  className="text-blue-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5 " /><span className='text-blue-700 text-xs md:text-sm'>{formatCurrency( totalAmount?totalAmount: 0)}</span>
-                </Button>
-                <Button color="gray" size="xs" className='p-1 cst-btn'>
-                    <FaRegArrowAltCircleDown 
-                    className="text-green-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5 " />
-                    <span className='text-green-700 text-xs md:text-sm'>
-                      {formatCurrency( totalIncome?totalIncome: 0)}
-                    </span>
-                </Button>
-                <Button color="gray" size="xs" className='p-1 cst-btn'>
-                    <FaRegArrowAltCircleUp className="text-red-700 sm:mr-1 h-4 w-4 md:h-5 md:w-5" /><span className='text-red-700 text-xs md:text-sm'>{formatCurrency( totalexpense?totalexpense: 0)}</span>
-                </Button>
-            </Button.Group>
-            </div> 
-            <span className='text-xs order'>Last Update: { moment(lastUpdate).tz('Asia/Jakarta').format('DD/MM/YYYY, HH:mm')}</span>
         </div>
-
-
-          <div className='overflow-x-auto'>
-            <Table hoverable>
-              <Table.Head>
-                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3 w-4'>No</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3 w-3/4'>Keterangan</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3'>Tanggal</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3'>Nominal</Table.HeadCell>
-                {/* <Table.HeadCell className='py-2 px-2 md:py-3 md:px-3'>Tipe</Table.HeadCell> */}
-                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3'>Status</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-1 md:py-3 md:px-3'>
-                    <span className="sr-only">Edit</span>
-                </Table.HeadCell>
-              </Table.Head>
-              <Table.Body className="divide-y">
-                
-                {currentPageData.map((transaction, index) => ( 
-                  <Table.Row key={index} className="items-start content-start py-2 px-1 md:py-3 md:px-3 text-xs md:text-base">
-                    <Table.Cell className={`items-start content-start  py-2 px-1 md:py-3 md:px-3 text-xs md:text-base w-4`}>
-                      <span className='flex items-start content-start'>
-                      {offset + index + 1}
-                      </span>
-                    </Table.Cell>
-
-                    <Table.Cell className={`py-2 px-1 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                      <span className='flex items-start content-start gap-y-3'>
-                      <span>{transaction.description}</span> 
-                      {/* <span>{getTypeIcon(transaction.transaction_type)} </span>
-                         {
-                              transaction.transaction_type === 'ipl' ? (
-                                  <span>{`IPL ${transaction.house_id.house_id}, ${transaction.related_months.length} Periode`}</span>  
-                              ) : (
-                                  <span>{transaction.description}</span> 
-                              )
-                          } */}
-
-
-                      </span>
-                    </Table.Cell>
-                    <Table.Cell className={`items-start content-start py-2 px-1 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatDate(transaction.date)}</Table.Cell>
-                    <Table.Cell className={`items-start content-start py-2 px-1 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>{formatCurrency(transaction.amount)}</Table.Cell>
-                    
-                    {/* <Table.Cell className={`items-start content-start py-2 px-2 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                      <span className='flex items-center'>
-                        {transaction.payment_type} 
-                      </span>
-                    </Table.Cell> */}
-                    <Table.Cell className={`items-center flex justify-center content-center py-2 px-1 md:py-3 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                      <span className='flex items-center content-start'>
-                        {getStatusIcon(transaction.status)} 
-                      </span>
-                    </Table.Cell>
-                    <Table.Cell className='py-2 px-1 md:py-3 md:px-3 text-xs md:text-base'>
-                      <Dropdown  className="relative z-50 cursor-pointer" align="right" label="" renderTrigger={() => <span><FaEllipsisH  className="h-4 w-4 cursor-pointer" /></span>}>
-                        <Dropdown.Item onClick={() => {
-                          handleEditTransaction(transaction._id);
-                          setCurrentTransactionType(transaction.transaction_type);
-                        } }><FaRegEdit className='mr-1'/><span>Edit</span></Dropdown.Item>
-                        {/* <Dropdown.Item><FaEye className='mr-1'/><span>View</span></Dropdown.Item> */}
-                        <Dropdown.Item onClick={() => handleDeleteTransaction(transaction._id)} ><FaRegTrashAlt className='mr-1' /><span>Delete</span></Dropdown.Item>
-                      </Dropdown>
-
-                    </Table.Cell>
-                </Table.Row>
-
-                ))}
-              </Table.Body>
-            </Table>
-          </div>
-          <nav className='py-6'>
-          <ReactPaginate
-                previousLabel={'<<'}
-                nextLabel={'>>'}
-                breakLabel={'..'}
-                pageCount={Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE)}
-                marginPagesDisplayed={2}
-                pageRangeDisplayed={5}
-                onPageChange={handlePageClick}
-                containerClassName={'pagination flex justify-center -space-x-px text-sm'}
-                pageClassName={'page-item'}
-                pageLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                previousClassName={'page-item'}
-                previousLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                nextClassName={'page-item'}
-                nextLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                breakClassName={'page-item'}
-                breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                activeClassName={'active bg-gray-300'}
-                activeLinkClassName={'bg-gray-300'}
-            />
-          </nav>
-
-        </section>
-        
-        <Modal
-          show={showDeleteModal}
-          size="md"
-          popup
-          onClose={() => setShowDeleteModal(false)}
-        >
-          <Modal.Header />
-          <Modal.Body>
-          <div className="text-center">
-            <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
-            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-            Apakah Anda yakin ingin menghapus transaksi ini?
-            </h3>
-            <div className="flex justify-center gap-4">
-              <Button color="failure" onClick={handleConfirmDelete}>
-                Hapus
-              </Button>
-              <Button color="gray" onClick={() => setShowDeleteModal(false)}>
-                Batal
-              </Button>
-            </div>
-          </div>
-          </Modal.Body>
-          
-        </Modal>         
-
       </div>
-      
-      
-    </main>
+
+      <TransactionDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => { setIsDrawerOpen(false); setCurrentTransactionType(''); setTransactionToEdit(null); }}
+        onSubmit={transactionToEdit ? handleUpdateTransaction : async (data) => {
+          try {
+            const response = await axios.post(
+              `${process.env.NEXT_PUBLIC_API_URL}/transactions/create`,
+              data,
+              { headers: { Authorization: `Bearer ${session.accessToken}`, 'Content-Type': 'application/json' } }
+            );
+            const waNumber = response.data.whatsapp_notification || data.whatsapp_notification;
+            if (data.transaction_type === 'ipl' && waNumber) {
+              const bodyMessage = buildIPLSuccessMessage(response.data, baseUrl);
+              try {
+                await axios.post(`${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`, { number: waNumber, bodyMessage }, {
+                  headers: { 'Content-Type': 'application/json' },
+                });
+              } catch (_) {}
+            }
+            showNotification('success', 'Transaksi berhasil ditambahkan');
+            fetchTransactions();
+          } catch (error) {
+            showNotification('error', 'Gagal menambahkan transaksi');
+            console.error('Error creating transaction:', error);
+          }
+        }}
+        transactionType={currentTransactionType}
+        transactionToEdit={transactionToEdit}
+      />
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex-1 min-w-[120px]">
+          <SearchInput value={searchTerm} onChange={(val) => setSearchTerm(val)} />
+        </div>
+        <FilterTransactions className="flex-1 min-w-[120px]" setTransactions={setTransactions} initialTransaction={reTransactions} />
+        <div className="flex-1 min-w-[120px]">
+          <Select
+            options={TrxType}
+            value={TrxType.find(o => o.value === selectedType)}
+            onChange={handleTypeChange}
+            placeholder="Type"
+            className="text-sm"
+            styles={selectStyles}
+          />
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="flex flex-wrap gap-2 mb-4 justify-between items-center">
+        <div className="join">
+          <button className="join-item btn btn-ghost btn-xs gap-1">
+            <MdOutlineAccountBalanceWallet className="text-primary h-4 w-4" />
+            <span className="text-primary text-xs">{formatCurrency(totalAmount || 0)}</span>
+          </button>
+          <button className="join-item btn btn-ghost btn-xs gap-1">
+            <FaRegArrowAltCircleDown className="text-success h-4 w-4" />
+            <span className="text-success text-xs">{formatCurrency(totalIncome || 0)}</span>
+          </button>
+          <button className="join-item btn btn-ghost btn-xs gap-1">
+            <FaRegArrowAltCircleUp className="text-error h-4 w-4" />
+            <span className="text-error text-xs">{formatCurrency(totalExpense || 0)}</span>
+          </button>
+        </div>
+        <span className="text-xs text-base-content/50">
+          Last Update: {moment(lastUpdate).tz('Asia/Jakarta').format('DD/MM/YYYY, HH:mm')}
+        </span>
+      </div>
+
+      {/* Table */}
+      <ResponsiveTable
+        data={currentPageData}
+        columns={columns}
+        renderMobileCard={renderMobileCard}
+        renderDesktopRow={renderDesktopRow}
+      />
+
+      <Pagination
+        pageCount={Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE)}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        message="Apakah Anda yakin ingin menghapus transaksi ini?"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </>
   );
-}
+};
+
+Transaction.getLayout = (page) => (
+  <DashboardLayout title="Data Transaksi">{page}</DashboardLayout>
+);
 
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
-  
-  // if (!session) {
-  //     return {
-  //         redirect: {
-  //             destination: '/',
-  //             permanent: false,
-  //         },
-  //     };
-  // }
-
+  if (!session) return { redirect: { destination: '/', permanent: false } };
   try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
-          headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-          },
-      });
-      const transactions = res.data.data.transactions.sort((a, b) => {
-        return new Date(b.date) - new Date(a.date);
-      });
-      return {
-          props: {
-            initialTransaction: transactions,
-          },
-      };
+    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+    });
+    const transactions = res.data.data.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return { props: { initialTransaction: transactions } };
   } catch (error) {
-      console.error('Error fetching houses data:', error);
-      return {
-          props: {
-            initialTransaction: [],
-          },
-      };
+    return { props: { initialTransaction: [] } };
   }
 };
 

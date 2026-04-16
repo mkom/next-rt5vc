@@ -1,0 +1,45 @@
+<!-- 
+  RT5VC Logo - SVG Version
+  Based on logo at public/rt5vc.png
+  Optimized for web with transparent background
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- Background (transparent) -->
+  
+  <!-- Ground/Hill - Primary Green -->
+  <path d="M0 220 Q100 180 200 200 Q300 220 400 200 L400 300 L0 300 Z" fill="#2E7D32"/>
+  
+  <!-- House 1 (Left) -->
+  <rect x="80" y="140" width="80" height="60" fill="#1A237E"/>
+  <path d="M70 140 L120 100 L170 140" fill="#3949AB"/>
+  <rect x="100" y="170" width="20" height="30" fill="#E8EAF6"/>
+  <rect x="120" y="160" width="20" height="20" fill="#E8EAF6"/>
+  
+  <!-- House 2 (Right) -->
+  <rect x="240" y="150" width="70" height="50" fill="#1A237E"/>
+  <path d="M230 150 L275 115 L320 150" fill="#3949AB"/>
+  <rect x="260" y="175" width="15" height="25" fill="#E8EAF6"/>
+  <rect x="280" y="170" width="15" height="15" fill="#E8EAF6"/>
+  
+  <!-- Sun - Amber Accent -->
+  <circle cx="200" cy="100" r="25" fill="#F9A825"/>
+  
+  <!-- Trees -->
+  <rect x="40" y="180" width="8" height="40" fill="#5D4037"/>
+  <circle cx="44" cy="170" r="15" fill="#2E7D32"/>
+  <circle cx="44" cy="155" r="12" fill="#4CAF50"/>
+  
+  <rect x="340" y="185" width="8" height="35" fill="#5D4037"/>
+  <circle cx="344" cy="175" r="14" fill="#2E7D32"/>
+  <circle cx="344" cy="162" r="11" fill="#4CAF50"/>
+  
+  <!-- Birds -->
+  <path d="M150 80 Q155 75 160 80" stroke="#1A237E" stroke-width="2" fill="none"/>
+  <path d="M240 85 Q245 80 250 85" stroke="#1A237E" stroke-width="2" fill="none"/>
+  
+  <!-- RT05 Text - Navy -->
+  <text x="200" y="70" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="60" font-weight="900" fill="#1A237E">RT05</text>
+  
+  <!-- VILLA CITAYAM Text - Teal -->
+  <text x="200" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#00838F">VILLA CITAYAM</text>
+</svg>

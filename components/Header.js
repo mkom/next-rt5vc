@@ -1,85 +1,125 @@
-import { Avatar, Dropdown, Button  } from "flowbite-react";
 import { signIn, signOut, useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { HiMenuAlt1 } from "react-icons/hi";
+import { HiChevronLeft } from 'react-icons/hi';
+import Image from 'next/image';
+import GoogleIcon from './ui/GoogleIcon';
 
-
-const Header = ({ toggleSidebar }) => {
-  const { data: session, status } = useSession();
+/**
+ * Header Component - Green Theme
+ * Uses RT5VC logo and green color palette
+ */
+const Header = ({ title, showBack }) => {
+  const { data: session } = useSession();
   const router = useRouter();
-  const currentPath = router.asPath; 
-  const [userImage, setUserImage] = useState(null);
-  const [userName, setUserName] = useState(null);
-  const [userEmail, setUserEmail] = useState(null);
+  const currentPath = router.asPath;
 
-  const [isOpen, setIsOpen] = useState(false);
-  const handleClose = () => setIsOpen(false);
-
-  useEffect(() => {
-    if (session) {
-      setUserImage(session.user.image);
-      setUserName(session.user.name);
-      setUserEmail(session.user.email);
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
     }
-   
-  }, [session, status, router]);
+  };
 
   return (
-    <>
-      <nav className="fixed top-0 z-50 w-full backdrop-blur flex-none transition-colors duration-500 lg:z-50 border-b border-slate-900/10 dark:border-slate-50/[0.06] bg-white/95 supports-backdrop-blur:bg-white/60 dark:bg-transparent" >
-        <div className="max-w-screen-lg flex flex-wrap items-center justify-between mx-auto px-4 py-2">
-          <div className="flex justify-center flex-wrap items-center">
-          <HiMenuAlt1 onClick={toggleSidebar} className="h-9 w-9 cursor-pointer mr-3" />
-          <a href="/" className="flex items-center space-x-2">
-            <span className="self-center text-2xl font-bold whitespace-nowrap dark:text-white">rt5vc</span>
-            <span className="text-xs">v1</span>
-          </a>
-          </div>
-          <div className="flex md:order-2">
-            {session ?(
-              <Dropdown
-              arrowIcon={false}
-              inline
-              label={
-                <Avatar alt="User settings" img={userImage} rounded />
-              }
+    <nav className="fixed top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-green-100 shadow-sm">
+      <div className="flex items-center justify-between px-4 h-14 lg:max-w-4xl lg:mx-auto lg:px-6">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {showBack ? (
+            <button
+              onClick={handleBack}
+              className="p-2 -ml-2 rounded-full hover:bg-green-50 transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+              aria-label="Kembali ke halaman sebelumnya"
             >
-              <Dropdown.Header>
-                <span className="block text-sm">{userName}</span>
-                <span className="block truncate text-sm font-medium">{userEmail}</span>
-              </Dropdown.Header>
-              
-              <Dropdown.Item>Settings</Dropdown.Item>
-              <Dropdown.Divider />
-              <Dropdown.Item onClick={() => signOut({ callbackUrl: '/' })}>Sign out</Dropdown.Item>
-              </Dropdown>
-            ) : (
-              <>
-              <Button
-                onClick={() => signIn('google',{callbackUrl: `${window.location.origin}${currentPath}`,})}
-                className="justify-start "
-                color="gray">
-                <svg className="mr-2 h-5 w-5 eUuXwBkW5W4__eatjSfd RRXFBumaW2SHdseZaWm6 _gmxfZ2BpOHxa6nWwqBB" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g clipPath="url(#clip0_13183_10121)"><path d="M20.3081 10.2303C20.3081 9.55056 20.253 8.86711 20.1354 8.19836H10.7031V12.0492H16.1046C15.8804 13.2911 15.1602 14.3898 14.1057 15.0879V17.5866H17.3282C19.2205 15.8449 20.3081 13.2728 20.3081 10.2303Z" fill="#3F83F8"></path><path d="M10.7019 20.0006C13.3989 20.0006 15.6734 19.1151 17.3306 17.5865L14.1081 15.0879C13.2115 15.6979 12.0541 16.0433 10.7056 16.0433C8.09669 16.0433 5.88468 14.2832 5.091 11.9169H1.76562V14.4927C3.46322 17.8695 6.92087 20.0006 10.7019 20.0006V20.0006Z" fill="#34A853"></path><path d="M5.08857 11.9169C4.66969 10.6749 4.66969 9.33008 5.08857 8.08811V5.51233H1.76688C0.348541 8.33798 0.348541 11.667 1.76688 14.4927L5.08857 11.9169V11.9169Z" fill="#FBBC04"></path><path d="M10.7019 3.95805C12.1276 3.936 13.5055 4.47247 14.538 5.45722L17.393 2.60218C15.5852 0.904587 13.1858 -0.0287217 10.7019 0.000673888C6.92087 0.000673888 3.46322 2.13185 1.76562 5.51234L5.08732 8.08813C5.87733 5.71811 8.09302 3.95805 10.7019 3.95805V3.95805Z" fill="#EA4335"></path></g><defs><clipPath id="clip0_13183_10121"><rect width="20" height="20" fill="white" transform="translate(0.5)"></rect></clipPath></defs>
-                </svg>
-                Masuk
-              </Button>
-              </>
-            )}
-            
-          </div>
+              <HiChevronLeft className="w-6 h-6 text-green-800" />
+            </button>
+          ) : (
+            <a 
+              href="/" 
+              className="flex items-center gap-2 shrink-0 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 rounded-lg"
+              aria-label="Beranda RT 005"
+            >
+              {/* Logo Container */}
+              <div className="w-10 h-10 bg-white rounded-lg shadow-sm border border-green-100 flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/rt5vc.png"
+                  alt="RT 005"
+                  width={40}
+                  height={40}
+                  className="w-8 h-8 object-contain"
+                />
+              </div>
+              <span className="text-lg font-bold text-green-800 tracking-tight hidden xs:block">
+                RT 005
+              </span>
+            </a>
+          )}
 
+          {title && (
+            <h1 className="text-base font-bold text-green-900 truncate pr-4">
+              {title}
+            </h1>
+          )}
         </div>
-      </nav >
-      
-      {/* <SideMenu/> */}
-      {/* <Drawer open={isOpen} onClose={handleClose}>
-        <SideMenu/>
-      </Drawer> */}
-    </>
-   
-    
+
+        <div className="flex items-center gap-2 shrink-0">
+          {session ? (
+            <div className="dropdown dropdown-end">
+              <div 
+                tabIndex={0} 
+                role="button" 
+                className="btn btn-ghost btn-circle avatar hover:bg-green-50 transition-colors w-9 h-9 focus:outline-none focus:ring-2 focus:ring-green-500"
+                aria-label={`Menu pengguna ${session.user?.name || ''}`}
+              >
+                <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-green-200 shadow-sm">
+                  {session.user?.image ? (
+                    <img 
+                      src={session.user.image} 
+                      alt={session.user.name || 'User'} 
+                      referrerPolicy="no-referrer" 
+                      className="object-cover w-full h-full" 
+                    />
+                  ) : (
+                    <div className="bg-green-100 text-green-700 flex items-center justify-center w-full h-full text-sm font-bold">
+                      {session.user?.name?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <ul tabIndex={0} className="dropdown-content menu bg-white rounded-2xl w-64 p-2 shadow-xl border border-green-100 mt-2">
+                <li className="px-4 py-3 pointer-events-none border-b border-green-50 mb-1">
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-sm font-bold text-green-900 leading-tight">{session.user?.name}</p>
+                    <p className="text-xs text-green-600/70 truncate">{session.user?.email}</p>
+                  </div>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => signOut({ callbackUrl: '/' })} 
+                    className="flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-colors font-medium text-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Keluar
+                  </button>
+                </li>
+              </ul>
+            </div>
+          ) : (
+            <button
+              onClick={() => signIn('google', { callbackUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}${currentPath}` })}
+              className="btn bg-white border border-green-200 text-green-800 hover:bg-green-50 btn-sm gap-2 h-9 rounded-xl px-4 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
+              aria-label="Masuk dengan Google"
+            >
+              <GoogleIcon />
+              <span className="hidden xs:inline text-xs font-semibold">Masuk</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </nav>
   );
-}
+};
+
 export default Header;

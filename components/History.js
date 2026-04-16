@@ -1,23 +1,17 @@
 import { getSession, useSession } from 'next-auth/react';
 import { signIn, signOut } from 'next-auth/react';
-import { useRequireAuth } from '../utils/authUtils.js'; 
+import { useRequireAuth } from '../utils/authUtils.js';
 import Spinner from './Spinner';
 import { useState, useEffect} from 'react';
-import {Table, Button, Modal, Badge} from "flowbite-react";
-import ReactPaginate from 'react-paginate';
-import { MdNavigateNext } from "react-icons/md";
 import Image from "next/image";
-import {  FaCheckCircle, FaTimesCircle, FaHourglassHalf } from 'react-icons/fa';
 import { GrFormNextLink } from "react-icons/gr";
+import { FaExternalLinkAlt, FaHistory, FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 import axios from 'axios';
 import moment from 'moment';
-import 'moment/locale/id';
-import 'moment-timezone';
-moment.locale('id');
 import Link from 'next/link';
-import { FaExternalLinkAlt } from "react-icons/fa";
-
-const ITEMS_PER_PAGE = 20;
+import { formatCurrency, formatDate } from '../utils/format';
+import { ITEMS_PER_PAGE } from '../utils/constants';
+import Pagination from './ui/Pagination';
 
 const History = () => {
     const { useAuthRedirect } = useRequireAuth(['user','admin', 'editor', 'superadmin']);
@@ -35,22 +29,8 @@ const History = () => {
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
 
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(amount);
-    };
-
-    const formatDate = (dateString) => {
-    // Gunakan timezone Asia/Jakarta
-        const date = moment.tz(dateString, 'Asia/Jakarta');
-        return date.format('DD/MM/YY'); // Format sesuai kebutuhan
-    };
-
     const truncateText = (text, maxLength) => {
-        if (text.length > maxLength) {
+        if (text && text.length > maxLength) {
             return text.substring(0, maxLength) + "...";
         }
         return text;
@@ -58,89 +38,64 @@ const History = () => {
 
     useEffect(() => {
       if (session) {
-
         const fetchUser = async () => {
           try {
             const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-              headers: {
-                Authorization: `Bearer ${session.accessToken}`,
-              },
+              headers: { Authorization: `Bearer ${session.accessToken}` },
             });
-            // console.log(res.data)
             const dataRes = res.data.data;
-            setUser (dataRes);
+            setUser(dataRes);
             setUserID(dataRes._id);
             setLoading(false);
           } catch (error) {
-           
             signOut();
             setLoading(false);
             console.error('Error fetching user data:', error);
           }
         };
-
         fetchUser();
-      } else {
-        
       }
     }, [session]);
 
     const fetchTransactions =  async (userID, session) => {
-        
         if (userID) {
-           
             try {
                 const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/transaction/${userID}`, {
-                    headers: {
-                        Authorization: `Bearer ${session.accessToken}`,
-                    },
+                    headers: { Authorization: `Bearer ${session.accessToken}` },
                 });
                 const dataRes = res.data;
-                //console.log(dataRes)
-                const transactionsData =  dataRes.data.sort((a, b) => {
-                    return new Date(b.date) - new Date(a.date);
-                });
-        
+                const transactionsData =  dataRes.data.sort((a, b) => new Date(b.date) - new Date(a.date));
                 setTransactions(transactionsData);
-            
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching trasaction data:', error);
                 setLoading(false);
             }
         }
-       
     };
 
     useEffect(() => {
-        if (session) {
+        if (session && userID) {
             fetchTransactions(userID,session);
         }
-
-    }, [session, status,userID]);
-
+    }, [session, status, userID]);
 
     const filteredTransactions = transactions.filter(transaction => {
-        const matchesSearchTerm = 
-            (transaction && transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (transaction && transaction.transaction_id && transaction.transaction_id.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-        // Return true only if both the period and search term conditions are met
-        return  matchesSearchTerm;
+        const matchesSearchTerm =
+            (transaction?.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (transaction?.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase()));
+        return matchesSearchTerm;
     });
 
     const offset = currentPage * ITEMS_PER_PAGE;
     const currentPageData = filteredTransactions.slice(offset, offset + ITEMS_PER_PAGE);
-
-    const currentPageNav = currentPage + 1;
     const pageCount = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
-  
-    const handlePageClick = (data) => {
-        setCurrentPage(data.selected);
+
+    const handlePageClick = (selected) => {
+        setCurrentPage(selected);
     };
 
     const openModal = (id) => {
-        // Temukan transaksi berdasarkan id
         const transaction = currentPageData.find((trans) => trans._id === id);
         setSelectedTransaction(transaction);
         setModalIsOpen(true);
@@ -154,280 +109,169 @@ const History = () => {
     };
 
     const handleImageLoad = () => {
-        setLoadingImg(false); 
+        setLoadingImg(false);
     };
 
-    if (!session) {
-      return <></>;
-    }
+    if (!session) return <></>;
+    if (loading) return <Spinner />;
 
-    if (loading) {
-       return <Spinner />;
-    }
-
-    const getStatusIcon = (status) => {
-        switch (status) {
-        case 'berhasil':
-            return <FaCheckCircle className="text-green-500 h-4 w-4 md:h-5 md:w-5" />;
-        case 'gagal':
-            return <FaTimesCircle className="text-red-500 h-4 w-4 md:h-5 md:w-5" />;
-        case 'sedang dicek':
-            return <FaHourglassHalf className="text-yellow-500 h-4 w-4 md:h-5 md:w-5" />;
-        default:
-            return null;
-        }
-    };
-
-  
-    
-    const getTextColor = (type) => {
-        switch (type) {
-            case 'income':
-            return "text-blue-700";
-            case 'expense':
-            return "text-red-700";
-            case 'ipl':
-            return "text-green-700";
-            default:
-            return null;
-        }
-    };
-
-    const getBadgeProps = (status) => {
+    const getStatusUI = (status) => {
         switch (status) {
             case 'berhasil':
-            return { color: 'info', text: 'Sukses' };
+                return { icon: <FaCheckCircle className="w-4 h-4" />, color: 'text-success', bg: 'bg-success/10', label: 'Sukses' };
             case 'sedang dicek':
-            return { color: 'warning', text: 'Menunggu' };
+                return { icon: <FaClock className="w-4 h-4" />, color: 'text-warning', bg: 'bg-warning/10', label: 'Menunggu' };
             default:
-            return { color: 'failure', text: 'Gagal' };
+                return { icon: <FaTimesCircle className="w-4 h-4" />, color: 'text-error', bg: 'bg-error/10', label: 'Gagal' };
         }
     };
 
     return (
-    <>
-        <div className='flex justify-start gap-2'>
-            <Link href="/confirmation" className='flex items-center content-center bg-blue-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
-            <span className='text-center content-center'>Konfirmasi Transfer</span>
-            <GrFormNextLink  className='w-5 h-5'/>
+    <div className="flex flex-col gap-4">
+        {/* Quick Actions */}
+        <div className='flex gap-2 mb-2'>
+            <Link href="/confirmation" className='flex-1 flex items-center justify-center gap-1 bg-primary text-primary-content font-bold text-xs rounded-xl px-3 py-3 active:scale-95 transition-transform'>
+                <span>Form Konfirmasi</span>
             </Link>
-            <Link href="/ipl" className='flex items-center content-center bg-green-700 text-white font-medium text-xs rounded-xl px-2 py-1 '>
-            <span className='text-center content-center'>Data IPL</span>
-            <GrFormNextLink  className='w-5 h-5'/>
+            <Link href="/ipl" className='flex-1 flex items-center justify-center gap-1 bg-base-200 text-base-content font-bold text-xs rounded-xl px-3 py-3 active:scale-95 transition-transform'>
+                <span>Lihat Data IPL</span>
             </Link>
         </div>
-        <p className='pt-6 pb-3 text-md'>Riwayat konfirmasi transfer oleh email: <span className='underline'>{user.email}</span></p>
 
-        <div className='overflow-x-auto'>
-            <Table striped>
-                <Table.Head>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:pl-2 md:pr-0 bg-cyan-600 text-white'>No</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-3/4'>Keterangan</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Tanggal</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Status</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Detail</Table.HeadCell>
-                </Table.Head>
-                <Table.Body className="divide-y">
-                    {currentPageData ? (
-                        <>
-                            {currentPageData.map((transaction, index) => ( 
-                            <Table.Row key={index} className=" py-2 px-2 md:py-3 md:px-3 text-xs md:text-base">
-                                <Table.Cell className={` items-center content-center  py-1 px-2 md:py-2 md:px-3 text-xs md:text-base`}>
-                                    <span className='flex items-center content-center justify-center'>
-                                    {offset + index + 1}
-                                    </span>
-                                </Table.Cell>
-                                <Table.Cell className={`items-center content-center  py-1 px-2 md:py-2 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                                    <span className='flex items-start content-start'>
-                                        {/* {
-                                            transaction.transaction_type === 'ipl' ? (
-                                                <span>{`IPL ${transaction.house_id.house_id}, ${transaction.related_months.length} Periode.`}</span>  
-                                            ) : (
-                                                <span>{transaction.description}</span> 
-                                            )
-                                        } */}
-
-                                    <span>{transaction.transaction_id? transaction.transaction_id : truncateText(transaction.description, 10)}</span> 
-
-                                    </span>
-                                </Table.Cell>
-                                <Table.Cell className={`items-center content-center  py-1 px-2 md:py-2 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                                    {formatDate(transaction.created_at)}
-                                </Table.Cell>     
-                                <Table.Cell className={`items-center content-center py-1 px-2 md:py-2 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                                <span className='flex items-center justify-center'>
-                                    {getStatusIcon(transaction.status)} 
-                                </span>
-                                </Table.Cell>
-                                <Table.Cell className={`items-center content-center py-1 px-2 md:py-2 md:px-3 text-xs md:text-base ${getTextColor(transaction.transaction_type)}`}>
-                                    <span className='flex items-center'>
-                                    <Button color="gray" onClick={() => openModal(transaction._id)} size="xs" className=' rounded-md focus:ring-0'>View</Button>
-                                    </span>
-                                </Table.Cell>
-                            </Table.Row>
-                            ))}
-                        </>
-                    ):(
-                        <Table.Row className=" py-2 px-2 md:py-3 md:px-3 text-xs md:text-base">
-                            <Table.Cell colSpan={5} className=" items-center content-center  py-1 px-2 md:py-2 md:px-3 text-xs md:text-base">
-                                <span className='flex items-center content-center justify-center'>
-                                    Data tidak ditemukan
-                                </span>
-                            </Table.Cell>
-                       
-                        </Table.Row>
-                    )}
-
-                    
-                </Table.Body>
-                
-            </Table>
+        {/* User Info */}
+        <div className="app-card p-4">
+            <p className="text-xs text-base-content/60 font-semibold uppercase mb-1">Riwayat Akun</p>
+            <p className="text-sm font-bold text-base-content">{user.email}</p>
         </div>
 
-        <Modal show={modalIsOpen} position="center" size="3xl" dismissible  onClose={closeModal}>
-            <Modal.Header>
-                <span className='block'>Detail</span>
-                {selectedTransaction && (
-                    <span className='block text-xs gray-700'>ID: {selectedTransaction.transaction_id}</span>
-                )}
-                
-            </Modal.Header>
-            <Modal.Body>
-            <div className="">
-                {selectedTransaction ? (
-                <>
-                    <div className='flex items-start content-start pb-2 mb-2 border-b'>
-                        <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Status</span><span>:</span></div>
-                        <div className='w-10/12'>
-                            <span className='flex flex-wrap mt-1'>
-                                <Badge color={getBadgeProps(selectedTransaction.status).color}> {getBadgeProps(selectedTransaction.status).text}</Badge>
-                            </span>
-                        </div>
-                    </div>
-                    <div className='flex items-start content-start pb-2 mb-2 border-b'>
-                        <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Deskripsi</span><span>:</span></div>
-                        <div className='w-10/12'><span>{selectedTransaction.description}</span></div>
-                    </div>
-                    <div className='flex items-start content-start pb-2 mb-2 border-b'>
-                        <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Nominal</span><span>:</span></div>
-                        <div className='w-10/12'><span>{formatCurrency(selectedTransaction.amount)}</span></div>
-                    </div>
-                    <div className='flex items-start content-start pb-2 mb-2 border-b'>
-                        <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Tipe</span><span>:</span></div>
-                        <div className='w-10/12'><span  className='capitalize'>{selectedTransaction.payment_type}</span></div>
-                    </div>
-                    <div className='flex items-start content-start pb-2 mb-2 border-b'>
-                        <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Tanggal</span><span>:</span></div>
-                        <div className='w-10/12'><span  className='capitalize'>{moment(selectedTransaction.date).locale('id').format('D MMMM YYYY')}</span></div>
-                    </div>
-                    
-                    {selectedTransaction.attachment && selectedTransaction.attachment.attachment_title && (
-
-                        <div className='flex items-start content-start pb-2 mb-2 border-b'>
-                        <div className='w-1/3 md:w-1/6 flex justify-between pr-1'><span className='font-semibold'>Dokumen</span><span>:</span></div>
-                        <div className='w-10/12'>
-                        <Link href={selectedTransaction.attachment.attachment_url} target='_blank' className='inline-block' > 
-                            <span className='flex items-center content-center capitalize px-3 py-2 text-xs font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800'>
-                                <FaExternalLinkAlt className='w-3 h-3 mr-2 '/> 
-                                <span>  {selectedTransaction.attachment.attachment_title}</span>
-                            </span>
-                        
-                        </Link>
-                        </div>
-                        </div>
-                    )}
-                    
-                    
-                    
-                    <div className="mt-5">
-                    {selectedTransaction.proof_of_transfer !== '' ? (
-                            <div className='w-1/2 relative'>
-                            <div className="relative w-full h-auto">
-                            {loadingImg && (
-                                <div className="animate-pulse flex justify-center items-center">
-                                {/* Skeleton Loader */}
-                                <div className="w-full h-40 bg-gray-300 rounded-lg"></div>
+        {/* Transaction List */}
+        <div className="flex flex-col gap-3">
+            {currentPageData.length > 0 ? (
+                currentPageData.map((transaction, index) => {
+                    const statusUI = getStatusUI(transaction.status);
+                    return (
+                        <div 
+                            key={index} 
+                            onClick={() => openModal(transaction._id)}
+                            className="app-card p-4 flex flex-col gap-3 cursor-pointer active:scale-[0.98] transition-transform"
+                        >
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-sm font-bold text-base-content leading-tight mb-1">
+                                        {transaction.transaction_id || "Transaksi"}
+                                    </p>
+                                    <p className="text-[11px] text-base-content/60">
+                                        {formatDate(transaction.created_at)}
+                                    </p>
                                 </div>
-                            )}
+                                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md ${statusUI.bg} ${statusUI.color}`}>
+                                    {statusUI.icon}
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">{statusUI.label}</span>
+                                </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-end mt-1">
+                                <p className="text-xs text-base-content/70 line-clamp-1 flex-1 pr-4">
+                                    {transaction.description}
+                                </p>
+                                <p className="text-sm font-extrabold text-base-content shrink-0">
+                                    {formatCurrency(transaction.amount)}
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })
+            ) : (
+                <div className="app-card p-8 flex flex-col items-center justify-center text-center">
+                    <FaHistory className="w-8 h-8 text-base-content/20 mb-3" />
+                    <p className="text-base-content/50 font-medium text-sm">Belum ada riwayat transaksi.</p>
+                </div>
+            )}
+        </div>
+
+        {/* Detail Modal */}
+        {modalIsOpen && selectedTransaction && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity" onClick={closeModal}>
+            <div 
+                className="bg-base-100 w-full sm:w-[500px] max-h-[85vh] overflow-y-auto rounded-t-[24px] sm:rounded-[24px] p-6 shadow-2xl transition-transform transform translate-y-0"
+                onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-base-200">
+                <div>
+                  <h3 className='font-extrabold text-lg text-base-content'>Detail Transaksi</h3>
+                  <p className='text-xs text-base-content/50 font-mono mt-0.5'>{selectedTransaction.transaction_id}</p>
+                </div>
+                <button className="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center text-base-content/60 hover:text-base-content active:scale-90 transition-all" onClick={closeModal}>✕</button>
+              </div>
+              
+              <div className="flex flex-col gap-4">
+                 {/* Status Big Badge */}
+                 <div className="flex flex-col items-center justify-center py-4 bg-base-200/50 rounded-2xl mb-2">
+                     <p className="text-[10px] uppercase font-bold text-base-content/50 tracking-wider mb-1">Nominal</p>
+                     <p className="text-2xl font-extrabold text-base-content mb-3">{formatCurrency(selectedTransaction.amount)}</p>
+                     <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${getStatusUI(selectedTransaction.status).bg} ${getStatusUI(selectedTransaction.status).color}`}>
+                        {getStatusUI(selectedTransaction.status).icon}
+                        <span className="text-xs font-bold uppercase tracking-wider">{getStatusUI(selectedTransaction.status).label}</span>
+                    </div>
+                 </div>
+
+                 {/* Detail Items */}
+                 <div className="grid grid-cols-3 gap-2 text-sm">
+                    <p className="text-base-content/60 font-medium">Tanggal</p>
+                    <p className="col-span-2 text-base-content font-semibold text-right">{moment(selectedTransaction.date).locale('id').format('D MMMM YYYY')}</p>
+                 </div>
+                 
+                 <div className="grid grid-cols-3 gap-2 text-sm">
+                    <p className="text-base-content/60 font-medium">Tipe</p>
+                    <p className="col-span-2 text-base-content font-semibold capitalize text-right">{selectedTransaction.payment_type}</p>
+                 </div>
+
+                 <div className="grid grid-cols-1 gap-1 text-sm mt-2">
+                    <p className="text-base-content/60 font-medium">Deskripsi</p>
+                    <p className="text-base-content font-semibold bg-base-200/50 p-3 rounded-xl leading-relaxed">{selectedTransaction.description}</p>
+                 </div>
+
+                 {selectedTransaction.attachment?.attachment_url && (
+                    <div className="mt-2">
+                        <p className="text-base-content/60 font-medium text-sm mb-2">Dokumen Terlampir</p>
+                        <Link href={selectedTransaction.attachment.attachment_url} target='_blank' className="flex items-center gap-2 p-3 bg-primary/10 text-primary rounded-xl font-bold text-sm hover:bg-primary/20 transition-colors">
+                            <FaExternalLinkAlt className='w-4 h-4 shrink-0'/>
+                            <span className="truncate">{selectedTransaction.attachment.attachment_title || "Lihat Dokumen"}</span>
+                        </Link>
+                    </div>
+                 )}
+
+                 {selectedTransaction.proof_of_transfer && (
+                    <div className="mt-4">
+                        <p className="text-base-content/60 font-medium text-sm mb-2">Bukti Transfer</p>
+                        <div className="relative w-full aspect-[3/4] sm:aspect-video rounded-xl overflow-hidden border border-base-200 bg-base-200/50">
+                            {loadingImg && <div className="absolute inset-0 animate-pulse bg-base-300"></div>}
                             <Image
-                            className='w-full h-auto relative'
-                            width={0} 
-                            height={0}
-                            sizes="100vw"
-                            onLoad={handleImageLoad}
-                            src={selectedTransaction.proof_of_transfer}  
-                            alt="Lampiran" /> 
-                            </div>
-                            </div>
-                    ) : (
-                        <></>
-                    )}
+                                className="object-contain"
+                                fill
+                                sizes="(max-width: 768px) 100vw, 500px"
+                                onLoad={handleImageLoad}
+                                src={selectedTransaction.proof_of_transfer}
+                                alt="Bukti Transfer" 
+                            />
+                        </div>
                     </div>
+                 )}
 
-                    <div>
-                        {selectedTransaction.additional_note_mutasi_bca &&  (
-                            <div className='flex items-start content-start pb-2 mt-6 mb-3'>
-                                <div className='w-1/3 md:w-1/6 flex justify-between pr-1 text-xs'><span className='font-semibold'>Note</span><span>:</span></div>
-                                <div className='w-10/12 flex justify-between'><span className='text-xs'>{selectedTransaction.additional_note_mutasi_bca}</span></div>
-                            </div>
-                        )}
-                    
-                    </div>
-                </>
-                ) : (
-                <p>Transaksi tidak ditemukan</p>
-                )}
+                 {selectedTransaction.additional_note_mutasi_bca &&  (
+                     <div className="mt-4 bg-warning/10 border border-warning/20 p-3 rounded-xl">
+                        <p className="text-[10px] uppercase font-bold text-warning tracking-wider mb-1">Catatan BCA</p>
+                        <p className="text-xs text-warning-content leading-relaxed">{selectedTransaction.additional_note_mutasi_bca}</p>
+                     </div>
+                 )}
+              </div>
             </div>
-            </Modal.Body>
-            <Modal.Footer>
-            {/* <Button color="gray" onClick={closeModal}>
-                Close
-            </Button> */}
-            </Modal.Footer>
-        </Modal>
+          </div>
+        )}
 
-        
-        {currentPageData &&
-          <nav className="py-6">
-            <div className="flex justify-end items-center content-center">
-                <span className="text-sm mr-3">
-                {currentPageNav * ITEMS_PER_PAGE - ITEMS_PER_PAGE + 1} - {Math.min(currentPageNav * ITEMS_PER_PAGE, filteredTransactions.length)} of {filteredTransactions.length}
-                </span>
-                <ReactPaginate
-                previousLabel={
-                currentPageNav === 1 ? (
-                    <span className="h-full" disabled>
-                    <MdNavigateNext className='h-6 w-6 rotate-180' />
-                    </span>
-                ) : (
-                    <span><MdNavigateNext className='h-6 w-6 rotate-180' /></span>
-                )}
-                nextLabel={
-                currentPageNav === pageCount ? (
-                    <span  disabled>
-                    <MdNavigateNext className='h-6 w-6' />
-                    </span>
-                ) : (
-                    <span><MdNavigateNext className='h-6 w-6' /></span>
-                )}
-                breakLabel={''}
-                pageCount={pageCount}
-                marginPagesDisplayed={2}
-                pageRangeDisplayed={5}
-                onPageChange={handlePageClick}
-                containerClassName={'pagination flex justify-center -space-x-px text-sm'}
-                pageClassName={'hidden'}
-                previousClassName={'px-2 py-1 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                nextClassName={'px-2 py-1 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                />
-            </div>
-          </nav>
-        }
-
-      
-        
-    </>
+        <Pagination pageCount={pageCount} currentPage={currentPage} onPageChange={handlePageClick} />
+    </div>
     );
-  };
-  
-  export default History;
+};
+
+export default History;

@@ -1,0 +1,487 @@
+{
+  "generatedAt": "2026-04-16 22:57:02",
+  "period": {
+    "start": "2024-07",
+    "current": "2026-04"
+  },
+  "summary": {
+    "total": 136,
+    "advanced": 0,
+    "current": 89,
+    "behind": 47,
+    "severeBehind": 47
+  },
+  "advancedCustomers": [],
+  "behindCustomers": [
+    {
+      "houseId": "E1-07",
+      "residentName": "JUNI",
+      "balance": -15,
+      "lastPaidMonth": "2025-06",
+      "lastPaidDate": "2025-08-30T05:14:38.634Z",
+      "firstPaidMonth": "2024-12",
+      "totalPaid": 7,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-15",
+      "residentName": "ENDANG ",
+      "balance": -14,
+      "lastPaidMonth": "2025-02",
+      "lastPaidDate": "2026-01-26T15:36:06.580Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 8,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-19",
+      "residentName": "ARDI GUSMAN",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2025-12-22T13:10:13.692Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-02",
+      "residentName": "HAFIZ",
+      "balance": -10,
+      "lastPaidMonth": "2026-04",
+      "lastPaidDate": "2026-02-28T04:31:56.818Z",
+      "firstPaidMonth": "2025-05",
+      "totalPaid": 12,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-02A",
+      "residentName": "YOVIANTO",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2025-07-31T01:34:52.971Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-06",
+      "residentName": "DJUMHARI",
+      "balance": -10,
+      "lastPaidMonth": "2026-04",
+      "lastPaidDate": "2026-04-01T14:14:07.478Z",
+      "firstPaidMonth": "2025-04",
+      "totalPaid": 12,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-12",
+      "residentName": "Frans ",
+      "balance": -12,
+      "lastPaidMonth": "2026-04",
+      "lastPaidDate": "2025-10-29T14:34:04.025Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 10,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-12A",
+      "residentName": "SURUR",
+      "balance": -7,
+      "lastPaidMonth": "2025-09",
+      "lastPaidDate": "2025-05-04T02:42:39.573Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 15,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-18",
+      "residentName": "NUNUNG SOFIAH/EKO W",
+      "balance": -3,
+      "lastPaidMonth": "2026-01",
+      "lastPaidDate": "2026-01-30T08:00:33.888Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 19,
+      "category": "behind"
+    },
+    {
+      "houseId": "E1-22",
+      "residentName": "ISTIQOMAH/RYANT",
+      "balance": -3,
+      "lastPaidMonth": "2026-01",
+      "lastPaidDate": "2026-02-14T02:15:22.569Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 19,
+      "category": "behind"
+    },
+    {
+      "houseId": "E2-01",
+      "residentName": "A ARIE FEBRIANSYAH",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2025-09-30T02:21:42.450Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E2-07",
+      "residentName": "PARJANA / MUHAMMAD AWALUDIN",
+      "balance": -10,
+      "lastPaidMonth": "2026-01",
+      "lastPaidDate": "2026-04-09T10:01:25.945Z",
+      "firstPaidMonth": "2025-02",
+      "totalPaid": 12,
+      "category": "behind"
+    },
+    {
+      "houseId": "E2-11A",
+      "residentName": "SAID EFFENDI",
+      "balance": -3,
+      "lastPaidMonth": "2026-01",
+      "lastPaidDate": "2025-12-13T00:07:09.272Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 19,
+      "category": "behind"
+    },
+    {
+      "houseId": "E2-02",
+      "residentName": "WIDIANTO",
+      "balance": -18,
+      "lastPaidMonth": "2024-10",
+      "lastPaidDate": "2024-10-29T07:00:00.000Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 4,
+      "category": "behind"
+    },
+    {
+      "houseId": "E2-02A",
+      "residentName": "AKBAR PRISBADI",
+      "balance": -19,
+      "lastPaidMonth": "2024-09",
+      "lastPaidDate": "2024-09-27T12:28:12.000Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 3,
+      "category": "behind"
+    },
+    {
+      "houseId": "E2-06",
+      "residentName": "LUKMAN HAKIM",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2025-07-28T12:54:58.156Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E2-08",
+      "residentName": "HAEKAL FIRDAUS",
+      "balance": -6,
+      "lastPaidMonth": "2025-10",
+      "lastPaidDate": "2025-12-03T10:00:19.383Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 16,
+      "category": "behind"
+    },
+    {
+      "houseId": "E2-10",
+      "residentName": "ANDRI PRANOTO",
+      "balance": -20,
+      "lastPaidMonth": "2024-08",
+      "lastPaidDate": "2024-11-29T16:35:41.000Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 2,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-01",
+      "residentName": "ARI AZHARI",
+      "balance": -16,
+      "lastPaidMonth": "2024-12",
+      "lastPaidDate": "2025-04-16T06:39:32.428Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 6,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-07",
+      "residentName": "RIZKY HIMAWAN",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2026-01-02T12:58:38.250Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-09",
+      "residentName": "RIZAL ANANDA",
+      "balance": -6,
+      "lastPaidMonth": "2025-10",
+      "lastPaidDate": "2025-11-05T08:54:52.230Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 16,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-11A",
+      "residentName": "HERVIANI / TOTO",
+      "balance": -9,
+      "lastPaidMonth": "2025-07",
+      "lastPaidDate": "2025-07-15T15:48:18.668Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 13,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-17",
+      "residentName": "RACHMAD HIDAYAT",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2025-12-28T06:26:59.031Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-21",
+      "residentName": "RIZAL SUANDI",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2025-12-30T13:39:23.624Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-25",
+      "residentName": "ERYANA",
+      "balance": -9,
+      "lastPaidMonth": "2025-07",
+      "lastPaidDate": "2025-05-16T08:49:02.018Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 13,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-08",
+      "residentName": "SUPRIYATI",
+      "balance": -3,
+      "lastPaidMonth": "2026-01",
+      "lastPaidDate": "2026-03-27T09:09:48.000Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 19,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-12",
+      "residentName": "HENDRIZAL",
+      "balance": -3,
+      "lastPaidMonth": "2026-01",
+      "lastPaidDate": "2026-04-02T11:14:01.028Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 19,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-12A",
+      "residentName": "RAFA RAHMANDIKA",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2026-01-02T13:12:42.456Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-18",
+      "residentName": "AZWAR",
+      "balance": -5,
+      "lastPaidMonth": "2025-11",
+      "lastPaidDate": "2026-01-03T13:36:37.938Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 17,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-22A",
+      "residentName": "JUANDA",
+      "balance": -3,
+      "lastPaidMonth": "2026-01",
+      "lastPaidDate": "2025-12-21T11:25:58.814Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 19,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3-30",
+      "residentName": "ERNI BASRI / ADI",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2025-12-15T03:17:28.328Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3A-01",
+      "residentName": "YUSUP",
+      "balance": -20,
+      "lastPaidMonth": "2025-08",
+      "lastPaidDate": "2025-10-06T03:29:32.416Z",
+      "firstPaidMonth": "2025-07",
+      "totalPaid": 2,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3A-05",
+      "residentName": "SYAHRUL",
+      "balance": -9,
+      "lastPaidMonth": "2025-07",
+      "lastPaidDate": "2025-12-09T04:29:41.186Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 13,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3A-11",
+      "residentName": "HABBIBUL HARIS",
+      "balance": -10,
+      "lastPaidMonth": "2026-04",
+      "lastPaidDate": "2026-02-06T07:06:39.763Z",
+      "firstPaidMonth": "2025-05",
+      "totalPaid": 12,
+      "category": "behind"
+    },
+    {
+      "houseId": "E3A-11A",
+      "residentName": "IRFAN NURHAKIM",
+      "balance": -6,
+      "lastPaidMonth": "2025-10",
+      "lastPaidDate": "2026-01-01T11:56:10.630Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 16,
+      "category": "behind"
+    },
+    {
+      "houseId": "E5-02",
+      "residentName": "UNDRA",
+      "balance": -7,
+      "lastPaidMonth": "2026-02",
+      "lastPaidDate": "2026-02-28T10:37:39.000Z",
+      "firstPaidMonth": "2024-09",
+      "totalPaid": 15,
+      "category": "behind"
+    },
+    {
+      "houseId": "E5-06",
+      "residentName": "BUDI SETIO ADI",
+      "balance": -8,
+      "lastPaidMonth": "2025-08",
+      "lastPaidDate": "2026-01-17T00:44:01.676Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 14,
+      "category": "behind"
+    },
+    {
+      "houseId": "E6-06",
+      "residentName": "REZA",
+      "balance": -20,
+      "lastPaidMonth": "2025-05",
+      "lastPaidDate": "2025-07-29T02:58:19.198Z",
+      "firstPaidMonth": "2025-04",
+      "totalPaid": 2,
+      "category": "behind"
+    },
+    {
+      "houseId": "E6-09",
+      "residentName": "FANDI",
+      "balance": -5,
+      "lastPaidMonth": "2025-11",
+      "lastPaidDate": "2026-02-26T00:47:18.404Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 17,
+      "category": "behind"
+    },
+    {
+      "houseId": "E6-16",
+      "residentName": "HERRY",
+      "balance": -8,
+      "lastPaidMonth": "2026-02",
+      "lastPaidDate": "2026-01-25T15:32:32.000Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 14,
+      "category": "behind"
+    },
+    {
+      "houseId": "E6-17",
+      "residentName": "TRI",
+      "balance": -14,
+      "lastPaidMonth": "2025-02",
+      "lastPaidDate": "2025-05-20T05:59:17.839Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 8,
+      "category": "behind"
+    },
+    {
+      "houseId": "E6-18",
+      "residentName": "RIDHO",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2025-12-02T03:00:04.140Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E7-03",
+      "residentName": "TERANG BINTANG S",
+      "balance": -4,
+      "lastPaidMonth": "2025-12",
+      "lastPaidDate": "2024-12-19T16:16:45.000Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 18,
+      "category": "behind"
+    },
+    {
+      "houseId": "E7-07",
+      "residentName": "NN",
+      "balance": -19,
+      "lastPaidMonth": "2026-03",
+      "lastPaidDate": "2026-03-27T11:18:47.166Z",
+      "firstPaidMonth": "2026-01",
+      "totalPaid": 3,
+      "category": "behind"
+    },
+    {
+      "houseId": "E7-11A",
+      "residentName": "WELLY",
+      "balance": -5,
+      "lastPaidMonth": "2025-11",
+      "lastPaidDate": "2025-12-02T09:07:23.877Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 17,
+      "category": "behind"
+    },
+    {
+      "houseId": "E7-25",
+      "residentName": "LEO",
+      "balance": -16,
+      "lastPaidMonth": "2026-04",
+      "lastPaidDate": "2026-04-07T01:25:08.355Z",
+      "firstPaidMonth": "2025-11",
+      "totalPaid": 6,
+      "category": "behind"
+    },
+    {
+      "houseId": "E8-03",
+      "residentName": "EDWIN",
+      "balance": -5,
+      "lastPaidMonth": "2025-11",
+      "lastPaidDate": "2025-12-03T00:05:23.028Z",
+      "firstPaidMonth": "2024-07",
+      "totalPaid": 17,
+      "category": "behind"
+    }
+  ]
+}

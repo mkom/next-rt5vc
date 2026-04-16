@@ -91,13 +91,13 @@ function LetterPreview({data}){
             <div className="flex justify-center gap-4 mt-10">
                 <button
                     onClick={() => generatePDF("preview")}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="btn btn-primary btn-sm"
                 >
                     Preview PDF
                 </button>
                 <button
                     onClick={() => generatePDF("download")}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    className="btn btn-success btn-sm"
                 >
                     Download PDF
                 </button>
@@ -105,7 +105,7 @@ function LetterPreview({data}){
 
 
             <div ref={printRef} className="p-6 mb-10  bg-white text-black max-w-screen-lg mx-auto text-sm">
-                <header className="border-b-4 pb-4 mb-8 flex items-center justify-around gap-12">
+                <header className="border-b-4 pb-4 mb-8 flex items-center justify-around gap-4 md:gap-12">
                     <div className=" w-[130px]">
                         <Image src="/images/rt005.png" className="w-full h-auto" width={130} height={100} alt="RT 005 Logo"/>
                     </div>

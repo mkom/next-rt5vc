@@ -1,110 +1,56 @@
 import { getSession, useSession } from 'next-auth/react';
-import { useEffect,useState,useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { useRequireAuth } from '../../utils/authUtils.js'; 
-import ReactPaginate from 'react-paginate';
-
-import { Button, Badge } from "flowbite-react";
-import {TextInput,Drawer} from "flowbite-react";
-import Header from '../../components/Header';
-import SideMenu from '../../components/dashboard/Sidebar'
-import Spinner from '../../components/Spinner';
-import { HiOutlineSearch } from "react-icons/hi";
-import {FaCalendarCheck } from 'react-icons/fa';
-import { FaRegEnvelope, FaWhatsapp } from "react-icons/fa";
-import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
-import 'moment/locale/id';
-moment.locale('id');
-import CustomThemeProviderSecond from '../../components/CustomThemeSecond';
+import { FaRegEnvelope, FaWhatsapp } from 'react-icons/fa';
+
+import DashboardLayout from '../../components/layouts/DashboardLayout';
+import Spinner from '../../components/Spinner';
+import SearchInput from '../../components/ui/SearchInput';
+import Pagination from '../../components/ui/Pagination';
+import Drawer from '../../components/ui/Drawer';
+import ResponsiveTable from '../../components/ui/ResponsiveTable';
+import { formatCurrency } from '../../utils/format';
 import LetterPreview from '@/components/LetterPreview.js';
 import WhatsAppMessage from '@/components/WhatsAppMessage.js';
-
 
 const ITEMS_PER_PAGE = 30;
 
 const Bills = ({ initialHouses }) => {
-  const { useAuthRedirectDashboard } = useRequireAuth(['admin', 'editor', 'superadmin']);
-  useAuthRedirectDashboard();
-  const { data: session, status } = useSession();
-  const [houses, setHouses] = useState([initialHouses]);
+  const { data: session } = useSession();
+  const [houses, setHouses] = useState(initialHouses ?? []);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(true);  
+  const [loading, setLoading] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isWhatsAppDrawerOpen, setIsWhatsAppDrawerOpen] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [totalHouses, setTotalHouses] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const fetchHouses = useCallback (async () => {
+  const fetchHouses = useCallback(async () => {
     if (session) {
-        try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
-            });
-            const sorted = res.data.data.sort((a, b) => b.total_fee - a.total_fee);
-            //console.log(sorted);
-            setHouses(sorted);
-            setTotalHouses(res.data.total);
-            setTotalAmount(res.data.total_amount)
-            setLoading(false);
-        } catch (error) {
-    
-          console.error('Error fetching houses data:', error);
-          setLoading(false);
-        }
+      try {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {});
+        const sorted = res.data.data.sort((a, b) => b.total_fee - a.total_fee);
+        setHouses(sorted);
+        setTotalHouses(res.data.total);
+        setTotalAmount(res.data.total_amount);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching houses data:', error);
+        setLoading(false);
+      }
     }
-   
-  },[session])
-
+  }, [session]);
 
   useEffect(() => {
     if (session) {
-        fetchHouses();
+      fetchHouses();
     }
-  }, [session,fetchHouses ]);
-
-  const handlePageClick = (data) => {
-    setCurrentPage(data.selected);
-  };
-
-  const handleSearchChange = (event) => {
-    setCurrentPage(0);
-    setSearchTerm(event.target.value);
-  };
-
-
-  const filteredHouses = Array.isArray(houses)
-  ? houses.filter(house => {
-      const searchTermLower = searchTerm.toLowerCase();
-      return (
-        (searchTermLower === '' || (
-          house?.resident_name?.toLowerCase().includes(searchTermLower) ||
-          house?.house_id?.toLowerCase().includes(searchTermLower)
-        )) 
-      );
-    })
-  : [];
-
-  const offset = currentPage * ITEMS_PER_PAGE;
-  const currentPageData = filteredHouses.slice(offset, offset + ITEMS_PER_PAGE);
-
+  }, [session, fetchHouses]);
 
   const handleEditClick = (data) => {
-   // setEditData(house);
     setIsDrawerOpen(true);
     setDetailData(data);
   };
@@ -113,8 +59,87 @@ const Bills = ({ initialHouses }) => {
     setIsWhatsAppDrawerOpen(true);
     setDetailData(data);
   };
-  //console.log(detailData);
 
+  const filteredHouses = Array.isArray(houses)
+    ? houses.filter((house) => {
+        const searchTermLower = searchTerm.toLowerCase();
+        return (
+          searchTermLower === '' ||
+          house?.resident_name?.toLowerCase().includes(searchTermLower) ||
+          house?.house_id?.toLowerCase().includes(searchTermLower)
+        );
+      })
+    : [];
+
+  const offset = currentPage * ITEMS_PER_PAGE;
+  const currentPageData = filteredHouses.slice(offset, offset + ITEMS_PER_PAGE);
+
+  const columns = [
+    { label: 'No', className: 'w-4' },
+    { label: 'Rumah', className: 'w-14' },
+    { label: 'Nama', className: 'w-28' },
+    { label: 'Periode', className: 'w-80' },
+    { label: 'Total', className: 'w-16' },
+    { label: 'Jumlah', className: 'w-16 text-right' },
+    { label: '', className: 'w-20' },
+  ];
+
+  const renderPeriodBadges = (house) => (
+    <span className="flex flex-wrap gap-1">
+      {house.periods.map((period, subindex) => {
+        const status = house.monthly_status.find((s) => s.month === period)?.status;
+        const badgeClass = status === 'Weekend' ? 'badge-secondary' : 'badge-error';
+        return (
+          <span key={subindex} className={`badge badge-xs ${badgeClass}`}>
+            {moment(period, 'YYYY-MM').format('MMMM YYYY')}
+          </span>
+        );
+      })}
+    </span>
+  );
+
+  const renderActionButtons = (house) => (
+    <div className="join">
+      <button className="join-item btn btn-ghost btn-xs" onClick={() => handleEditClick(house)}>
+        <FaRegEnvelope className="h-4 w-4" />
+        <span>Surat</span>
+      </button>
+      <button className="join-item btn btn-ghost btn-xs" onClick={() => handleWhatsAppClick(house)}>
+        <FaWhatsapp className="h-4 w-4" />
+        <span>WA</span>
+      </button>
+    </div>
+  );
+
+  const renderDesktopRow = (house, index) => (
+    <tr key={index}>
+      <td>{offset + index + 1}</td>
+      <td>{house.house_id}</td>
+      <td>{house.resident_name}</td>
+      <td>{renderPeriodBadges(house)}</td>
+      <td>{house.periods.length} Bulan</td>
+      <td className="text-right">{formatCurrency(house.total_fee)}</td>
+      <td>{renderActionButtons(house)}</td>
+    </tr>
+  );
+
+  const renderMobileCard = (house, index) => (
+    <div className="space-y-2">
+      <div className="flex justify-between items-start">
+        <div>
+          <span className="font-semibold">{house.house_id}</span>{' '}
+          <span className="text-base-content/70">{house.resident_name}</span>
+        </div>
+      </div>
+      <div>{renderPeriodBadges(house)}</div>
+      <div className="flex justify-between items-center">
+        <span className="text-sm">
+          {house.periods.length} Bln {formatCurrency(house.total_fee)}
+        </span>
+        {renderActionButtons(house)}
+      </div>
+    </div>
+  );
 
   if (loading) {
     return <Spinner />;
@@ -122,170 +147,84 @@ const Bills = ({ initialHouses }) => {
 
   return (
     <>
-    
-    <Header toggleSidebar={toggleSidebar}/>
-    <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-lg mx-auto h-full'>
-      <div className='w-full'>
-        <section className='mt-14 px-3 py-5  mb-11'>
-            <h1 className='text-xl mb-4 flex font-semibold text-gray-900 sm:text-2xl dark:text-white'>
-            <FaCalendarCheck  className="mr-2 h-7 w-7" /> 
-            <span>Tagihan Berjalan</span>
-            </h1>
-
-            <div className="mb-3 mt-5 flex justify-between content-center items-center gap-3 w-full">
-            <CustomThemeProviderSecond>
-              <TextInput 
-                name="name"
-                placeholder="Cari"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="mr-2 rounded-md w-full md:w-1/2"
-                icon={HiOutlineSearch} 
-              />
-
-            
-            </CustomThemeProviderSecond>
-
-            </div>
-
-            <div className='overflow-x-auto mt-5'>
-                <table className='w-full'>
-                    <thead className='bg-gray-50 border-b-2 group/head text-xs uppercase text-gray-700'>
-                        <tr className='border-y-2 '>
-                        <th colSpan={6} className='p-3 text-right text-base'>Jumlah Keseluruhan: {formatCurrency(totalAmount)}</th>
-                        <th  className='py-1 px-2  text-left w-20'></th>
-                        </tr>
-                        <tr>
-                            <th  className='py-1 px-2 text-left w-4'>No</th>
-                            <th className='py-1 px-2 text-left w-14'>Rumah</th>
-                            <th  className='py-1 px-2 text-left w-28 '>Nama</th> 
-                            <th  className='py-1 px-2 text-left w-80'>Periode</th>
-                            <th  className='py-1 px-2 text-left w-16 '>Total</th>
-                            <th  className='py-1 px-2 text-right w-16 '>Jumlah</th>
-                            <th  className='py-1 px-2  text-left w-20'></th>
-                        </tr>
-                       
-                    </thead>
-                    <tbody className="divide-y border-b text-xs">
-                    {currentPageData.map((house, index) => (  
-                        <tr key={index} className="bg-white ">
-                            <td className="py-2 px-2 ">{offset + index + 1}</td>
-                            <td className="py-2 px-2">{house.house_id}</td>
-                            <td className="py-2 px-2 ">{house.resident_name}</td>
-                            <td className="py-2 px-2  ">
-                              <span className="flex flex-wrap gap-1">
-                                {house.periods.map((period, subindex) => {
-                                    const status = house.monthly_status.find((status) => status.month === period)?.status;
-                                    const badgeColor = status === 'Weekend' ? 'pink' : 'failure';
-    
-                                    return (
-                                    <Badge key={subindex} color={badgeColor} size="xs">
-                                        {moment(period, 'YYYY-MM').format('MMMM YYYY')}
-                                    </Badge>
-                                    );
-                                })}
-                                </span>
-                            </td>
-                            <td className="py-2 px-2 ">
-                             {house.periods.length} Bulan
-                            </td>
-                            <td className="py-2 px-2 text-right ">
-                             {formatCurrency(house.total_fee)}
-                            </td>
-                           
-                            <td className="py-2 px-2 ">
-                              <Button.Group className=''>
-                              {/* <Button color="gray" size="xs" className=''>Detail</Button> */}
-                              <Button color="gray" size="xs" className='' onClick={() => handleEditClick(house)}>
-                                <FaRegEnvelope className="mr-1 h-4 w-4" />
-                                <span>Surat</span>
-                              </Button>
-                              <Button color="gray" size="xs" className='' onClick={() => handleWhatsAppClick(house)}>
-                                <FaWhatsapp className="mr-1 h-4 w-4" />
-                                WhatsApp
-                              </Button>
-                              {/* <Button color="gray" size="xs" target='_blank' as={Link} href={`/ipl/${house.house_id.toLowerCase()}`}>Surat</Button> */}
-                              </Button.Group>
-                              </td>
-                        </tr>
-                    ))}
-                   
-                    </tbody>
-                   
-                </table>
-            </div>
-
-            <nav className='py-6'>
-            <ReactPaginate
-                  previousLabel={'Previous'}
-                  nextLabel={'Next'}
-                  breakLabel={'...'}
-                  pageCount={Math.ceil(filteredHouses.length / ITEMS_PER_PAGE)}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={5}
-                  onPageChange={handlePageClick}
-                  containerClassName={'pagination flex justify-center -space-x-px text-sm'}
-                  pageClassName={'page-item'}
-                  pageLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                  previousClassName={'page-item'}
-                  previousLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                  nextClassName={'page-item'}
-                  nextLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                  breakClassName={'page-item'}
-                  breakLinkClassName={'flex items-center justify-center px-3 h-8 leading-tight text-gray-500  border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'}
-                  activeClassName={'active bg-gray-100'}
-                  activeLinkClassName={'bg-gray-100'}
-                  forcePage={currentPage === 0 ? 0 : currentPage}
-              />
-            </nav>
-
-            {detailData && (
-            <Drawer className='py-4 px-7 top-0 z-50 w-full ' open={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} position="right">
-            <Drawer.Header title="Preview" titleIcon={FaRegEnvelope}/>
-               <LetterPreview data={detailData}/>
-            </Drawer>
-            )}
-
-            {detailData && (
-            <Drawer className='py-4 px-7 top-0 z-50 w-full ' open={isWhatsAppDrawerOpen} onClose={() => setIsWhatsAppDrawerOpen(false)} position="right">
-            <Drawer.Header title="Pesan WhatsApp" titleIcon={() => <span>💬</span>}/>
-               <WhatsAppMessage data={detailData}/>
-            </Drawer>
-            )}
-
-        </section>
-
-      
+      <div className="mb-3 flex justify-between items-center gap-3 w-full">
+        <div className="w-full md:w-1/2">
+          <SearchInput
+            value={searchTerm}
+            onChange={(val) => {
+              setCurrentPage(0);
+              setSearchTerm(val);
+            }}
+          />
+        </div>
       </div>
-      
-      
-    </main>
+
+      <div className="text-right text-sm mb-3">
+        Jumlah Keseluruhan: <span className="font-semibold">{formatCurrency(totalAmount)}</span>
+      </div>
+
+      <ResponsiveTable
+        data={currentPageData}
+        columns={columns}
+        renderDesktopRow={renderDesktopRow}
+        renderMobileCard={renderMobileCard}
+        emptyMessage="Tidak ada tagihan"
+      />
+
+      <Pagination
+        pageCount={Math.ceil(filteredHouses.length / ITEMS_PER_PAGE)}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+      />
+
+      <Drawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        title="Preview"
+        icon={<FaRegEnvelope className="h-4 w-4" />}
+        width="lg"
+      >
+        {detailData && <LetterPreview data={detailData} />}
+      </Drawer>
+
+      <Drawer
+        isOpen={isWhatsAppDrawerOpen}
+        onClose={() => setIsWhatsAppDrawerOpen(false)}
+        title="Pesan WhatsApp"
+        width="lg"
+      >
+        {detailData && <WhatsAppMessage data={detailData} />}
+      </Drawer>
     </>
   );
-}
+};
 
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
+  if (!session) return { redirect: { destination: '/', permanent: false } };
   try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
-          headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-          },
-      });
-      return {
-          props: {
-              initialHouses: res.data.data,
-          },
-      };
+    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+    return {
+      props: {
+        initialHouses: res.data.data,
+      },
+    };
   } catch (error) {
-      console.error('Error fetching houses data:', error);
-      return {
-          props: {
-              initialHouses: [],
-          },
-      };
+    console.error('Error fetching houses data:', error);
+    return {
+      props: {
+        initialHouses: [],
+      },
+    };
   }
 };
+
+Bills.getLayout = (page) => (
+  <DashboardLayout title="Tagihan Berjalan">{page}</DashboardLayout>
+);
 
 export default Bills;

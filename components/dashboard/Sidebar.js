@@ -1,87 +1,46 @@
+import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { Sidebar } from "flowbite-react";
-import { BiBuoy } from "react-icons/bi";
-import { HiChartPie,HiDocumentReport,HiUser, HiViewBoards } from "react-icons/hi";
 import { GrTransaction } from "react-icons/gr";
-import { IoIosHome } from "react-icons/io";
-import { useSession } from 'next-auth/react';
 import { FaCalendarCheck } from "react-icons/fa";
-import { HiHome } from "react-icons/hi2";
+import { HiChartPie, HiUser, HiHome } from "react-icons/hi";
 
-const SideMenu = ({ isOpen }) => {
-    const router = useRouter();
-    const { pathname } = router;
+const menuItems = [
+  { href: '/', label: 'Beranda', icon: HiChartPie },
+  { href: '/dashboard/transactions', label: 'Transaksi', icon: GrTransaction },
+  { href: '/dashboard/ipl', label: 'IPL', icon: FaCalendarCheck },
+  { href: '/dashboard/bills', label: 'Tagihan', icon: FaCalendarCheck },
+  { href: '/dashboard/setorrw', label: 'Setor RW', icon: FaCalendarCheck },
+  { href: '/dashboard/houses', label: 'Rumah', icon: HiHome },
+  { href: '/dashboard/users', label: 'Users', icon: HiUser },
+];
 
-    const { data: session } = useSession();
-    const hasRole = (roles) => {
-        if (session && session.user && session.user.role) {
-            return roles.includes(session.user.role);
-        }
-        return false;
-    };
+const SideMenu = () => {
+  const { pathname } = useRouter();
 
-    return (
-        <Sidebar  className={`fixed top-0  z-40 w-64 h-screen pt-14 transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} bg-white border-r border-gray-200  duration-300 ease-in-out dark:bg-gray-800 dark:border-gray-700`}>
-        <Sidebar.Items >
-            <Sidebar.ItemGroup>
-            <Sidebar.Item href="/" 
-            icon={HiChartPie}
-            className={pathname === '/' ? 'text-gray-900 bg-gray-100' : ''}>
-                Beranda
-            </Sidebar.Item>
-            <Sidebar.Item
-             href="/dashboard/transactions" 
-             icon={GrTransaction}
-             className={pathname === '/dashboard/transactions' ? 'text-gray-900 bg-gray-100' : ''}
-             >
-                Transaksi
-            </Sidebar.Item>
-
-            <Sidebar.Item
-             href="/dashboard/ipl" 
-             icon={FaCalendarCheck}
-             className={pathname === '/dashboard/ipl' ? 'text-gray-900 bg-gray-100' : ''}
-             >
-                Ipl
-            </Sidebar.Item>
-            <Sidebar.Item
-             href="/dashboard/bills" 
-             icon={FaCalendarCheck}
-             className={pathname === '/dashboard/bills' ? 'text-gray-900 bg-gray-100' : ''}
-             >
-                Tagihan 
-            </Sidebar.Item>
-            
-            <Sidebar.Item
-             href="/dashboard/setorrw" 
-             icon={FaCalendarCheck}
-             className={pathname === '/dashboard/setorrw' ? 'text-gray-900 bg-gray-100' : ''}
-             >
-                Setor RW
-            </Sidebar.Item>
-    
-            <Sidebar.Item 
-            href="/dashboard/houses" 
-            icon={HiHome}
-            className={pathname === '/dashboard/houses' ? 'text-gray-900 bg-gray-100' : ''}>
-                Rumah
-            </Sidebar.Item>
-            <Sidebar.Item href="#" icon={HiViewBoards}>
-                Dokumen
-            </Sidebar.Item>
-            <Sidebar.Item
-             href="/dashboard/users" 
-             className={pathname === '/dashboard/users' ? 'text-gray-900 bg-gray-100' : ''}
-             icon={HiUser}>
-                Users
-            </Sidebar.Item>
-            <Sidebar.Item href="#" icon={BiBuoy}>
-                Help
-            </Sidebar.Item>
-            </Sidebar.ItemGroup>
-        </Sidebar.Items>
-        </Sidebar>
-    );
-}
+  return (
+    <aside className="hidden lg:block fixed top-0 z-40 w-72 h-screen pt-14 bg-base-200">
+      <div className="h-full overflow-y-auto py-4">
+        <p className="text-xs font-semibold text-base-content/50 uppercase tracking-widest px-4 mb-1">Menu</p>
+        <ul className="menu gap-0.5 w-full px-2">
+          {menuItems.map(({ href, label, icon: Icon }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                className={`rounded-lg transition-all duration-150 font-medium text-sm
+                  ${pathname === href || (href !== '/' && pathname.startsWith(href))
+                    ? 'bg-base-100 text-primary border-l-2 border-primary pl-3'
+                    : 'text-base-content/70 hover:bg-base-300 hover:text-base-content border-l-2 border-transparent pl-3'
+                  }`}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+  );
+};
 
 export default SideMenu;

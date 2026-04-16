@@ -1,11 +1,14 @@
-const Footer = ({  }) => {
+const Footer = () => {
   return (
-
-    <footer className="py-4 bg-green-50  dark:bg-gray-800">
-        <div className="w-full max-w-screen-xl mx-auto ">
-            <span className="block text-sm text-gray-500 text-center dark:text-gray-400">© 2025 RT 05 VILLA CITAYAM.</span>
+    <footer className="hidden lg:block py-6 bg-base-100 border-t border-base-300 mt-auto">
+      <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span className="text-sm text-base-content/60">© 2025 RT 05 VILLA CITAYAM. All rights reserved.</span>
+          <span className="text-xs text-base-content/40">Villa Citayam, Bogor</span>
         </div>
+      </div>
     </footer>
   );
-}
+};
+
 export default Footer;

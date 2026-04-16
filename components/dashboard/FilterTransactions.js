@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import { useState} from 'react';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import moment from 'moment';
 import 'moment/locale/id';
 import id from "date-fns/locale/id";
@@ -69,7 +68,7 @@ const FilterTransactions = ({ setTransactions, initialTransaction }) => {
             placeholderText="Rentang Tanggal"
             dateFormat="dd/MM/YY"
             isClearable={true}
-            className='block w-full text-sm text-gray-900  border-gray-300  rounded-md py-2 px-4  focus:border-cyan-500 focus:ring-cyan-500 bg-gray-50'
+            className='input input-bordered input-sm w-full'
         />
     );
 };

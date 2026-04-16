@@ -1,167 +1,179 @@
-// pages/home.js
-import {getSession} from 'next-auth/react';
-import { useEffect,useState,useCallback } from 'react';
+import { getSession } from 'next-auth/react';
+import React, { useRef } from "react";
+import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-
 import Spinner from './Spinner';
-import CustomThemeProviderSecond from './CustomThemeSecond';
-import { Card, Table,Badge } from 'flowbite-react';
-import 'react-datepicker/dist/react-datepicker.css';
+import Link from 'next/link';
+import { GrFormNextLink } from "react-icons/gr";
 import moment from 'moment';
-import 'moment/locale/id';
-moment.locale('id');
-
-import { IoBookmark } from "react-icons/io5";
-import { IoPrism } from "react-icons/io5";
 import { HiHome } from "react-icons/hi";
 import { GrMoney } from "react-icons/gr";
+import { formatCurrency } from '../utils/format';
 
-const Outstanding = ({ initialHousesPaid }) =>  {
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+
+const Tbd = ({ initialHousesPaid }) => {
   const [loading, setLoading] = useState(true);
-  const [dataOutStanding, setDataOutStanding] = useState([initialHousesPaid]);
+  const [dataOutStanding, setDataOutStanding] = useState(initialHousesPaid);
   const [totalHouses, setTotalHouses] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
-  
-  const offset = 0;
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(amount);
-  };
-  
+  const printRef = useRef();
 
-  const fetchOutstanding = useCallback( async () => {
+  const currentDate = new Date();
+  const formattedDate = currentDate.toLocaleDateString('id-ID', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const formattedTime = currentDate.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const fetchOutstanding = useCallback(async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/tbd`, {
-      });
-    //console.log(res.data)
-     setDataOutStanding(res.data.data);
-     setTotalHouses(res.data.total);
-     setTotalAmount(res.data.total_amount)
-     setLoading(false);
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`);
+      const sorted = res.data.data.sort((a, b) => b.total_fee - a.total_fee);
+      setDataOutStanding(sorted);
+      setTotalHouses(res.data.total);
+      setTotalAmount(res.data.total_amount);
+      setLoading(false);
     } catch (error) {
-        console.error('Error fetching houses data:', error);
-        setLoading(false);
+      console.error('Error fetching houses data:', error);
+      setLoading(false);
     }
-  },[]);
+  }, []);
 
   useEffect(() => {
     fetchOutstanding();
-
   }, [fetchOutstanding]);
 
+  if (loading) return <Spinner />;
 
-  if (loading) {
-    return <Spinner />;
-  }
+  const generatePDF = () => {
+    const docDefinition = {
+      content: [
+        { text: 'Outstanding IPL RT 005 RW 011 Report ', style: 'header' },
+        { text: `${formattedDate} ${formattedTime}`, style: 'content' },
+        {
+          columns: [
+            { text: `Total Rumah: ${totalHouses}`, style: 'subheader' },
+            { text: `Jumlah: ${formatCurrency(totalAmount)}`, style: 'subheader' },
+          ],
+        },
+        {
+          table: {
+            widths: ['auto', 'auto', '*', 'auto', 'auto'],
+            body: [
+              ['No', 'No Rumah', 'Nama', 'Total', 'Jumlah'],
+              ...dataOutStanding.map((data, index) => [
+                offset + index + 1,
+                data.house_id,
+                data.resident_name,
+                data.periods.length + ' bulan',
+                { text: formatCurrency(data.total_fee), alignment: 'right' },
+              ]),
+            ],
+          },
+          layout: 'lightHorizontalLines',
+        },
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 5] },
+        content: { fontSize: 12, margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 14, italics: true, margin: [0, 0, 0, 10] },
+      },
+    };
+    pdfMake.createPdf(docDefinition).download('Outstanding_IPL_Report.pdf');
+  };
 
   return (
     <>
-    <CustomThemeProviderSecond>
-      <div className='flex gap-1 md:gap-4 justify-start flex-row mb-4'>
-        <div className='bg-green-700 text-white w-1/2 py-2 px-4 flex flex-col gap-1 rounded-md shadow-md'>
-          <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row  items-start lg:items-center content-center'>
-            <span className='flex'>
-              <span><HiHome className="h-5 w-5  md:h-7 md:w-7 mr-1 lg:mr-2" /></span>
-              <span>Rumah</span>
-            </span>
-          </h3>
-          <span className='font-semibold text-sm md:text-lg'>{totalHouses} Unit</span>
+      <div ref={printRef}>
+        <div className='flex my-6 items-center justify-between'>
+          <h1 className='text-xl font-bold'>OUTSTANDING IPL</h1>
+          <button onClick={generatePDF} className='btn btn-outline btn-primary btn-sm'>Download</button>
         </div>
-        <div className='bg-blue-700 text-white w-1/2 py-2 px-4 flex flex-col gap-1 rounded-md shadow-md'>
-          <h3 className='font-bold text-sm md:text-xl flex items-start'>
-            <span><GrMoney className="h-5 w-5  md:h-7 md:w-7 mr-2" /></span>
-            <span>Nominal</span>
-          </h3>
-          <span className='font-semibold text-xs md:text-lg'>{formatCurrency(totalAmount)}</span>
+        <div className='flex gap-2 md:gap-4 justify-start flex-row mb-4'>
+          <div className='bg-base-100 border border-base-300 border-l-4 border-l-success w-1/2 py-2 px-4 flex flex-col gap-1 rounded-lg'>
+            <h3 className='font-bold text-sm md:text-xl flex flex-col lg:flex-row items-start lg:items-center text-base-content'>
+              <span className='flex'>
+                <HiHome className="h-5 w-5 md:h-7 md:w-7 mr-1 lg:mr-2 text-success" />
+                <span>Rumah</span>
+              </span>
+            </h3>
+            <span className='font-semibold text-sm md:text-lg flex items-center text-success'>{totalHouses} Unit</span>
+          </div>
+          <div className='bg-base-100 border border-base-300 border-l-4 border-l-primary w-1/2 py-2 px-4 flex flex-col gap-1 rounded-lg'>
+            <h3 className='font-bold text-sm md:text-xl flex items-start text-base-content'>
+              <GrMoney className="h-5 w-5 md:h-7 md:w-7 mr-2 text-primary" />
+              <span>Jumlah</span>
+            </h3>
+            <span className='font-semibold text-xs md:text-lg text-primary'>{formatCurrency(totalAmount)}</span>
+          </div>
         </div>
-      </div>
-           
-      <div className="overflow-x-auto">
-        <Table striped className='block'>
-            <Table.Head className='' >
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4'>No</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-7 md:w-32'>No Rumah</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white'>Periode</Table.HeadCell>
-                <Table.HeadCell className='py-2 px-2 md:text-base md:py-3 md:px-3 bg-cyan-600 text-white w-4'>Total</Table.HeadCell>
-            </Table.Head>
-            <Table.Body className="divide-y">
-            {dataOutStanding && dataOutStanding.length > 0 && dataOutStanding[0] !== undefined ? (
+
+        <div className="overflow-x-auto rounded-lg border border-base-300 bg-base-100">
+          <table className="table table-zebra table-sm w-full">
+            <thead>
+              <tr className="bg-base-200">
+                <th className='p-2'>No</th>
+                <th className='p-2 w-7 md:w-28'>No Rumah</th>
+                <th className='p-2 w-7 md:w-28'>Nama</th>
+                <th className='p-2'>Periode</th>
+                <th className='p-2'>Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {dataOutStanding && dataOutStanding.length > 0 && dataOutStanding[0] !== undefined ? (
                 dataOutStanding.map((data, index) => (
-                    <Table.Row key={index} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                        <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                        {offset + index + 1}
-                        </Table.Cell>
-
-                        <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                          <span className="">{data.house}</span>
-                        </Table.Cell>
-                        <Table.Cell className={`py-2 px-2 md:py-3 md:px-3 text-xs md:text-base`}>
-                          <span className="flex flex-wrap gap-2">
-                            {data.periods.map((period, subindex) => (
-                            <Badge key={subindex} color="success">
+                  <tr key={index}>
+                    <td className='p-2 text-xs md:text-base'>{offset + index + 1}</td>
+                    <td className='p-2 text-xs md:text-base'>{data.house_id}</td>
+                    <td className='p-2 text-xs md:text-base'>{data.resident_name}</td>
+                    <td className='p-2 text-xs md:text-base'>
+                      <span className="flex flex-wrap gap-1">
+                        {data.periods.map((period, subindex) => {
+                          const status = data.monthly_status.find((s) => s.month === period)?.status;
+                          const badgeClass = status === 'Weekend' ? 'badge-secondary' : 'badge-error';
+                          return (
+                            <span key={subindex} className={`badge ${badgeClass} badge-sm`}>
                               {moment(period, 'YYYY-MM').format('MMMM YYYY')}
-                              {/* {subindex < data.periods.length - 1 ? ', ' : ''} */}
-                            </Badge>
-                            ))}
-                          </span>
-                        </Table.Cell>
-
-                        <Table.Cell className={` py-2 px-2 md:py-3 md:px-3 text-xs md:text-base `}>
-                          {formatCurrency(data.total_fee)}
-                        </Table.Cell>
-                        
-                    </Table.Row>
+                            </span>
+                          );
+                        })}
+                      </span>
+                    </td>
+                    <td className='p-2 text-xs md:text-base'>{formatCurrency(data.total_fee)}</td>
+                  </tr>
                 ))
-                ) : (
-                <Table.Row>
-                    <Table.Cell colSpan="4" className="text-center">Data tidak tersedia</Table.Cell>
-                </Table.Row>
-            )}
-
-            
-            
-            </Table.Body>
-        </Table>
+              ) : (
+                <tr>
+                  <td colSpan="5" className="text-center">Data tidak tersedia</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </CustomThemeProviderSecond>
+
+      <div className='flex items-center justify-between mt-3'>
+        <Link href="/ipl" className='btn btn-success btn-xs'>Data IPL<GrFormNextLink className='w-4 h-4' /></Link>
+      </div>
     </>
   );
-}
+};
 
 export const getServerSideProps = async (context) => {
-    const session = await getSession(context);
-    
-    // if (!session) {
-    //     return {
-    //         redirect: {
-    //             destination: '/',
-    //             permanent: false,
-    //         },
-    //     };
-    // }
-  
-    try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
-            // headers: {
-            //     Authorization: `Bearer ${session.accessToken}`,
-            // },
-        });
-        return {
-            props: {
-              initialHousesPaid: res.data.data,
-            },
-        };
-    } catch (error) {
-        console.error('Error fetching tra data:', error);
-        return {
-            props: {
-              initialHousesPaid: [],
-            },
-        };
-    }
-  };
+  const session = await getSession(context);
+  try {
+    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`);
+    return { props: { initialHousesPaid: res.data.data } };
+  } catch (error) {
+    console.error('Error fetching tra data:', error);
+    return { props: { initialHousesPaid: [] } };
+  }
+};
 
-export default Outstanding;
+export default Tbd;

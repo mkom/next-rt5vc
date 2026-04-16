@@ -1,40 +1,370 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* @import 'flowbite'; */
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
+@import 'react-datepicker/dist/react-datepicker.css';
 
-@media (prefers-color-scheme: dark) {
+/**
+ * RT5VC Global Styles
+ * Green-Dominant Theme Implementation
+ */
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+@layer base {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    /* Design Tokens */
+    --rt5vc-green-50: #E8F5E9;
+    --rt5vc-green-100: #C8E6C9;
+    --rt5vc-green-200: #A5D6A7;
+    --rt5vc-green-300: #81C784;
+    --rt5vc-green-400: #66BB6A;
+    --rt5vc-green-500: #4CAF50;
+    --rt5vc-green-600: #43A047;
+    --rt5vc-green-700: #2E7D32;
+    --rt5vc-green-800: #1B5E20;
+    --rt5vc-green-900: #0D3B0E;
+
+    --rt5vc-teal-700: #00838F;
+    --rt5vc-amber-700: #F9A825;
+    --rt5vc-navy-900: #1A237E;
+
+    /* Glass effect */
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-blur: 16px;
+    
+    /* Focus ring */
+    --focus-ring-color: #2E7D32;
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+  }
+
+  html {
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    @apply text-gray-800 antialiased bg-white;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "cv02", "cv05", "cv11";
+  }
+
+  /* Focus visible styles for accessibility */
+  *:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  /* Reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
+/* ============================================
+   COMPONENT CLASSES
+   ============================================ */
 
-/* body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-} */
+@layer components {
+  /* Card variants */
+  .app-card {
+    @apply bg-white rounded-2xl border border-green-100 shadow-sm transition-all;
+  }
+  
+  .app-card-hover {
+    @apply app-card hover:shadow-md hover:border-green-200 active:scale-[0.98];
+  }
+  
+  /* Glass card */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    @apply rounded-2xl border border-white/50 shadow-xl;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    @apply bg-green-700 hover:bg-green-800 text-white font-semibold 
+           px-6 py-3 rounded-xl shadow-lg hover:shadow-xl 
+           transition-all duration-200 
+           hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+           focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-teal-700 hover:bg-teal-800 text-white font-semibold 
+           px-6 py-3 rounded-xl shadow-md hover:shadow-lg 
+           transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
+  }
+
+  .btn-outline {
+    @apply bg-white border-2 border-green-700 text-green-700 
+           hover:bg-green-50 font-semibold
+           px-6 py-3 rounded-xl transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2;
+  }
+  
+  /* Input fields */
+  .app-input {
+    @apply w-full px-4 py-3 bg-white border border-green-200 rounded-xl 
+           text-green-900 placeholder:text-green-400/70 
+           focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 
+           transition-all text-sm;
+  }
+  
+  /* Logo container */
+  .logo-container {
+    @apply bg-white rounded-2xl p-3 shadow-xl border border-green-100;
+  }
+
+  /* Safe areas for mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Feature badge */
+  .feature-badge {
+    @apply inline-flex items-center gap-2 bg-green-700/15 backdrop-blur-sm 
+           px-3 py-2 rounded-full border border-white/20 text-white text-xs font-medium;
+  }
+
+  .trust-pill {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[0.72rem] font-medium text-white/90 backdrop-blur-md;
+  }
+
+  .hero-feature-card {
+    @apply rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-md transition-all duration-200;
+  }
+
+  .hero-feature-card:hover {
+    @apply bg-white/15 -translate-y-0.5;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
 
 @layer utilities {
+  /* Fade animations */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeInDown {
+    from { 
+      opacity: 0; 
+      transform: translateY(-20px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  @keyframes fadeInUp {
+    from { 
+      opacity: 0; 
+      transform: translateY(20px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0; 
+      transform: translateY(40px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  @keyframes scaleIn {
+    from { 
+      opacity: 0; 
+      transform: scale(0.95); 
+    }
+    to { 
+      opacity: 1; 
+      transform: scale(1); 
+    }
+  }
+
+  /* Blob animation for background */
+  @keyframes blob {
+    0% { 
+      transform: translate(0px, 0px) scale(1); 
+    }
+    33% { 
+      transform: translate(30px, -50px) scale(1.1); 
+    }
+    66% { 
+      transform: translate(-20px, 20px) scale(0.9); 
+    }
+    100% { 
+      transform: translate(0px, 0px) scale(1); 
+    }
+  }
+
+  /* Pulse glow */
+  @keyframes pulseGlow {
+    0%, 100% { 
+      box-shadow: 0 0 20px rgba(46, 125, 50, 0.3); 
+    }
+    50% { 
+      box-shadow: 0 0 40px rgba(46, 125, 50, 0.5); 
+    }
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-fade-in-down {
+    animation: fadeInDown 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out forwards;
+  }
+
+  .animate-hero-enter {
+    animation: fadeInDown 0.55s ease-out forwards;
+  }
+
+  .animate-card-enter {
+    animation: slideUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  /* Animation delays */
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  /* Text utilities */
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Shadow utilities */
+  .shadow-green {
+    box-shadow: 0 10px 30px -5px rgba(46, 125, 50, 0.3);
+  }
+
+  .shadow-green-lg {
+    box-shadow: 0 20px 40px -10px rgba(46, 125, 50, 0.4);
+  }
+
+  .shadow-glass {
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  }
 }
 
-.cst-btn span {
-  align-items: center;
-  padding: 0 0.1rem;
+/* ============================================
+   REACT-DATEPICKER OVERRIDES
+   ============================================ */
+
+.react-datepicker {
+  @apply border-green-100 font-sans shadow-2xl rounded-2xl border-0 !important;
+}
+
+.react-datepicker__header {
+  @apply bg-green-50 border-b border-green-100 rounded-t-2xl pt-4 !important;
+}
+
+.react-datepicker__day {
+  @apply w-10 h-10 leading-10 lg:w-9 lg:h-9 lg:leading-9 rounded-xl transition-colors !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  @apply bg-green-600 text-white font-bold !important;
+}
+
+.react-datepicker__day:hover {
+  @apply bg-green-100 !important;
+}
+
+/* ============================================
+   SCROLLBAR STYLES (Desktop)
+   ============================================ */
+
+@media (min-width: 1024px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: #C8E6C9;
+    border-radius: 9999px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #A5D6A7;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background-color: white;
+    color: black;
+  }
 }

@@ -1,13 +1,16 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-
 import "../styles/globals.css";
 import { SessionProvider } from 'next-auth/react';
 import Spinner from "../components/Spinner";
-import CustomThemeProvider from '../components/CustomTheme';
+import AuthGuard from "../components/AuthGuard";
+import moment from 'moment';
+import 'moment/locale/id';
+moment.locale('id');
 
 export default function App({ Component, pageProps }) {
+  const getLayout = Component.getLayout || ((page) => page);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -35,14 +38,14 @@ export default function App({ Component, pageProps }) {
         <meta property="og:description" content="Laporan Keuangan RT 05/RW 11 Villa Citayam Susukan Bojong gede Bogor" />
         <meta property="og:image" content="" />
         <meta property="og:url" content="" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </Head>
-
-      <CustomThemeProvider>
       {loading && <Spinner />}
-      <Component {...pageProps} />
-      </CustomThemeProvider>
-      
-     </SessionProvider>
-   
+      <AuthGuard>
+        {getLayout(<Component {...pageProps} />)}
+      </AuthGuard>
+    </SessionProvider>
   );
 }

@@ -10,29 +10,29 @@ export default NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
   ],
+  session: {
+    maxAge: 7 * 24 * 60 * 60, // 7 hari (1 minggu) — Remember Me
+    updateAge: 24 * 60 * 60, // Update session setiap 24 jam
+  },
   callbacks: {
-    async jwt({ token, account,user}) {
+    async jwt({ token, account, user }) {
       if (account) {
         token.accessToken = user.jwtToken;
-        token.user = user;
+        token.role = user.role;
       }
       return token;
     },
-    async session({session, token  }) {
-      // Adding accessToken and user to session
+    async session({ session, token }) {
       session.accessToken = token.accessToken;
-      session.user = token.user;
-
-      // Handle session expiration or invalid token
-      if (!session.accessToken) {
-        // Redirect to home if session expired
-        return null;
-      }
-
+      session.user = {
+        name: token.name,
+        email: token.email,
+        image: token.picture,
+        role: token.role,
+      };
       return session;
     },
-    async signIn({ user, account, profile }) {
-      const { email } = user;
+    async signIn({ user, account }) {
       const { id_token } = account;
 
       try {
@@ -40,12 +40,9 @@ export default NextAuth({
           token: id_token,
         });
 
-        const { token } = response.data.jwtToken;
         user.jwtToken = response.data.jwtToken;
-        user.role=response.data.user.role;
-        //console.log(response.data.user.role)
+        user.role = response.data.user.role;
         return true;
-        //return `/home`; // Redirect URL after successful login
       } catch (error) {
         console.error('Error signing in:', error);
         return false;
@@ -54,7 +51,7 @@ export default NextAuth({
 
     async redirect({ url, baseUrl }) {
       if (url === '/auth/signin' || url === '/auth/error') {
-        return baseUrl;  // Redirect to the homepage
+        return baseUrl;
       }
       return url.startsWith(baseUrl) ? url : baseUrl;
     },
@@ -62,11 +59,7 @@ export default NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
 
   pages: {
-    signIn: '/',  // Customize the login page
-    //signIn: '/auth/signin',  // Customize the login page
-    error: '/auth/error',    // Custom error page
-    // Optionally, you can create a custom redirect page
-    // after a successful login:
-    // dashboard: '/dashboard',
+    signIn: '/',
+    error: '/auth/error',
   },
 });

@@ -1,33 +1,46 @@
 // components/TransactionDrawer.js
-import { getSession, useSession } from 'next-auth/react';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import Image from "next/image";
-import { Drawer, Button, Input, FileInput, Textarea, Label, TextInput, Dropdown,Alert, Card } from 'flowbite-react';
-import {FaCalendarAlt, FaMoneyBill, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp } from 'react-icons/fa';
-import { FaExchangeAlt } from "react-icons/fa";
+import { FaCalendarAlt, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp, FaExchangeAlt } from 'react-icons/fa';
 import { AiOutlineLoading } from "react-icons/ai";
 import axios from 'axios';
 import Autocomplete from '../Autocomplete';
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css'
 import Select from 'react-select';
+import { selectStyles } from '@/utils/selectStyles';
 import moment from 'moment';
-import 'moment/locale/id';
 import id from "date-fns/locale/id";
-moment.locale('id');
- import { useRequireAuth } from '@/utils/authUtils'; 
+import { useRequireAuth } from '@/utils/authUtils';
+import Drawer from '../ui/Drawer';
+import FormField from '../ui/FormField';
+
+const optionsType = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'transfer', label: 'Transfer' },
+];
+
+const optionsCategory = [
+  { value: 'Rutin', label: 'Rutin' },
+  { value: 'Lain - Lain', label: 'Lain - Lain' },
+  { value: 'Fasilitas Sosial', label: 'Fasilitas Sosial' },
+  { value: 'Fasilitas Umum', label: 'Fasilitas Umum' },
+];
+
+const optionsStatus = [
+  { value: 'berhasil', label: 'Berhasil' },
+  { value: 'gagal', label: 'Gagal' },
+  { value: 'sedang dicek', label: 'Sedang dicek' },
+];
 
 const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transactionToEdit }) => {
   const { useAuthRedirectDashboard } = useRequireAuth(['admin', 'editor', 'superadmin']);
   useAuthRedirectDashboard();
 
- // console.log(transactionToEdit);
   const [houseId, setHouseId] = useState('');
   const [houseName, setHouseName] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
- // const [attachments, setAttachments] = useState([]);
   const [attachmentTitle, setAttachmentTitle] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [additional_note_mutasi_bca, setAdditional_note_mutasi_bca] = useState('');
@@ -36,7 +49,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const [relatedMonths, setRelatedMonths] = useState([]);
   const [status, setStatus] = useState('berhasil');
   const [houses, setHouses] = useState([]);
-  const [selectedHouse, setSelectedHouse] = useState(null);
   const [paymentDate, setPaymentDate] = useState(new Date());
   const { data: session } = useSession();
   const [errors, setErrors] = useState({});
@@ -45,80 +57,59 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentType, setPaymentType] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [zoomedFile, setZoomedFile] = useState(null); // { src, isPdf }
-  const filePreviewUrls = useMemo(() => selectedFiles.map(f => URL.createObjectURL(f)), [selectedFiles]);
-  const [formattedMonths, setFormattedMonths] =useState([]);
+  const [zoomedFile, setZoomedFile] = useState(null);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [filePreviewUrls, setFilePreviewUrls] = useState([]);
+
+  useEffect(() => {
+    const urls = selectedFiles.map(f => URL.createObjectURL(f));
+    setFilePreviewUrls(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [selectedFiles]);
+  const [formattedMonths, setFormattedMonths] = useState([]);
   const [lastPaidIPl, setLastPaidIPl] = useState(null);
   const [feeIPl, setFeeIPl] = useState(0);
   const [noteCancel, setNoteCancel] = useState(false);
   const [trxCategory, setTrxCategory] = useState('');
   const [noWa, setNowa] = useState('');
 
-  // const handleAddAttachment = () => {
-  //   setAttachments([...attachments, { attachment_title: attactment_title, attachment_url: attactment_url }]);
-  //   setAttactment_title(''); // Reset the input
-  //   setAttactment_url('');
-  // };
-
   useEffect(() => {
     if (transactionToEdit) {
       const formattedMonth = transactionToEdit.related_months.map((month) => {
-        const date = new Date(month + '-01'); // add '-01' to create a valid date string
+        const date = new Date(month + '-01');
         const label = moment(date).format('MMMM YYYY');
         return { value: month, label };
       });
-      setFormattedMonths(formattedMonth)
+      setFormattedMonths(formattedMonth);
     }
-    
-
   }, [transactionToEdit]);
 
   useEffect(() => {
     if (formattedMonths !== null) {
-      //console.log(formattedMonths);
       setRelatedMonths(formattedMonths || []);
     }
   }, [formattedMonths]);
 
-  const fetchIPlStatus = useCallback (async (currentHouseId) => {
-     
+  const fetchIPlStatus = useCallback(async (currentHouseId) => {
     try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`, {
-
-    });
-
-        const dataMonthlyFees = res.data.data.monthly_fees
-
-        // Filter data yang memiliki status "Lunas"
-        const paidMonths = dataMonthlyFees.filter(item => 
-          item.status === "Lunas" || item.status === "TBD"
-        );
-        
-        // Urutkan berdasarkan bulan, dari yang terbaru
-        const sortedPaidMonths = paidMonths.sort((a, b) => new Date(b.month) - new Date(a.month));
-    
-       
-        // Ambil bulan terakhir yang statusnya "Lunas"
-        if (sortedPaidMonths.length > 0) {
-            const lastPaidMonth = sortedPaidMonths[0].month;
-            const getFeeIPL = sortedPaidMonths[0].fee;
-            setFeeIPl(getFeeIPL);
-            setLastPaidIPl(lastPaidMonth);
-        }
-
-       
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`, {
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
+      const dataMonthlyFees = res.data.data.monthly_fees;
+      const paidMonths = dataMonthlyFees
+        .filter(item => item.status === "Lunas" || item.status === "TBD")
+        .sort((a, b) => new Date(b.month) - new Date(a.month));
+      if (paidMonths.length > 0) {
+        setFeeIPl(paidMonths[0].fee);
+        setLastPaidIPl(paidMonths[0].month);
+      }
     } catch (error) {
-
-        console.error('Error fetching houses data:', error);
-        //setLoading(false);
+      console.error('Error fetching IPL status:', error);
     }
-   
-  },[])
+  }, [session]);
 
   useEffect(() => {
     if (transactionToEdit) {
-      //console.log(transactionToEdit)
-
       fetchIPlStatus(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setHouseId(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
       setHouseName(transactionToEdit.house_id ? transactionToEdit.house_id.house_id : '');
@@ -128,29 +119,22 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       setAttachmentUrl(transactionToEdit.attachment.attachment_url || '');
       setAdditional_note_mutasi_bca(transactionToEdit.additional_note_mutasi_bca || '');
       setProofOfTransfer(Array.isArray(transactionToEdit.proof_of_transfer) ? transactionToEdit.proof_of_transfer[0] : transactionToEdit.proof_of_transfer || '');
-      //setRelatedMonths(formattedMonths || []);
       setPaymentDate(transactionToEdit.date || '');
       setStatus(transactionToEdit.status ? { value: transactionToEdit.status, label: transactionToEdit.status } : '');
       setPaymentType(transactionToEdit.payment_type ? { value: transactionToEdit.payment_type, label: transactionToEdit.payment_type } : '');
       setTrxCategory(transactionToEdit.transaction_category ? { value: transactionToEdit.transaction_category, label: transactionToEdit.transaction_category } : '');
-      // keep WA in sync when editing an existing transaction
       setNowa(transactionToEdit.whatsapp_notification || '');
     }
   }, [transactionToEdit]);
-
 
   useEffect(() => {
     if (session) {
       const fetchHouses = async () => {
         try {
           const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-            },
+            headers: { Authorization: `Bearer ${session.accessToken}` },
           });
-         // console.log(res)
-          const dataRes = res.data;
-          setHouses(dataRes.data.map(house => ({
+          setHouses(res.data.data.map(house => ({
             value: house.house_id,
             label: house.house_id,
             whatsapp_number: house.whatsapp_number,
@@ -159,57 +143,19 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
           console.error('Error fetching houses data:', error);
         }
       };
-
       fetchHouses();
     }
   }, [session]);
 
   useEffect(() => {
     if (transactionType === 'ipl') {
-      //console.log(relatedMonths)
-      setTrxCategory( { value: 'Rutin', label: 'Rutin' });
-      if(relatedMonths.length > 0 && houseName ) {
-        const monthLabels = relatedMonths.map(option => moment(option.value, "YYYY-MM").format("MMMM YYYY")).join(', ');
-        const descriptionText = `IPL ${houseName} periode ${monthLabels}`;
-        setDescription(descriptionText);
+      setTrxCategory({ value: 'Rutin', label: 'Rutin' });
+      if (relatedMonths.length > 0 && houseName) {
+        const monthLabels = relatedMonths.map(o => moment(o.value, "YYYY-MM").format("MMMM YYYY")).join(', ');
+        setDescription(`IPL ${houseName} periode ${monthLabels}`);
       }
-     
     }
-  }, [houseId, relatedMonths, transactionType,houseName]);
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-        setSelectedFiles(prev => {
-            const merged = [...prev, ...files];
-            setProofOfTransfer(merged[0]); // for validation
-            return merged;
-        });
-        fileInputRef.current.value = '';
-    }
-  };
-
-  const handleFileUpload = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-        //console.log(response.data.fileUrl);
-        setUploadUrl(response.data.fileUrl);
-        return response.data.fileUrl;
-    } catch (error) {
-        //console.error('Error uploading file:', error);
-        alert('Failed to upload file.');
-        resetForm();
-        onClose();
-        return null;
-    }
-  };
+  }, [houseId, relatedMonths, transactionType, houseName]);
 
   useEffect(() => {
     if (transactionToEdit) {
@@ -217,47 +163,68 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     }
   }, [transactionToEdit]);
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setSelectedFiles(prev => {
+        const merged = [...prev, ...files];
+        setProofOfTransfer(merged[0]);
+        return merged;
+      });
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFileUpload = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${session?.accessToken}` },
+      });
+      setUploadUrl(response.data.fileUrl);
+      return response.data.fileUrl;
+    } catch (error) {
+      setAlertMessage('Gagal mengupload file.');
+      resetForm();
+      onClose();
+      return null;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-
-    if (!transactionType) newErrors.transactionType = 'Transaction type is required';
-    if (!amount || amount <= 0) newErrors.amount = 'Amount must be a positive number';
-    if (!description) newErrors.description = 'Description is required';
-    if (!paymentDate) newErrors.paymentDate = 'Payment date is required';
-    if (!relatedMonths) newErrors.relatedMonths = 'Months is required';
-    if (!paymentType) newErrors.paymentType = 'Payment Type is required';
-    if (!trxCategory) newErrors.trxCategory = 'Category Type is required';
-    if (!status) newErrors.status = 'Status is required';
-    if (transactionType === 'ipl' && !houseId) newErrors.houseId = 'House ID is required';
-    if (paymentType === 'transfer' && !proofOfTransfer) newErrors.proofOfTransfer = 'Proof of transfer is required';
+    if (!transactionType) newErrors.transactionType = 'Tipe transaksi wajib diisi';
+    if (!amount || amount <= 0) newErrors.amount = 'Jumlah harus lebih dari 0';
+    if (!description) newErrors.description = 'Deskripsi wajib diisi';
+    if (!paymentDate) newErrors.paymentDate = 'Tanggal pembayaran wajib diisi';
+    if (!paymentType) newErrors.paymentType = 'Tipe pembayaran wajib diisi';
+    if (!trxCategory) newErrors.trxCategory = 'Kategori wajib diisi';
+    if (!status) newErrors.status = 'Status wajib diisi';
+    if (transactionType === 'ipl' && !houseId) newErrors.houseId = 'No Rumah wajib diisi';
+    if (paymentType === 'transfer' && !proofOfTransfer) newErrors.proofOfTransfer = 'Bukti transfer wajib diisi';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    setIsProcessing(true); // Start processing
+    setIsProcessing(true);
 
     let proofOfTransferUrl = uploadUrl;
     if (selectedFiles.length > 0) {
       const urls = [];
       for (const file of selectedFiles) {
         const url = await handleFileUpload(file);
-        if (!url) return; // Abort if any upload fails
+        if (!url) return;
         urls.push(url);
       }
       proofOfTransferUrl = urls;
     }
 
-    const convertStringToArray = (dateString) => {
-      // Memisahkan string berdasarkan koma dan spasi
-      const dateArray = dateString.split(', ').map(date => date.trim());
-      return dateArray;
-    };
-
-    const dateString = relatedMonths.map(option => option.value).join(', ');
-    const dateArray = convertStringToArray(dateString);
+    const dateString = relatedMonths.map(o => o.value).join(', ');
+    const dateArray = dateString.split(', ').map(d => d.trim());
 
     const newTransaction = {
       transaction_type: transactionType,
@@ -268,117 +235,57 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       houseId,
       payment_type: paymentType.value,
       related_months: dateArray,
-      paymentDate: paymentDate,
+      paymentDate,
       status: status.value,
       attachment: { attachment_title: attachmentTitle, attachment_url: attachmentUrl },
       reason_cancellation,
-      transaction_category:trxCategory.value,
+      transaction_category: trxCategory.value,
       whatsapp_notification: noWa,
     };
 
-    //console.log(newTransaction)
-
     onSubmit(newTransaction);
-    setHouseId('');
-    setAmount('');
-    setDescription('');
-    setAttachmentTitle('');
-    setAttachmentUrl('');
-    setAdditional_note_mutasi_bca('')
-    setProofOfTransfer('');
-    setSelectedFiles([]);
-    setRelatedMonths([]);
-    setPaymentDate(new Date());
-    setStatus('');
-    fileInputRef.current.value = '';
-    setPaymentType('');
-    setTrxCategory('');
-    setIsProcessing(false); // Stop processing
-    onClose();
     resetForm();
-  };
-
-
-  const handleHouseChange = (newValue) => {
-    setHouseId(newValue);
+    setIsProcessing(false);
+    onClose();
   };
 
   const handleHouseSelect = (selectedHouse) => {
     resetForm();
-    const currentHouseId = selectedHouse.value;
     setHouseId(selectedHouse.value);
     setHouseName(selectedHouse.label);
     setNowa(selectedHouse?.whatsapp_number || '');
-    fetchIPlStatus(currentHouseId);
+    fetchIPlStatus(selectedHouse.value);
   };
-  
 
   const handleMonthChange = (selectedOptions) => {
     setRelatedMonths(selectedOptions || []);
-    setAmount(feeIPl*selectedOptions.length)
+    setAmount(feeIPl * selectedOptions.length);
   };
 
   const generateMonthsOptions = () => {
-    //console.log(lastPaidIPl)
     const lastPaid = lastPaidIPl || "2024-06";
+    const options = [];
+    let nextMonth = moment(lastPaid, "YYYY-MM").add(1, 'month');
+    const startYear = nextMonth.year();
+    let startMonthIndex = nextMonth.month();
+    const endYear = startYear + 1;
 
-      const options = [];
-      let nextMonth = moment(lastPaid, "YYYY-MM").add(1, 'month'); // Bulan setelah bulan terakhir yang "Lunas"
-      let startYear = nextMonth.year();
-      let startMonthIndex = nextMonth.month(); // Bulan setelah bulan terakhir yang "Lunas"
-      let endYear = startYear + 1; 
-
-      // Generate bulan selama 2 tahun ke depan
-      for (let year = startYear; year <= endYear; year++) {
-          for (let month = startMonthIndex; month < 12; month++) {
-            const value = moment().month(month).year(year).format("YYYY-MM");
-            const label = moment().month(month).year(year).format("MMMM YYYY");
-            // Hanya tambahkan jika bulan belum dipilih
-            if (!relatedMonths.some((m) => m.value === value)) {
-              options.push({ value, label });
-            }
-           // options.push({ value, label });
-          }
-          startMonthIndex = 0; // Setelah tahun pertama, mulai lagi dari bulan Januari
+    for (let year = startYear; year <= endYear; year++) {
+      for (let month = startMonthIndex; month < 12; month++) {
+        const value = moment().month(month).year(year).format("YYYY-MM");
+        const label = moment().month(month).year(year).format("MMMM YYYY");
+        if (!relatedMonths.some(m => m.value === value)) {
+          options.push({ value, label });
+        }
       }
-
-      //console.log(options)
-      return options;
+      startMonthIndex = 0;
+    }
+    return options;
   };
-
-  const optionsType = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'transfer', label: 'Transfer' },
-  ]
-
-  const optionsCategory = [
-    { value: 'Rutin', label: 'Rutin' },
-    { value: 'Lain - Lain', label: 'Lain - Lain' },
-    { value: 'Fasilitas Sosial', label: 'Fasilitas Sosial' },
-    { value: 'Fasilitas Umum', label: 'Fasilitas Umum' },
-  ]
-
-  const optionsStatus = [
-    { value: 'berhasil', label: 'Berhasil' },
-    { value: 'gagal', label: 'Gagal' },
-    { value: 'sedang dicek', label: 'Sedang dicek' },
-  ]
-
 
   const handleStatusChange = (e) => {
     setStatus(e);
-    if(e.value == 'gagal') {
-      setNoteCancel(true)
-    }
-   
-  };
-
-  const handleTypeChange = (e) => {
-    setPaymentType(e);
-  };
-
-  const handleCatChange = (e) => {
-    setTrxCategory(e);
+    if (e.value === 'gagal') setNoteCancel(true);
   };
 
   const resetForm = () => {
@@ -392,7 +299,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setRelatedMonths([]);
     setPaymentDate(new Date());
     setPaymentType('');
-    fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setErrors({});
     setIsProcessing(false);
     setSelectedFiles([]);
@@ -410,357 +317,326 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     return url;
   };
 
-  //console.log('transactionToEdit', transactionToEdit)
+  const titleMap = {
+    ipl: 'Transaksi IPL',
+    income: 'Transaksi Masuk',
+    expense: 'Transaksi Keluar',
+  };
 
   return (
     <>
-    <Drawer
-      open={isOpen}
-      onClose={() => {
-        resetForm();
-        onClose();
-      }}
-      position="right"
-      className="py-4 px-7 top-0 z-50 w-full md:w-2/4"
-    >
-      <Drawer.Header title={`Transaksi ${transactionType === 'ipl' ? 'IPL' : transactionType === 'income' ? 'Masuk' : 'Keluar'}`} titleIcon={FaExchangeAlt} />
-      <Drawer.Items>
+      <Drawer
+        isOpen={isOpen}
+        onClose={() => { resetForm(); onClose(); }}
+        title={titleMap[transactionType] || 'Transaksi'}
+        icon={<FaExchangeAlt className="h-5 w-5 text-primary" />}
+      >
+          <div className="space-y-4">
+            {alertMessage && (
+              <div className="alert alert-error">
+                <span>{alertMessage}</span>
+                <button onClick={() => setAlertMessage('')} className="btn btn-ghost btn-xs">x</button>
+              </div>
+            )}
+            {/* Edit info */}
+            {transactionToEdit && (
+              <div className="bg-base-200 rounded-lg p-3 text-sm space-y-1">
+                <div className="flex gap-2"><span className="text-base-content/60">Dibuat oleh:</span><span>{transactionToEdit.created_by[0]?.email || ''}</span></div>
+                <div className="flex gap-2"><span className="text-base-content/60">Tanggal:</span><span>{transactionToEdit.created_at}</span></div>
+                <div className="flex gap-2"><span className="text-base-content/60">WhatsApp:</span><span>{transactionToEdit.whatsapp_notification}</span></div>
+              </div>
+            )}
 
-        {transactionToEdit && 
-         <div className='p-3 shadow-none rounded-md border '>
-            <div className='flex flex-wrap gap-3 justify-start'>
-              <div className="text-sm ">Dibuat oleh :</div>
-              <div className="text-sm ">{transactionToEdit.created_by[0]?  transactionToEdit.created_by[0].email :''}</div>
-            </div>
-            <div className='flex flex-wrap gap-3 justify-start'>
-              <div className="text-sm ">Tanggal :</div>
-              <div className="text-sm ">{transactionToEdit.created_at}</div>
-            </div>
-            <div className='flex flex-wrap gap-3 justify-start'>
-              <div className="text-sm ">Whatsapp :</div>
-              <div className="text-sm ">{transactionToEdit.whatsapp_notification}</div>
-            </div>
-          </div>
-        }
-       
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* No Rumah */}
+              {transactionType !== 'expense' && transactionType !== 'income' && (
+                <FormField label="No Rumah" error={errors.houseId}>
+                  <Autocomplete
+                    value={houseId}
+                    onChange={setHouseId}
+                    options={houses}
+                    onSelect={handleHouseSelect}
+                  />
+                  {lastPaidIPl && (
+                    <p className="text-xs pt-1 text-base-content/60">
+                      IPL Terakhir: {moment(lastPaidIPl, "YYYY-MM").format("MMMM YYYY")}
+                    </p>
+                  )}
+                  {noWa && (
+                    <p className="text-xs pt-1 text-base-content/60">WhatsApp: {noWa}</p>
+                  )}
+                </FormField>
+              )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {transactionType !== 'expense' && transactionType !== 'income' && (
-            <>
-              <div className="mb-6 mt-3">
-                <Label htmlFor="houseId" className="mb-2 block">No Rumah</Label>
-                <Autocomplete
-                  value={houseId}
-                  onChange={handleHouseChange}
-                  options={houses}
-                  onSelect={handleHouseSelect}
+              {/* Periode */}
+              {transactionType === 'ipl' && (
+                <FormField label="Periode" error={errors.relatedMonths}>
+                  <Select
+                    isMulti
+                    options={generateMonthsOptions()}
+                    value={relatedMonths}
+                    onChange={handleMonthChange}
+                    placeholder="Pilih bulan"
+                    styles={selectStyles}
+                    isSearchable={false}
+                  />
+                </FormField>
+              )}
+
+              {/* Deskripsi */}
+              <FormField label="Deskripsi" error={errors.description}>
+                <textarea
+                  className="textarea textarea-bordered textarea-sm w-full"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Masukkan deskripsi"
+                  readOnly={transactionType === 'ipl'}
+                  rows={3}
                 />
-                {errors.houseId && <div className="text-red-500 text-sm">{errors.houseId}</div>}
-                {lastPaidIPl && 
-                  <>
-                  <p className='text-xs pt-2 text-gray-700'>IPL Terakhir : {moment(lastPaidIPl,("YYYY-MM")).format("MMMM YYYY")}</p>
-                  </>
-                }
-                {noWa &&
-                  <div className='flex flex-wrap gap-3 justify-start'>
-                    <div className="text-xs">Whatsapp :</div>
-                    <div className="text-xs">{noWa}</div>
+              </FormField>
+
+              {/* Kategori */}
+              <FormField label="Kategori" error={errors.trxCategory}>
+                <Select
+                  isSearchable={false}
+                  options={optionsCategory}
+                  value={trxCategory}
+                  onChange={setTrxCategory}
+                  placeholder="Kategori"
+                  styles={selectStyles}
+                />
+              </FormField>
+
+              {/* Jumlah */}
+              <FormField label="Jumlah" error={errors.amount}>
+                <input
+                  type="number"
+                  className="input input-bordered input-sm w-full"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Masukkan jumlah"
+                />
+              </FormField>
+
+              {/* Tipe Pembayaran */}
+              <FormField label="Tipe Pembayaran" error={errors.paymentType}>
+                <Select
+                  isSearchable={false}
+                  options={optionsType}
+                  value={paymentType}
+                  onChange={setPaymentType}
+                  placeholder="Cash atau Transfer"
+                  styles={selectStyles}
+                />
+              </FormField>
+
+              {/* Lampiran */}
+              <FormField label="Lampiran" error={errors.proofOfTransfer}>
+                <input
+                  type="file"
+                  className="file-input file-input-bordered file-input-sm w-full"
+                  onChange={handleFileChange}
+                  accept=".jpg,.png,.pdf,.jpeg"
+                  ref={fileInputRef}
+                  multiple
+                />
+                {selectedFiles.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedFiles.map((file, i) => {
+                      const isPdf = file.type === 'application/pdf';
+                      const src = filePreviewUrls[i];
+                      const removeFile = (e) => {
+                        e.stopPropagation();
+                        setSelectedFiles(prev => {
+                          const updated = prev.filter((_, idx) => idx !== i);
+                          setProofOfTransfer(updated[0] ?? '');
+                          return updated;
+                        });
+                      };
+                      return (
+                        <div key={i} className="relative">
+                          {isPdf ? (
+                            <div
+                              onClick={() => setZoomedFile({ src, isPdf: true })}
+                              className="w-[100px] h-[100px] flex flex-col items-center justify-center border rounded-lg cursor-pointer bg-base-200 text-base-content/60 text-xs gap-1"
+                            >
+                              <svg className="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                              <span className="truncate w-full text-center px-1">{file.name}</span>
+                            </div>
+                          ) : (
+                            <img
+                              src={src}
+                              alt={`Preview ${i + 1}`}
+                              className="w-[100px] h-[100px] object-cover rounded-lg border cursor-zoom-in"
+                              onClick={() => setZoomedFile({ src, isPdf: false })}
+                            />
+                          )}
+                          <button
+                            onClick={removeFile}
+                            className="absolute -top-1 -right-1 btn btn-error btn-xs btn-circle text-xs"
+                          >×</button>
+                        </div>
+                      );
+                    })}
                   </div>
-                }
-              </div>
-              
+                )}
+                {selectedFiles.length === 0 && uploadUrl && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {(Array.isArray(uploadUrl) ? uploadUrl : uploadUrl.split(/,(?=https?:\/\/)/).map(u => u.trim())).map((url, i) => {
+                      const isPdf = url.toLowerCase().includes('.pdf');
+                      const displayUrl = toDisplayUrl(url);
+                      return isPdf ? (
+                        <div
+                          key={i}
+                          onClick={() => setZoomedFile({ src: url, isPdf: true })}
+                          className="w-[100px] h-[100px] flex flex-col items-center justify-center border rounded-lg cursor-pointer bg-base-200 text-base-content/60 text-xs gap-1"
+                        >
+                          <svg className="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                          <span className="text-center px-1">PDF</span>
+                        </div>
+                      ) : (
+                        <img
+                          key={i}
+                          src={displayUrl}
+                          alt={`image ${i + 1}`}
+                          className="w-[100px] h-[100px] object-cover rounded-lg border cursor-zoom-in"
+                          onClick={() => setZoomedFile({ src: displayUrl, isPdf: false })}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </FormField>
 
-            </>
-          )}
+              {/* Tanggal Pembayaran */}
+              <FormField label="Tanggal Pembayaran" error={errors.paymentDate}>
+                <div className="relative flex items-center input input-bordered w-full px-3 py-0">
+                  <FaCalendarAlt className="text-base-content/40 mr-2 shrink-0" />
+                  <DatePicker
+                    locale={id}
+                    selected={paymentDate}
+                    onChange={(date) => setPaymentDate(date)}
+                    dateFormat="dd MMMM yyyy"
+                    placeholderText="Pilih tanggal"
+                    className="bg-transparent w-full text-sm py-[0.6rem] focus:outline-none"
+                  />
+                </div>
+              </FormField>
 
-          {transactionType === 'ipl' && (
-             <div className="mb-6 mt-3">
-             <Label htmlFor="relatedMonths" className="mb-2 block">Periode</Label>
-             <Select
-              id="relatedMonths"
-              isMulti
-              options={generateMonthsOptions()}
-              value={relatedMonths}
-              onChange={handleMonthChange}
-              placeholder="Pilih bulan"
-              className='bg-gray-50 text-sm'
-              isSearchable={false}
-             />
-             {errors.relatedMonths && <div className="text-red-500 text-sm">{errors.relatedMonths}</div>}
-             </div>
-          )}
+              {/* Catatan */}
+              <FormField label="Catatan">
+                <textarea
+                  className="textarea textarea-bordered textarea-sm w-full"
+                  value={additional_note_mutasi_bca}
+                  onChange={(e) => setAdditional_note_mutasi_bca(e.target.value)}
+                  placeholder="Catatan tambahan"
+                  rows={2}
+                />
+              </FormField>
 
-          <div className="mb-6 mt-3">
-            <Label htmlFor="description" className="mb-2 block">Deskripsi</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Masukkan deskripsi"
-              readOnly={transactionType === 'ipl'} // Make description read-only for IPL transactions
-            />
-            {errors.description && <div className="text-red-500 text-sm">{errors.description}</div>}
-          </div>
+              {/* Status */}
+              <FormField label="Status" error={errors.status}>
+                <Select
+                  isSearchable={false}
+                  options={optionsStatus}
+                  value={status}
+                  onChange={handleStatusChange}
+                  placeholder="Status"
+                  styles={selectStyles}
+                />
+              </FormField>
 
-          <div className="mb-6 mt-3">
-            <Label htmlFor="category" className="mb-2 block">Kategori</Label>
-             
-              <Select
-                id="category"
-                isSearchable={false}
-                options={optionsCategory}
-                value={trxCategory}
-                onChange={handleCatChange}
-                placeholder="Kategori"
-                className='bg-gray-50 text-sm'
-              />
-            {errors.trxCategory && <div className="text-red-500 text-sm">{errors.trxCategory}</div>}
-          </div>
+              {/* Alasan pembatalan */}
+              {noteCancel && status?.value === 'gagal' && (
+                <FormField label="Alasan Pembatalan">
+                  <textarea
+                    className="textarea textarea-bordered textarea-sm w-full"
+                    value={reason_cancellation}
+                    onChange={(e) => setReason_cancellation(e.target.value)}
+                    placeholder="Alasan pembatalan"
+                    rows={2}
+                  />
+                </FormField>
+              )}
 
-          <div className="mb-6 mt-3">
-            <Label htmlFor="amount" className="mb-2 block">Jumlah</Label>
-            <TextInput
-              id="amount"
-              name="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Masukkan jumlah"
-            />
-            {errors.amount && <div className="text-red-500 text-sm">{errors.amount}</div>}
-          </div>
-
-          <div className="mb-6 mt-3">
-            <Label htmlFor="payment_type" className="mb-2 block">Tipe Pembayaran</Label>
-              <Select
-                id="payment_type"
-                isSearchable={false}
-                options={optionsType}
-                value={paymentType}
-                onChange={handleTypeChange}
-                placeholder="Cash atau Transfer"
-                className='bg-gray-50 text-sm'
-              />
-            {errors.paymentType && <div className="text-red-500 text-sm">{errors.paymentType}</div>}
-          </div>
-
-          <div className="mb-6 mt-3">
-              <Label htmlFor="proofOfTransfer" className="mb-2 block">Lampiran</Label>
-              <FileInput 
-                id="file" 
-                onChange={handleFileChange} 
-                accept=".jpg,.png,.pdf,.jpeg"
-                ref={fileInputRef}
-                multiple
-              />
-              
-              <TextInput
-                id="proofOfTransfer"
-                name="proofOfTransfer"
-                value={typeof proofOfTransfer === 'string' ? proofOfTransfer : ''}
-                onChange={(e) => setProofOfTransfer(e.target.value)}
-                placeholder="Masukkan URL lampiran"
-                className='hidden'
-              />
-              {selectedFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {selectedFiles.map((file, i) => {
-                    const isPdf = file.type === 'application/pdf';
-                    const src = filePreviewUrls[i];
-                    const removeFile = (e) => {
-                      e.stopPropagation();
-                      setSelectedFiles(prev => {
-                        const updated = prev.filter((_, idx) => idx !== i);
-                        setProofOfTransfer(updated[0] ?? '');
-                        return updated;
-                      });
-                    };
-                    return (
-                      <div key={i} className="relative">
-                        {isPdf ? (
-                          <div onClick={() => setZoomedFile({ src, isPdf: true })}
-                            className="w-[120px] h-[120px] flex flex-col items-center justify-center border rounded cursor-pointer bg-gray-50 text-gray-500 text-xs gap-1">
-                            <span className="text-3xl">📄</span>
-                            <span className="truncate w-full text-center px-1">{file.name}</span>
-                          </div>
-                        ) : (
-                          <img src={src} alt={`Preview ${i + 1}`}
-                            className="w-[120px] h-[120px] object-cover p-2 rounded border cursor-zoom-in"
-                            onClick={() => setZoomedFile({ src, isPdf: false })} />
-                        )}
-                        <button onClick={removeFile}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs leading-none">×</button>
-                      </div>
-                    );
-                  })}
+              {/* Dokumen tambahan */}
+              {transactionType !== 'ipl' && (
+                <div className="card bg-base-200 p-4 space-y-3">
+                  <h3 className="font-semibold text-sm">Dokumen Tambahan</h3>
+                  <FormField label="Judul Dokumen">
+                    <input
+                      type="text"
+                      className="input input-bordered input-sm w-full"
+                      value={attachmentTitle}
+                      onChange={(e) => setAttachmentTitle(e.target.value)}
+                      placeholder="Judul"
+                    />
+                  </FormField>
+                  <FormField label="URL Dokumen">
+                    <input
+                      type="text"
+                      className="input input-bordered input-sm w-full"
+                      value={attachmentUrl}
+                      onChange={(e) => setAttachmentUrl(e.target.value)}
+                      placeholder="Link URL"
+                    />
+                  </FormField>
                 </div>
               )}
-              {errors.proofOfTransfer && <div className="text-red-500 text-sm">{errors.proofOfTransfer}</div>}
-              {selectedFiles.length === 0 && uploadUrl && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {(Array.isArray(uploadUrl) ? uploadUrl : uploadUrl.split(/,(?=https?:\/\/)/).map(u => u.trim())).map((url, i) => {
-                    const isPdf = url.toLowerCase().includes('.pdf');
-                    const displayUrl = toDisplayUrl(url);
-                    return isPdf ? (
-                      <div key={i} onClick={() => setZoomedFile({ src: url, isPdf: true })}
-                        className="w-[120px] h-[120px] flex flex-col items-center justify-center border rounded cursor-pointer bg-gray-50 text-gray-500 text-xs gap-1">
-                        <span className="text-3xl">📄</span>
-                        <span className="text-center px-1">PDF</span>
-                      </div>
-                    ) : (
-                      <img key={i} src={displayUrl} alt={`image ${i + 1}`}
-                        className="w-[120px] h-[120px] object-cover p-2 rounded border cursor-zoom-in"
-                        onClick={() => setZoomedFile({ src: displayUrl, isPdf: false })} />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
 
-          <div className="mb-6 mt-3">
-            <Label htmlFor="paymentDate" className="mb-2 block">Tanggal Pembayaran</Label>
-            <div className='flex items-center w-72 relative border border-gray-300 rounded-md shadow-sm bg-gray-50'>
-            <FaCalendarAlt className="absolute h-5 w-5 left-2 z-50 top-1/2 transform -translate-y-1/2 text-gray-500" />
-            <DatePicker
-              locale={id}
-              id="paymentDate"
-              name="paymentDate"
-              selected={paymentDate}
-              onChange={(date) => setPaymentDate(date)}
-              dateFormat="dd MMMM yyyy"
-              calendarClassName="light-blue-stripes"
-              placeholderText="Pilih tanggal"
-              className="block w-full pl-8 text-sm text-gray-900  border-gray-300 border-none rounded-md py-2 px-4 focus:ring-0 bg-gray-50"
-            />
-            </div>
-            {errors.paymentDate && <div className="text-red-500 text-sm">{errors.paymentDate}</div>}
-            
-          </div>
-
-          <div className="mb-6 mt-3">
-            <Label htmlFor="additional_note_mutasi_bca" className="mb-2 block">Catatan</Label>
-            <Textarea
-              id="additional_note_mutasi_bca"
-              name="additional_note_mutasi_bca"
-              value={additional_note_mutasi_bca}
-              onChange={(e) => setAdditional_note_mutasi_bca(e.target.value)}
-              placeholder="Catatan tambahan"
-            />
-            
-          </div>
-
-          <div className="mb-6 mt-3">
-            <Label htmlFor="payment_type" className="mb-2 block">Status</Label>
-              <Select
-                id="status"
-                isSearchable={false}
-                options={optionsStatus}
-                value={status}
-                onChange={handleStatusChange}
-                placeholder="Status"
-                className='bg-gray-50 text-sm'
-              />
-            {errors.status && <div className="text-red-500 text-sm">{errors.status}</div>}
-          </div>
-
-        {noteCancel && status.value === 'gagal' && 
-        
-        <div className="mb-6 mt-3">
-            <Label htmlFor="cancel_note" className="mb-2 block">Alasan pembatalan</Label>
-            <Textarea
-              id="cancel_note"
-              name="cancel_note"
-              value={reason_cancellation}
-              onChange={(e) => setReason_cancellation(e.target.value)}
-              placeholder="Catatan tambahan"
-            />
-            
-          </div>
-        }
-          
-
-          {transactionType !== 'ipl' && 
-            <Card>
-            <h3>Dokumen tambahan</h3>
-              <div className=" mt-3">
-                <Label htmlFor="attactment_title" className="mb-2 block">Judul Dokumen</Label>
-                <TextInput
-                  id="attactment_title"
-                  name="attactment_title"
-                  type="text"
-                  value={attachmentTitle}
-                  onChange={(e) => setAttachmentTitle(e.target.value)}
-                  placeholder="Judul"
-                />
-              
+              {/* Actions */}
+              <div className="flex gap-2 pb-10 pt-2">
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  className={`btn flex-1 ${
+                    transactionType === 'ipl' ? 'btn-success' :
+                    transactionType === 'income' ? 'btn-primary' :
+                    'btn-error'
+                  }`}
+                >
+                  {isProcessing && <AiOutlineLoading className="h-4 w-4 animate-spin" />}
+                  {transactionType === 'ipl' && <FaExchangeAlt className="h-4 w-4" />}
+                  {transactionType === 'income' && <FaRegArrowAltCircleDown className="h-4 w-4" />}
+                  {transactionType === 'expense' && <FaRegArrowAltCircleUp className="h-4 w-4" />}
+                  Simpan
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => { resetForm(); onClose(); }}
+                >
+                  Batal
+                </button>
               </div>
-              <div className="mb-6">
-                <Label htmlFor="attactment_url" className="mb-2 block">Url Dokumen</Label>
-                <TextInput
-                  id="attactment_url"
-                  name="attactment_url"
-                  type="text"
-                  value={attachmentUrl}
-                  onChange={(e) => setAttachmentUrl(e.target.value)}
-                  placeholder="Link Url"
-                />
-              
-              </div>
-            </Card>
-          }
-         
-
-          <div className='flex gap-2 pb-24'>
-            <Button 
-            type="submit" 
-            color={transactionType === 'ipl' ? 'success' : transactionType === 'income' ? 'blue' : 'failure'}
-            disabled={isProcessing}
-            >
-              {isProcessing && <AiOutlineLoading className="h-5 w-5 animate-spin mr-2" />}
-              {transactionType === 'ipl' && <FaExchangeAlt className="mr-2 h-5 w-5" />}
-              {transactionType === 'income' && <FaRegArrowAltCircleDown className="mr-2 h-5 w-5" />}
-              {transactionType === 'expense' && <FaRegArrowAltCircleUp className="mr-2 h-5 w-5" />}
-              Simpan
-            </Button>
-            <Button
-              type="button"
-              color="gray"
-              onClick={() => {
-                resetForm();
-                onClose();
-              }}
-            >
-              Batal
-            </Button>
+            </form>
           </div>
-        </form>
-      </Drawer.Items>
-    </Drawer>
+      </Drawer>
 
-    {zoomedFile && createPortal(
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80">
-        <button
-          onClick={() => setZoomedFile(null)}
-          className="absolute top-4 right-4 text-white text-3xl leading-none font-bold hover:text-gray-300"
-        >×</button>
-        {zoomedFile.isPdf ? (
-          <iframe
-            src={zoomedFile.src}
-            className="w-[90vw] h-[90vh] rounded shadow-lg bg-white"
-            title="PDF Preview"
-          />
-        ) : (
-          <img
-            src={zoomedFile.src}
-            alt="Zoom"
-            className="max-w-[90vw] max-h-[90vh] rounded shadow-lg"
+      {/* Image/PDF zoom modal */}
+      {zoomedFile && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80">
+          <button
             onClick={() => setZoomedFile(null)}
-          />
-        )}
-      </div>,
-      document.body
-    )}
+            className="absolute top-4 right-4 btn btn-circle btn-sm btn-ghost text-white text-xl"
+          >✕</button>
+          {zoomedFile.isPdf ? (
+            <iframe
+              src={zoomedFile.src}
+              className="w-[90vw] h-[90vh] rounded-lg shadow-xl bg-base-100"
+              title="PDF Preview"
+            />
+          ) : (
+            <img
+              src={zoomedFile.src}
+              alt="Zoom"
+              className="max-w-[90vw] max-h-[90vh] rounded-lg shadow-xl"
+              onClick={() => setZoomedFile(null)}
+            />
+          )}
+        </div>,
+        document.body
+      )}
     </>
   );
 };

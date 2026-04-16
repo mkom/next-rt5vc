@@ -269,8 +269,9 @@ const IplReport = ({ initialHouses }) =>  {
                       className="app-input pl-10 py-3 w-full"
                   />
               </div>
-              <button onClick={generatePDF} className="app-btn w-auto px-4 bg-base-200 text-base-content/70 shadow-none hover:bg-base-300" title="Unduh Laporan PDF">
+              <button onClick={generatePDF} className="app-btn w-auto px-4 bg-error text-error-content shadow-md hover:bg-error/90 flex items-center gap-2" title="Unduh Laporan PDF">
                   <MdOutlineDownload className="w-5 h-5" />
+                  <span className="font-bold text-sm">PDF</span>
               </button>
           </div>
           
@@ -367,10 +368,10 @@ const IplReport = ({ initialHouses }) =>  {
                       <p className="text-[11px] text-base-content/60">
                         Blok {house.house_id}
                         {outstanding_count != 0 && (
-                          <sup className='ml-1 text-red-400'>-{outstanding_count}</sup>
+                          <sup className='ml-1 text-red-400 font-bold'>-{outstanding_count}</sup>
                         )}
                         {future_count != 0 && (
-                          <sup className='ml-1 text-blue-400'>+{future_count}</sup>
+                          <sup className='ml-1 text-blue-400 font-bold'>+{future_count}</sup>
                         )}
                       </p>
                     </div>

@@ -1,49 +1,26 @@
-import {useState } from 'react';
-import Header from '../components/Header';
-import SideMenu from '../components/Sidebar'
+import PublicLayout from '../components/layouts/PublicLayout';
 import AllCashflow from '@/components/Cashflow';
-import Head from 'next/head';
-import { Breadcrumb } from "flowbite-react";
 import { HiHome } from "react-icons/hi";
 
 const Transactions = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
   return (
     <>
-    <Head>
-        <title>RT5VC - Laporan Arus Kas Rt 05 Villa Citayam</title>
-        <meta name="description" content="Laporan Arus Kas RT05/RW11 Villa Citayam Susukan Bojong gede Bogor" />
-        <meta property="og:title" content="RT5VC" />
-        <meta property="og:description" content="Laporan Arus Kas RT05/RW11 Villa Citayam Susukan Bogor" />
-        <meta property="og:image" content="" />
-        <meta property="og:url" content="" />
-    </Head>
-
-    <Header toggleSidebar={toggleSidebar}/>
-    <SideMenu isOpen={isSidebarOpen}/>
-    <main className='max-w-screen-md mx-auto min-h-dvh'>
-      <div className='w-full'>
-        <section className='mt-14 px-3 py-5  mb-11'>
-          <Breadcrumb aria-label="Default breadcrumb" className='mb-3'>
-            <Breadcrumb.Item href="/" icon={HiHome}>
-              Home
-            </Breadcrumb.Item>
-            <Breadcrumb.Item>Cashflow</Breadcrumb.Item>
-          </Breadcrumb>
-          <h1 className='text-xl mb-4 font-bold text-gray-900 sm:text-2xl dark:text-white'>Laporan Arus Kas</h1>
-          <AllCashflow/>
-        </section>
+      <div className="breadcrumbs text-sm mb-3">
+        <ul>
+          <li><a href="/"><HiHome className="h-4 w-4 inline mr-1" />Home</a></li>
+          <li>Cashflow</li>
+        </ul>
       </div>
-      
-      
-    </main>
+      <h1 className='text-xl mb-4 font-bold'>Laporan Arus Kas</h1>
+      <AllCashflow/>
     </>
   );
-}
+};
+
+Transactions.getLayout = (page) => (
+  <PublicLayout title="Laporan Arus Kas" description="Laporan Arus Kas RT05/RW11 Villa Citayam Susukan Bojong gede Bogor">
+    {page}
+  </PublicLayout>
+);
 
 export default Transactions;

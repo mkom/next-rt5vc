@@ -1,100 +1,38 @@
-import { useRouter } from 'next/router';
-import { useEffect } from 'react';
-import axios from 'axios';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { useAuth, useRequireRole, useSessionExpiry } from '../hooks/useAuth';
 
+/**
+ * @deprecated Gunakan useAuth dari 'hooks/useAuth' secara langsung
+ * Auth utility hooks - maintained for backward compatibility
+ * 
+ * Migration guide:
+ * - useRequireAuth().useAuthRedirect() -> useAuth() (AuthGuard handles redirect automatically)
+ * - useRequireAuth().useAuthRedirectDashboard() -> useAuth() (AuthGuard handles redirect automatically)
+ */
 export const useRequireAuth = (allowedRoles = ['admin', 'user', 'editor', 'superadmin']) => {
-  const router = useRouter();
-  const { data: session, status } = useSession();
+  console.warn('useRequireAuth is deprecated. Use useAuth hook directly or AuthGuard component.');
+  
+  const { session, status, hasRole } = useAuth();
 
-  const checkAuthAndRole = async (token, userRole) => {
-    try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const user = response.data;
-
-      if (!user) {
-        router.push('/');
-        return false;
-      }
-
-      if (!allowedRoles.includes(user.role)) {
-        router.push('/unauthorized');
-        return false;
-      }
-      return true;
-      
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      signOut();
-      router.push('/');
-      return false;
-    }
-  };
-
-  // const useAuthRedirect = () => {
-  //   useEffect(() => {
-  //     if (status === 'loading') return; // Wait for session to load
-  //     if (!session) {
-
-  //       // Redirect to login popup
-  //       //const redirectUrl = encodeURIComponent(router.asPath); // Store current path
-  //       //signIn('google', { callbackUrl: redirectUrl }); // Open Google login popup
-  //       router.push('/');
-  //       return;
-  //     }
-  //     const token = session.accessToken;
-  //     const userRole = session.user.role;
-  //     checkAuthAndRole(token, userRole);
-  //   }, [session, status, router]);
-  // };
-
+  // Legacy hook no-ops since AuthGuard now handles all redirects
   const useAuthRedirect = () => {
-    useEffect(() => {
-      if (status === 'loading') return; // Tunggu hingga session selesai dimuat
-  
-      if (!session && status !== 'authenticated') {
-        // Jika belum login, tetap di halaman dan tampilkan LoginCard
-        //signOut();
-        //router.push('/');
-        return;
-      }
-      
-  
-      // Jika sudah login, tidak ada tindakan tambahan
-    }, [session, status]);
-
-    // useEffect(() => {
-    //   if (status === 'loading') return; // Wait until the session is fully loaded
-  
-    //   // If there is no session and the status is not authenticated, redirect to the homepage
-    //   if (!session && status !== 'authenticated') {
-    //     router.push('/');  // Redirect to the homepage
-    //   }
-    // }, [session, status, router]);
-
-
+    // No-op - AuthGuard handles this automatically
   };
 
   const useAuthRedirectDashboard = () => {
-    useEffect(() => {
-      if (status === 'loading') return; // Tunggu hingga session selesai dimuat
-  
-      if (!session && status !== 'authenticated') {
-        // Jika belum login, tetap di halaman dan tampilkan LoginCard
-        //signOut();
-        router.push('/');
-        return;
-      }
-      
-  
-      // Jika sudah login, tidak ada tindakan tambahan
-    }, [session, status]);
-
+    // No-op - AuthGuard handles this automatically
   };
-  
 
-  return { checkAuthAndRole, useAuthRedirect, useAuthRedirectDashboard };
+  return { 
+    useAuthRedirect, 
+    useAuthRedirectDashboard,
+    // Expose new auth data for migration
+    session,
+    status,
+    hasRole,
+  };
 };
+
+// Re-export new hooks for convenience
+export { useAuth, useRequireRole, useSessionExpiry };
+
+export default useAuth;

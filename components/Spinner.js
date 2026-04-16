@@ -1,9 +1,10 @@
-import { Spinner } from "flowbite-react";
-
-const Spinne = () => (
-    <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-100 z-20">
-      <Spinner  size="xl" />
+const Spinner = () => (
+  <div className="fixed inset-0 flex items-center justify-center bg-base-100/90 z-[9999]">
+    <div className="flex flex-col items-center gap-3">
+      <span className="loading loading-spinner loading-lg text-primary"></span>
+      <p className="text-sm text-base-content/60">Memuat...</p>
     </div>
-  );
-  
-export default Spinne;
+  </div>
+);
+
+export default Spinner;
