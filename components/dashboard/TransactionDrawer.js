@@ -340,6 +340,31 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
         onClose={() => { resetForm(); onClose(); }}
         title={titleMap[transactionType] || 'Transaksi'}
         icon={<FaExchangeAlt className="h-5 w-5 text-primary" />}
+        footer={
+          <div className="flex gap-3 w-full">
+            <button
+              type="submit"
+              form="transaction-form"
+              disabled={isProcessing}
+              className="btn btn-primary btn-sm flex-1 gap-2 touch-target shadow-md hover:shadow-lg transition-all"
+            >
+              {isProcessing ? (
+                <AiOutlineLoading className="h-4 w-4 animate-spin" />
+              ) : (
+                <FaRegSave className="h-4 w-4" />
+              )}
+              Simpan
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm touch-target px-4 gap-2"
+              onClick={() => { resetForm(); onClose(); }}
+            >
+              <FaTimes className="h-4 w-4" />
+              Batal
+            </button>
+          </div>
+        }
       >
           <div className="space-y-4">
             {alertMessage && (
@@ -357,7 +382,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form id="transaction-form" onSubmit={handleSubmit} className="space-y-4">
               {/* No Rumah */}
               {transactionType !== 'expense' && transactionType !== 'income' && (
                 <FormField label="No Rumah" error={errors.houseId}>
@@ -607,30 +632,6 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                   </FormField>
                 </div>
               )}
-
-              {/* Actions */}
-              <div className="flex gap-3 mt-4 pt-4 border-t border-base-200">
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="btn btn-primary btn-sm flex-1 gap-2 touch-target-sm shadow-md hover:shadow-lg transition-all"
-                >
-                  {isProcessing ? (
-                    <AiOutlineLoading className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <FaRegSave className="h-4 w-4" />
-                  )}
-                  Simpan
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm touch-target-sm px-4 gap-2"
-                  onClick={() => { resetForm(); onClose(); }}
-                >
-                  <FaTimes className="h-4 w-4" />
-                  Batal
-                </button>
-              </div>
             </form>
           </div>
       </Drawer>

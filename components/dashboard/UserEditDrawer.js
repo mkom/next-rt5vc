@@ -57,6 +57,30 @@ const UserEditDrawer = ({ isOpen, onClose, user, onSave }) => {
       onClose={onClose}
       title="Edit Data User"
       icon={<HiUser className="h-5 w-5 text-primary" />}
+      footer={
+        <div className="flex gap-3 w-full">
+          <button
+            className="btn btn-primary btn-sm flex-1 gap-2 touch-target shadow-md hover:shadow-lg transition-all"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <FaRegSave className="h-4 w-4" />
+            )}
+            Simpan
+          </button>
+          <button
+            className="btn btn-ghost btn-sm touch-target px-4"
+            onClick={onClose}
+            disabled={isSaving}
+          >
+            <FaTimes className="h-4 w-4" />
+            Batal
+          </button>
+        </div>
+      }
     >
       <div className="flex flex-col gap-4">
         {/* Username */}
@@ -103,30 +127,6 @@ const UserEditDrawer = ({ isOpen, onClose, user, onSave }) => {
             placeholder="Alamat email"
           />
         </FormField>
-
-        {/* Actions */}
-        <div className="flex gap-3 mt-4 pt-4 border-t border-base-200">
-          <button
-            className="btn btn-primary btn-sm flex-1 gap-2 touch-target-sm shadow-md hover:shadow-lg transition-all"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <span className="loading loading-spinner loading-xs" />
-            ) : (
-              <FaRegSave className="h-4 w-4" />
-            )}
-            Simpan
-          </button>
-          <button
-            className="btn btn-ghost btn-sm touch-target-sm px-4"
-            onClick={onClose}
-            disabled={isSaving}
-          >
-            <FaTimes className="h-4 w-4" />
-            Batal
-          </button>
-        </div>
       </div>
     </Drawer>
   );
