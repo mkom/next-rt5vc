@@ -53,34 +53,61 @@ function LetterPreview({data}){
 
     const generatePDF = async (mode = "preview") => {
         const element = printRef.current;
-        const canvas = await html2canvas(element, { scale: 2 });
-      
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-      
-        const pdfWidth = pdf.internal.pageSize.getWidth();   // biasanya 210 mm
-        const pdfHeight = pdf.internal.pageSize.getHeight(); // biasanya 297 mm
-      
-        // Hitung ukuran gambar di PDF dengan mempertahankan rasio
-        const imgWidth = pdfWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-        const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
-        const finalWidth = canvas.width * ratio;
-        const finalHeight = canvas.height * ratio;
-      
-        // Hitung posisi agar berada di tengah halaman
-        const marginX = (pdfWidth - finalWidth) / 2;
-        const marginY = (pdfHeight - finalHeight) / 2;
-      
-        pdf.addImage(imgData, "PNG", marginX, marginY, finalWidth, finalHeight);
-      
-        if (mode === "preview") {
-          const blob = pdf.output("blob");
-          const url = URL.createObjectURL(blob);
-          window.open(url);
-        } else {
-          pdf.save(`Surat-Tagihan-${unit.house_id}.pdf`);
+
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc) => {
+                    // Override problematic CSS colors (oklch) with hex colors
+                    const allElements = clonedDoc.querySelectorAll('*');
+                    allElements.forEach(el => {
+                        const computedStyle = window.getComputedStyle(el);
+                        const color = computedStyle.color;
+                        const bgColor = computedStyle.backgroundColor;
+
+                        // Override oklch colors or transparent text with solid black
+                        if (color.includes('oklch') || color === 'rgba(0, 0, 0, 0)' || color === 'transparent') {
+                            el.style.color = '#000000';
+                        }
+                        // Override oklch background colors
+                        if (bgColor.includes('oklch')) {
+                            el.style.backgroundColor = '#ffffff';
+                        }
+                    });
+                }
+            });
+
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();   // biasanya 210 mm
+            const pdfHeight = pdf.internal.pageSize.getHeight(); // biasanya 297 mm
+
+            // Hitung ukuran gambar di PDF dengan mempertahankan rasio
+            const imgWidth = pdfWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
+            const finalWidth = canvas.width * ratio;
+            const finalHeight = canvas.height * ratio;
+
+            // Hitung posisi agar berada di tengah halaman
+            const marginX = (pdfWidth - finalWidth) / 2;
+            const marginY = (pdfHeight - finalHeight) / 2;
+
+            pdf.addImage(imgData, "PNG", marginX, marginY, finalWidth, finalHeight);
+
+            if (mode === "preview") {
+                const blob = pdf.output("blob");
+                const url = URL.createObjectURL(blob);
+                window.open(url);
+            } else {
+                pdf.save(`Surat-Tagihan-${unit.house_id}.pdf`);
+            }
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Gagal generate PDF. Silakan coba lagi.');
         }
     };
       
@@ -104,7 +131,7 @@ function LetterPreview({data}){
                 </div>
 
 
-            <div ref={printRef} className="p-6 mb-10  bg-white text-black max-w-screen-lg mx-auto text-sm">
+            <div ref={printRef} className="p-6 mb-10 bg-white text-black max-w-screen-lg mx-auto text-sm" style={{ color: '#000000', backgroundColor: '#ffffff' }}>
                 <header className="border-b-4 pb-4 mb-8 flex items-center justify-around gap-4 md:gap-12">
                     <div className=" w-[130px]">
                         <Image src="/images/rt005.png" className="w-full h-auto" width={130} height={100} alt="RT 005 Logo"/>
@@ -143,7 +170,7 @@ function LetterPreview({data}){
                         </tr>
                         </thead>
                         <tbody>
-                        {unit.periods.map((item, i) => (
+                        {unit.periods?.map((item, i) => (
                             <tr key={i}>
                             <td className="border p-2">{i + 1}</td>
                             <td className="border p-2">{moment(item, 'YYYY-MM').format('MMMM YYYY')}</td>

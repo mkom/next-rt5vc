@@ -1,6 +1,5 @@
 import { getSession, useSession } from 'next-auth/react';
 import { signIn, signOut } from 'next-auth/react';
-import { useRequireAuth } from '../utils/authUtils.js';
 import Spinner from './Spinner';
 import { useState, useEffect} from 'react';
 import Image from "next/image";
@@ -14,8 +13,6 @@ import { ITEMS_PER_PAGE } from '../utils/constants';
 import Pagination from './ui/Pagination';
 
 const History = () => {
-    const { useAuthRedirect } = useRequireAuth(['user','admin', 'editor', 'superadmin']);
-    useAuthRedirect();
 
     const [status, setStatus] = useState('sedang dicek');
     const { data: session } = useSession();

@@ -1,10 +1,15 @@
-import { useSession } from 'next-auth/react';
+import { useSession, getSession } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 import { FaCalendarCheck } from 'react-icons/fa';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
 
+/**
+ * IplDetail Page - Admin only
+ * 
+ * CRITICAL: Only users with 'admin' role can access this page.
+ */
 const IplDetail = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -42,6 +47,37 @@ const IplDetail = () => {
       <button onClick={goBack} className="btn btn-ghost btn-sm">Go Back</button>
     </>
   );
+};
+
+/**
+ * Server-side protection - Hanya admin yang boleh akses
+ */
+export const getServerSideProps = async (context) => {
+  const session = await getSession(context);
+  
+  // Check authentication
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    };
+  }
+  
+  // Check authorization - HANYA admin yang boleh akses
+  if (session.user?.role !== 'admin') {
+    return {
+      redirect: {
+        destination: '/?access_denied=true',
+        permanent: false,
+      },
+    };
+  }
+  
+  return {
+    props: {},
+  };
 };
 
 IplDetail.getLayout = (page) => (

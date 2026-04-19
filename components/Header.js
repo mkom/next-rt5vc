@@ -1,17 +1,24 @@
+import Link from 'next/link';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { HiChevronLeft } from 'react-icons/hi';
+import { HiChevronLeft, HiViewGrid } from 'react-icons/hi';
 import Image from 'next/image';
 import GoogleIcon from './ui/GoogleIcon';
+import { canAccessDashboard } from '../constants/roles';
 
 /**
  * Header Component - Green Theme
  * Uses RT5VC logo and green color palette
+ * Includes Dashboard link for admin users
+ *
+ * @param {boolean} hasSidebar - Set to true when header is used with sidebar (dashboard pages)
  */
-const Header = ({ title, showBack }) => {
+const Header = ({ title, showBack, hasSidebar = false }) => {
   const { data: session } = useSession();
   const router = useRouter();
   const currentPath = router.asPath;
+  const userRole = session?.user?.role;
+  const isAdmin = canAccessDashboard(userRole);
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -22,8 +29,8 @@ const Header = ({ title, showBack }) => {
   };
 
   return (
-    <nav className="fixed top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-green-100 shadow-sm">
-      <div className="flex items-center justify-between px-4 h-14 lg:max-w-4xl lg:mx-auto lg:px-6">
+    <nav className={`fixed top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-green-100 shadow-sm ${hasSidebar ? 'lg:left-72 lg:w-[calc(100%-18rem)]' : ''}`}>
+      <div className={`flex items-center justify-between px-4 h-14 lg:px-6 ${!hasSidebar ? 'max-w-4xl mx-auto' : ''}`}>
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {showBack ? (
             <button
@@ -34,9 +41,9 @@ const Header = ({ title, showBack }) => {
               <HiChevronLeft className="w-6 h-6 text-green-800" />
             </button>
           ) : (
-            <a 
-              href="/" 
-              className="flex items-center gap-2 shrink-0 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 rounded-lg"
+            <a
+              href="/"
+              className={`flex items-center gap-2 shrink-0 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 rounded-lg ${hasSidebar ? 'lg:hidden' : ''}`}
               aria-label="Beranda RT 005"
             >
               {/* Logo Container */}
@@ -49,7 +56,7 @@ const Header = ({ title, showBack }) => {
                   className="w-8 h-8 object-contain"
                 />
               </div>
-              <span className="text-lg font-bold text-green-800 tracking-tight hidden xs:block">
+              <span className={`text-lg font-bold text-green-800 tracking-tight hidden xs:block ${hasSidebar ? 'lg:hidden' : ''}`}>
                 RT 005
               </span>
             </a>
@@ -91,8 +98,28 @@ const Header = ({ title, showBack }) => {
                   <div className="flex flex-col gap-0.5">
                     <p className="text-sm font-bold text-green-900 leading-tight">{session.user?.name}</p>
                     <p className="text-xs text-green-600/70 truncate">{session.user?.email}</p>
+                    {isAdmin && (
+                      <span className="inline-flex items-center gap-1 mt-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        <span className="text-xs text-green-600 font-medium">Admin</span>
+                      </span>
+                    )}
                   </div>
                 </li>
+                
+                {/* Dashboard Link - Only for Admin */}
+                {isAdmin && (
+                  <li>
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center gap-3 px-3 py-2.5 text-green-700 hover:bg-green-50 rounded-xl transition-colors font-medium text-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <HiViewGrid className="w-4 h-4" />
+                      Dashboard Admin
+                    </Link>
+                  </li>
+                )}
+                
                 <li>
                   <button 
                     onClick={() => signOut({ callbackUrl: '/' })} 

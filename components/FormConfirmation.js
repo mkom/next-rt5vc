@@ -1,11 +1,10 @@
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
-import { useRequireAuth } from '../utils/authUtils.js';
 import { useRouter } from 'next/router';
 import Spinner from './Spinner';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from "next/image";
-import { FaCalendarAlt, FaCamera, FaWhatsapp, FaHome, FaCheckCircle, FaMoneyBillWave, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaCalendarAlt, FaCamera, FaWhatsapp, FaHome, FaCheckCircle, FaMoneyBillWave, FaPlus, FaTrash, FaRedo, FaPaperPlane, FaHistory } from 'react-icons/fa';
 import { MdDelete } from "react-icons/md";
 import { GrFormNextLink } from "react-icons/gr";
 import { AiOutlineLoading } from "react-icons/ai";
@@ -19,8 +18,6 @@ import { formatCurrency } from '../utils/format';
 
 const Confirmation = () => {
     const router = useRouter();
-    const { useAuthRedirect } = useRequireAuth(['user','admin', 'editor', 'superadmin']);
-    useAuthRedirect();
 
     const [houseId, setHouseId] = useState('');
     const [houseName, setHouseName] = useState('');
@@ -51,6 +48,7 @@ const Confirmation = () => {
     const [whatsappError, setWhatsappError] = useState("");
     const [monthOptionsList, setMonthOptionsList] = useState([]);
     const [lastPaidIpl, setLastPaidIpl] = useState(null);
+    const [paymentType, setPaymentType] = useState('');
 
     useEffect(() => {
       if (session) {
@@ -391,9 +389,10 @@ const Confirmation = () => {
                 </div>
                 <p className="text-base-content font-extrabold text-xl leading-tight tracking-tight">Terima Kasih!</p>
                 <p className="text-sm text-base-content/70 font-medium px-4">{alertMessage}</p>
-                <Link href="/history" className="app-btn bg-success mt-4 w-full sm:w-auto px-8">
+                <Link href="/history" className="btn bg-success text-white font-semibold rounded-xl shadow-lg shadow-success/25 hover:shadow-xl hover:-translate-y-0.5 mt-4 w-full sm:w-auto px-8 transition-all duration-200 active:scale-[0.98]">
+                    <FaHistory className='w-4 h-4 mr-2'/>
                     Cek Riwayat Konfirmasi
-                    <GrFormNextLink className='w-5 h-5'/>
+                    <GrFormNextLink className='w-5 h-5 ml-1'/>
                 </Link>
                 <button onClick={() => {setShowForm(true); setNotification(false); resetForm();}} className="text-xs font-bold text-base-content/50 mt-2 hover:text-primary">
                     Kirim konfirmasi lainnya
@@ -603,21 +602,22 @@ const Confirmation = () => {
                 <div className='flex gap-3 mt-4 pt-4 border-t border-base-200'>
                     <button
                         type="button"
-                        className="app-btn bg-base-200 text-base-content/70 shadow-none hover:bg-base-300 flex-[1]"
+                        className="btn btn-outline border-green-600/30 text-green-700 hover:bg-green-50 hover:border-green-600 flex-1 font-semibold rounded-xl transition-all duration-200 active:scale-[0.98]"
                         onClick={resetForm}
                         disabled={isProcessing}
                     >
+                        <FaRedo className="w-4 h-4 mr-2" />
                         Reset
                     </button>
                     <button
                         type="submit"
-                        className={`app-btn flex-[2.5] ${(!houseId || relatedMonths.length === 0 || proofOfTransferFiles.length === 0) ? 'opacity-50 cursor-not-allowed' : 'opacity-100'}`}
-                        disabled={isProcessing || whatsappError}
+                        className={`btn flex-[2.5] font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] ${(!houseId || relatedMonths.length === 0 || proofOfTransferFiles.length === 0) ? 'bg-green-300 text-white/50 cursor-not-allowed hover:bg-green-300' : 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-600/25 hover:shadow-xl hover:-translate-y-0.5 hover:from-green-600 hover:to-green-800'}`}
+                        disabled={isProcessing || whatsappError || !houseId || relatedMonths.length === 0 || proofOfTransferFiles.length === 0}
                     >
                         {isProcessing ? (
-                            <><AiOutlineLoading className="h-5 w-5 animate-spin"/> Proses...</>
+                            <><AiOutlineLoading className="h-5 w-5 animate-spin mr-2"/> Memproses...</>
                         ) : (
-                            'Kirim Konfirmasi'
+                            <><FaPaperPlane className="w-4 h-4 mr-2" /> Kirim Konfirmasi</>
                         )}
                     </button>
                 </div>

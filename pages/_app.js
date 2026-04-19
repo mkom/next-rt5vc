@@ -34,13 +34,11 @@ export default function App({ Component, pageProps }) {
       <Head>
         <title>RT5VC - Rt 05 Villa Citayam</title>
         <meta name="description" content="Laporan Keuangan RT 05/RW 11 Villa Citayam Susukan Bojong gede Bogor" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta property="og:title" content="Rt 05 Villa Citayam" />
         <meta property="og:description" content="Laporan Keuangan RT 05/RW 11 Villa Citayam Susukan Bojong gede Bogor" />
         <meta property="og:image" content="" />
         <meta property="og:url" content="" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </Head>
       {loading && <Spinner />}
       <AuthGuard>

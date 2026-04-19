@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getSession } from 'next-auth/react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import Select from 'react-select';
@@ -7,6 +8,11 @@ import id from "date-fns/locale/id";
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
 import { selectStyles } from '../../../utils/selectStyles';
 
+/**
+ * SetorRw Page - Admin only
+ * 
+ * CRITICAL: Only users with 'admin' role can access this page.
+ */
 const SetorRw = () => {
   const [relatedMonths, setRelatedMonths] = useState([]);
   const [months, setMonths] = useState([]);
@@ -92,6 +98,37 @@ const SetorRw = () => {
       </div>
     </>
   );
+};
+
+/**
+ * Server-side protection - Hanya admin yang boleh akses
+ */
+export const getServerSideProps = async (context) => {
+  const session = await getSession(context);
+  
+  // Check authentication
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    };
+  }
+  
+  // Check authorization - HANYA admin yang boleh akses
+  if (session.user?.role !== 'admin') {
+    return {
+      redirect: {
+        destination: '/?access_denied=true',
+        permanent: false,
+      },
+    };
+  }
+  
+  return {
+    props: {},
+  };
 };
 
 SetorRw.getLayout = (page) => (

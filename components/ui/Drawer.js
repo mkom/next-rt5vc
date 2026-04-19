@@ -1,3 +1,22 @@
+/**
+ * Drawer - Responsive slide-out panel
+ *
+ * Features:
+ * - Mobile: Bottom sheet style
+ * - Desktop: Side panel
+ * - Standardized z-index
+ * - Accessible close button
+ * - Configurable widths
+ *
+ * @param {Object} props
+ * @param {boolean} props.isOpen - Whether drawer is visible
+ * @param {Function} props.onClose - Close handler
+ * @param {string} props.title - Drawer title
+ * @param {React.ReactNode} props.icon - Optional icon
+ * @param {string} props.width - Width variant: 'sm' | 'md' | 'lg'
+ * @param {React.ReactNode} props.children - Drawer content
+ */
+
 const sizeClasses = {
   sm: 'lg:max-w-sm',
   md: 'lg:max-w-lg',
@@ -7,9 +26,11 @@ const sizeClasses = {
 const Drawer = ({ isOpen, onClose, title, icon, width = 'md', children }) => {
   return (
     <div
-      className={`fixed inset-0 z-50 flex transition-all duration-300 ${
+      className={`fixed inset-0 z-drawer flex transition-all duration-300 ${
         isOpen ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
+      role="dialog"
+      aria-modal="true"
     >
       {/* Backdrop */}
       <div
@@ -17,6 +38,7 @@ const Drawer = ({ isOpen, onClose, title, icon, width = 'md', children }) => {
           isOpen ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* Mobile: Bottom sheet */}
@@ -27,12 +49,16 @@ const Drawer = ({ isOpen, onClose, title, icon, width = 'md', children }) => {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="w-10 h-1 bg-base-300 rounded-full mx-auto mt-2" />
-        <div className="sticky top-0 z-10 bg-base-100 border-b border-base-300 px-4 py-3 flex items-center justify-between">
+        <div className="sticky top-0 z-sticky bg-base-100 border-b border-base-300 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {icon}
             <h2 className="text-base font-semibold">{title}</h2>
           </div>
-          <button onClick={onClose} className="btn btn-ghost btn-sm btn-square">
+          <button
+            onClick={onClose}
+            className="btn btn-ghost btn-sm btn-square touch-target-sm"
+            aria-label="Close drawer"
+          >
             ✕
           </button>
         </div>
@@ -45,12 +71,16 @@ const Drawer = ({ isOpen, onClose, title, icon, width = 'md', children }) => {
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="sticky top-0 z-10 bg-base-100 border-b border-base-300 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-sticky bg-base-100 border-b border-base-300 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {icon}
             <h2 className="text-lg font-semibold">{title}</h2>
           </div>
-          <button onClick={onClose} className="btn btn-ghost btn-sm btn-square">
+          <button
+            onClick={onClose}
+            className="btn btn-ghost btn-sm btn-square touch-target-sm"
+            aria-label="Close drawer"
+          >
             ✕
           </button>
         </div>

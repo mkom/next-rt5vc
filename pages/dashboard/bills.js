@@ -1,216 +1,227 @@
 import { getSession, useSession } from 'next-auth/react';
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import axios from 'axios';
-import moment from 'moment';
 import { FaRegEnvelope, FaWhatsapp } from 'react-icons/fa';
 
+// Layout & Components
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import Spinner from '../../components/Spinner';
-import SearchInput from '../../components/ui/SearchInput';
+import PageHeader from '../../components/dashboard/PageHeader';
+import BillsStats from '../../components/dashboard/BillsStats';
+import BillsFilters from '../../components/dashboard/BillsFilters';
+import BillsTable from '../../components/dashboard/BillsTable';
+import Alert from '../../components/ui/Alert';
 import Pagination from '../../components/ui/Pagination';
 import Drawer from '../../components/ui/Drawer';
-import ResponsiveTable from '../../components/ui/ResponsiveTable';
-import { formatCurrency } from '../../utils/format';
 import LetterPreview from '@/components/LetterPreview.js';
 import WhatsAppMessage from '@/components/WhatsAppMessage.js';
 
-const ITEMS_PER_PAGE = 30;
+// Hooks
+import { useBillsData } from '../../lib/hooks/useBillsData';
 
+// Utils
+import { ITEMS_PER_PAGE } from '../../utils/constants';
+
+/**
+ * Bills Page - Manage outstanding bills/tagihan
+ *
+ * Features:
+ * - KPI stats summary (total tagihan, jumlah rumah, rata-rata)
+ * - Search filtering
+ * - Responsive table with mobile card view
+ * - Letter preview drawer
+ * - WhatsApp message drawer
+ * - Accessible UI with keyboard navigation
+ *
+ * @param {Object} props
+ * @param {Array} props.initialHouses - Initial data from SSR
+ */
 const Bills = ({ initialHouses }) => {
   const { data: session } = useSession();
-  const [houses, setHouses] = useState(initialHouses ?? []);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Drawer state
+  const [isLetterDrawerOpen, setIsLetterDrawerOpen] = useState(false);
   const [isWhatsAppDrawerOpen, setIsWhatsAppDrawerOpen] = useState(false);
-  const [detailData, setDetailData] = useState(null);
-  const [totalHouses, setTotalHouses] = useState(0);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [selectedHouse, setSelectedHouse] = useState(null);
 
-  const fetchHouses = useCallback(async () => {
-    if (session) {
-      try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {});
-        const sorted = res.data.data.sort((a, b) => b.total_fee - a.total_fee);
-        setHouses(sorted);
-        setTotalHouses(res.data.total);
-        setTotalAmount(res.data.total_amount);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching houses data:', error);
-        setLoading(false);
-      }
-    }
-  }, [session]);
+  // Notification state
+  const [notification, setNotification] = useState({
+    show: false,
+    type: 'success',
+    message: '',
+  });
 
-  useEffect(() => {
-    if (session) {
-      fetchHouses();
-    }
-  }, [session, fetchHouses]);
+  // Custom hook for bills data management
+  const {
+    filteredHouses,
+    paginatedData,
+    filters,
+    setFilter,
+    clearFilters,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    stats,
+    loading,
+    error,
+    lastUpdated,
+    refresh,
+  } = useBillsData({
+    initialHouses,
+    accessToken: session?.accessToken,
+  });
 
-  const handleEditClick = (data) => {
-    setIsDrawerOpen(true);
-    setDetailData(data);
+  // Check if search filter is active
+  const hasActiveFilters = useMemo(() => {
+    return !!filters.search;
+  }, [filters.search]);
+
+  // Show notification helper
+  const showNotification = (type, message) => {
+    setNotification({ show: true, type, message });
+    setTimeout(() => {
+      setNotification((prev) => ({ ...prev, show: false }));
+    }, 5000);
   };
 
-  const handleWhatsAppClick = (data) => {
+  // Handle letter preview click
+  const handleLetterClick = (house) => {
+    setSelectedHouse(house);
+    setIsLetterDrawerOpen(true);
+  };
+
+  // Handle WhatsApp click
+  const handleWhatsAppClick = (house) => {
+    setSelectedHouse(house);
     setIsWhatsAppDrawerOpen(true);
-    setDetailData(data);
   };
-
-  const filteredHouses = Array.isArray(houses)
-    ? houses.filter((house) => {
-        const searchTermLower = searchTerm.toLowerCase();
-        return (
-          searchTermLower === '' ||
-          house?.resident_name?.toLowerCase().includes(searchTermLower) ||
-          house?.house_id?.toLowerCase().includes(searchTermLower)
-        );
-      })
-    : [];
-
-  const offset = currentPage * ITEMS_PER_PAGE;
-  const currentPageData = filteredHouses.slice(offset, offset + ITEMS_PER_PAGE);
-
-  const columns = [
-    { label: 'No', className: 'w-4' },
-    { label: 'Rumah', className: 'w-14' },
-    { label: 'Nama', className: 'w-28' },
-    { label: 'Periode', className: 'w-80' },
-    { label: 'Total', className: 'w-16' },
-    { label: 'Jumlah', className: 'w-16 text-right' },
-    { label: '', className: 'w-20' },
-  ];
-
-  const renderPeriodBadges = (house) => (
-    <span className="flex flex-wrap gap-1">
-      {house.periods.map((period, subindex) => {
-        const status = house.monthly_status.find((s) => s.month === period)?.status;
-        const badgeClass = status === 'Weekend' ? 'badge-secondary' : 'badge-error';
-        return (
-          <span key={subindex} className={`badge badge-xs ${badgeClass}`}>
-            {moment(period, 'YYYY-MM').format('MMMM YYYY')}
-          </span>
-        );
-      })}
-    </span>
-  );
-
-  const renderActionButtons = (house) => (
-    <div className="join">
-      <button className="join-item btn btn-ghost btn-xs" onClick={() => handleEditClick(house)}>
-        <FaRegEnvelope className="h-4 w-4" />
-        <span>Surat</span>
-      </button>
-      <button className="join-item btn btn-ghost btn-xs" onClick={() => handleWhatsAppClick(house)}>
-        <FaWhatsapp className="h-4 w-4" />
-        <span>WA</span>
-      </button>
-    </div>
-  );
-
-  const renderDesktopRow = (house, index) => (
-    <tr key={index}>
-      <td>{offset + index + 1}</td>
-      <td>{house.house_id}</td>
-      <td>{house.resident_name}</td>
-      <td>{renderPeriodBadges(house)}</td>
-      <td>{house.periods.length} Bulan</td>
-      <td className="text-right">{formatCurrency(house.total_fee)}</td>
-      <td>{renderActionButtons(house)}</td>
-    </tr>
-  );
-
-  const renderMobileCard = (house, index) => (
-    <div className="space-y-2">
-      <div className="flex justify-between items-start">
-        <div>
-          <span className="font-semibold">{house.house_id}</span>{' '}
-          <span className="text-base-content/70">{house.resident_name}</span>
-        </div>
-      </div>
-      <div>{renderPeriodBadges(house)}</div>
-      <div className="flex justify-between items-center">
-        <span className="text-sm">
-          {house.periods.length} Bln {formatCurrency(house.total_fee)}
-        </span>
-        {renderActionButtons(house)}
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return <Spinner />;
-  }
 
   return (
-    <>
-      <div className="mb-3 flex justify-between items-center gap-3 w-full">
-        <div className="w-full md:w-1/2">
-          <SearchInput
-            value={searchTerm}
-            onChange={(val) => {
-              setCurrentPage(0);
-              setSearchTerm(val);
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="text-right text-sm mb-3">
-        Jumlah Keseluruhan: <span className="font-semibold">{formatCurrency(totalAmount)}</span>
-      </div>
-
-      <ResponsiveTable
-        data={currentPageData}
-        columns={columns}
-        renderDesktopRow={renderDesktopRow}
-        renderMobileCard={renderMobileCard}
-        emptyMessage="Tidak ada tagihan"
+    <section className="flex flex-col gap-6 animate-fade-in">
+      {/* Alert Notification */}
+      <Alert
+        show={notification.show}
+        type={notification.type}
+        message={notification.message}
+        onClose={() => setNotification((prev) => ({ ...prev, show: false }))}
       />
 
+      {/* Page Header */}
+      <PageHeader
+        title="Tagihan Berjalan"
+        subtitle="Kelola dan monitor tagihan IPL yang belum lunas"
+        onRefresh={refresh}
+        refreshing={loading}
+        lastUpdated={lastUpdated}
+      />
+
+      {/* Error State */}
+      {error && (
+        <div className="alert alert-error shadow-lg animate-fade-in">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>Gagal memuat data: {error}</span>
+        </div>
+      )}
+
+      {/* Stats Summary */}
+      <BillsStats stats={stats} loading={loading && filteredHouses.length === 0} />
+
+      {/* Filters */}
+      <BillsFilters
+        filters={filters}
+        onChange={setFilter}
+        onClear={clearFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
+
+      {/* Bills Table */}
+      <BillsTable
+        houses={paginatedData}
+        offset={currentPage * ITEMS_PER_PAGE}
+        onLetterClick={handleLetterClick}
+        onWhatsAppClick={handleWhatsAppClick}
+        loading={loading}
+      />
+
+      {/* Pagination */}
       <Pagination
-        pageCount={Math.ceil(filteredHouses.length / ITEMS_PER_PAGE)}
+        pageCount={totalPages}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
       />
 
+      {/* Letter Preview Drawer */}
       <Drawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        title="Preview"
-        icon={<FaRegEnvelope className="h-4 w-4" />}
+        isOpen={isLetterDrawerOpen}
+        onClose={() => setIsLetterDrawerOpen(false)}
+        title="Preview Surat"
+        icon={<FaRegEnvelope className="h-5 w-5 text-primary" />}
         width="lg"
       >
-        {detailData && <LetterPreview data={detailData} />}
+        {selectedHouse && <LetterPreview data={selectedHouse} />}
       </Drawer>
 
+      {/* WhatsApp Message Drawer */}
       <Drawer
         isOpen={isWhatsAppDrawerOpen}
         onClose={() => setIsWhatsAppDrawerOpen(false)}
         title="Pesan WhatsApp"
+        icon={<FaWhatsapp className="h-5 w-5 text-success" />}
         width="lg"
       >
-        {detailData && <WhatsAppMessage data={detailData} />}
+        {selectedHouse && <WhatsAppMessage data={selectedHouse} />}
       </Drawer>
-    </>
+    </section>
   );
 };
 
+/**
+ * Server-side protection - Hanya admin yang boleh akses
+ */
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
-  if (!session) return { redirect: { destination: '/', permanent: false } };
+
+  // Check authentication
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    };
+  }
+
+  // Check authorization - HANYA admin yang boleh akses
+  if (session.user?.role !== 'admin') {
+    return {
+      redirect: {
+        destination: '/?access_denied=true',
+        permanent: false,
+      },
+    };
+  }
+
   try {
-    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
+    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/outstanding`, {
       headers: {
         Authorization: `Bearer ${session.accessToken}`,
       },
     });
+    const sorted = res.data.data.sort((a, b) => b.total_fee - a.total_fee);
     return {
       props: {
-        initialHouses: res.data.data,
+        initialHouses: sorted,
       },
     };
   } catch (error) {

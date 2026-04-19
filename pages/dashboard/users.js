@@ -1,198 +1,214 @@
 import { getSession, useSession } from 'next-auth/react';
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import axios from 'axios';
+
+// Layout & Components
 import DashboardLayout from '../../components/layouts/DashboardLayout';
-import SearchInput from '../../components/ui/SearchInput';
+import PageHeader from '../../components/dashboard/PageHeader';
+import UsersStats from '../../components/dashboard/UsersStats';
+import UsersFilters from '../../components/dashboard/UsersFilters';
+import UsersTable from '../../components/dashboard/UsersTable';
+import UserEditDrawer from '../../components/dashboard/UserEditDrawer';
+import Alert from '../../components/ui/Alert';
 import Pagination from '../../components/ui/Pagination';
-import Drawer from '../../components/ui/Drawer';
-import ResponsiveTable from '../../components/ui/ResponsiveTable';
-import Spinner from '../../components/Spinner';
+
+// Hooks
+import { useUsersData } from '../../lib/hooks/useUsersData';
+
+// Utils
 import { ITEMS_PER_PAGE } from '../../utils/constants';
-import { HiHome } from "react-icons/hi";
-import { FaCalendarCheck } from 'react-icons/fa';
 
+/**
+ * Users Page - Manage users data
+ *
+ * Features:
+ * - KPI stats summary (Total Users)
+ * - Search filtering
+ * - Responsive table with mobile card view
+ * - Edit drawer with consistent field styling
+ * - Accessible UI with keyboard navigation
+ *
+ * @param {Object} props
+ * @param {Array} props.initialUsers - Initial data from SSR
+ */
+const Users = ({ initialUsers }) => {
+  const { data: session } = useSession();
 
-const Users = ({ initialUser }) => {
-  const { data: session, status } = useSession();
-  const [users, setUsers] = useState(initialUser ?? []);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [editData, setEditData] = useState(null);
+  // Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  const fetchUser = useCallback(async () => {
-    if (session) {
-      try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/list`, {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        });
-        setUsers(res.data.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        setLoading(false);
-      }
-    }
-  }, [session]);
+  // Notification state
+  const [notification, setNotification] = useState({
+    show: false,
+    type: 'success',
+    message: '',
+  });
 
-  useEffect(() => {
-    if (session) {
-      fetchUser();
-    }
-  }, [session, fetchUser]);
+  // Custom hook for users data management
+  const {
+    users,
+    filteredUsers,
+    paginatedData,
+    filters,
+    setFilter,
+    clearFilters,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    stats,
+    loading,
+    error,
+    lastUpdated,
+    refresh,
+  } = useUsersData({
+    initialUsers,
+    accessToken: session?.accessToken,
+  });
 
-  const handleSearchChange = (value) => {
-    setCurrentPage(0);
-    setSearchTerm(value);
+  // Check if search filter is active
+  const hasActiveFilters = useMemo(() => {
+    return !!filters.search;
+  }, [filters.search]);
+
+  // Show notification helper
+  const showNotification = (type, message) => {
+    setNotification({ show: true, type, message });
+    setTimeout(() => {
+      setNotification((prev) => ({ ...prev, show: false }));
+    }, 5000);
   };
 
-  const filteredUsers = Array.isArray(users)
-    ? users.filter(user => {
-        const searchTermLower = searchTerm.toLowerCase();
-        return (
-          searchTermLower === '' || (
-            user?.username?.toLowerCase().includes(searchTermLower) ||
-            user?.name?.toLowerCase().includes(searchTermLower) ||
-            user?.email?.toLowerCase().includes(searchTermLower)
-          )
-        );
-      })
-    : [];
-
-  const offset = currentPage * ITEMS_PER_PAGE;
-  const currentPageData = filteredUsers.slice(offset, offset + ITEMS_PER_PAGE);
-
-  const handleEditClick = (house) => {
-    setEditData(house);
+  // Handle edit click
+  const handleEditClick = (user) => {
+    setSelectedUser(user);
     setIsDrawerOpen(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditData({ ...editData, [name]: value });
-  };
-
-  const handleSaveChanges = async () => {
+  // Handle save changes
+  const handleSaveChanges = async (editData) => {
     try {
-      const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/houses/update/${editData._id}`, editData, {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-        params: {
-          period: selectedPeriod,
-          zona: selectedGroup
+      await axios.put(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/update/${editData._id}`,
+        editData,
+        {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
         }
-      });
-      setHouses(houses.map(house => house._id === editData._id ? { ...house, ...res.data.data } : house));
-      setIsDrawerOpen(false);
+      );
+      // Refresh data after save
+      await refresh();
+      showNotification('success', 'Data user berhasil diupdate');
     } catch (error) {
-      console.error('Error updating house data:', error);
+      console.error('Error updating user data:', error);
+      showNotification('error', 'Gagal mengupdate data user');
+      throw error;
     }
   };
 
-  if (loading) {
-    return <Spinner />;
-  }
-
-  const columns = [
-    { label: 'No' },
-    { label: 'Nama', className: 'w-1/4' },
-    { label: 'Whatsapp', className: 'w-1/4' },
-    { label: 'Email', className: 'w-1/3' },
-    { label: 'Edit' },
-  ];
-
   return (
-    <>
-      <h1 className="text-xl font-bold mb-4 flex items-center">
-        <FaCalendarCheck className="mr-2 h-7 w-7" />
-        <span>User</span>
-      </h1>
+    <section className="flex flex-col gap-6 animate-fade-in">
+      {/* Alert Notification */}
+      <Alert
+        show={notification.show}
+        type={notification.type}
+        message={notification.message}
+        onClose={() => setNotification((prev) => ({ ...prev, show: false }))}
+      />
 
-      <div className="mb-3 mt-5 flex justify-between content-center items-center gap-3 w-full">
-        <div className="w-full md:w-1/3">
-          <SearchInput
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder="Cari"
-          />
+      {/* Page Header */}
+      <PageHeader
+        title="Data User"
+        subtitle="Kelola dan monitor data pengguna sistem"
+        onRefresh={refresh}
+        refreshing={loading}
+        lastUpdated={lastUpdated}
+      />
+
+      {/* Error State */}
+      {error && (
+        <div className="alert alert-error shadow-lg animate-fade-in">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>Gagal memuat data: {error}</span>
         </div>
-      </div>
+      )}
 
-      <div className="mt-5">
-        <ResponsiveTable
-          data={currentPageData}
-          columns={columns}
-          renderMobileCard={(user, index) => (
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="font-semibold text-sm">
-                  {user.username} / {user.name || '-'}
-                </div>
-                <div className="text-xs text-base-content/70 mt-1">
-                  WhatsApp: {user.whatsapp_number || '-'} &nbsp; Email: {user.email || '-'}
-                </div>
-              </div>
-              <button className="btn btn-ghost btn-xs" onClick={() => handleEditClick(user)}>Edit</button>
-            </div>
-          )}
-          renderDesktopRow={(user, index) => (
-            <tr key={index}>
-              <td>{offset + index + 1}</td>
-              <td>{user.name ? user.name : user.username}</td>
-              <td>{user.whatsapp_number}</td>
-              <td>{user.email}</td>
-              <td>
-                <button className="btn btn-ghost btn-xs" onClick={() => handleEditClick(user)}>Edit</button>
-              </td>
-            </tr>
-          )}
-        />
-      </div>
+      {/* Stats Summary */}
+      <UsersStats stats={stats} loading={loading && filteredUsers.length === 0} />
 
+      {/* Filters */}
+      <UsersFilters
+        filters={filters}
+        onChange={setFilter}
+        onClear={clearFilters}
+        hasActiveFilters={hasActiveFilters}
+      />
+
+      {/* Users Table */}
+      <UsersTable
+        users={paginatedData}
+        offset={currentPage * ITEMS_PER_PAGE}
+        onEditClick={handleEditClick}
+        loading={loading}
+      />
+
+      {/* Pagination */}
       <Pagination
-        pageCount={Math.ceil(filteredUsers.length / ITEMS_PER_PAGE)}
+        pageCount={totalPages}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
       />
 
-      <Drawer
+      {/* User Edit Drawer */}
+      <UserEditDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        title="Edit Data User"
-        icon={<HiHome className="h-5 w-5" />}
-      >
-        {editData && (
-          <div className="flex flex-col gap-3">
-            <div className="form-control">
-              <label className="label pb-1"><span className="label-text font-medium">Username</span></label>
-              <input className="input input-bordered input-sm" name="username" value={editData?.username || ''} onChange={handleInputChange} />
-            </div>
-            <div className="form-control">
-              <label className="label pb-1"><span className="label-text font-medium">Nama</span></label>
-              <input className="input input-bordered input-sm" name="name" value={editData?.name || ''} onChange={handleInputChange} />
-            </div>
-            <div className="form-control">
-              <label className="label pb-1"><span className="label-text font-medium">WhatsApp</span></label>
-              <input className="input input-bordered input-sm" name="whatsapp_number" value={editData?.whatsapp_number || ''} onChange={handleInputChange} />
-            </div>
-            <div className="flex gap-2 mt-2">
-              <button className="btn btn-primary btn-sm" onClick={handleSaveChanges}>Simpan</button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsDrawerOpen(false)}>Batal</button>
-            </div>
-          </div>
-        )}
-      </Drawer>
-    </>
+        user={selectedUser}
+        onSave={handleSaveChanges}
+      />
+    </section>
   );
 };
 
+/**
+ * Server-side protection - Hanya admin yang boleh akses
+ */
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
-  if (!session) return { redirect: { destination: '/', permanent: false } };
+
+  // Check authentication
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false,
+      },
+    };
+  }
+
+  // Check authorization - HANYA admin yang boleh akses
+  if (session.user?.role !== 'admin') {
+    return {
+      redirect: {
+        destination: '/?access_denied=true',
+        permanent: false,
+      },
+    };
+  }
+
   try {
     const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/list`, {
       headers: {
@@ -201,21 +217,21 @@ export const getServerSideProps = async (context) => {
     });
     return {
       props: {
-        initialUser: res.data.data,
+        initialUsers: res.data.data,
       },
     };
   } catch (error) {
     console.error('Error fetching users data:', error);
     return {
       props: {
-        initialUser: [],
+        initialUsers: [],
       },
     };
   }
 };
 
 Users.getLayout = (page) => (
-  <DashboardLayout title="Users">{page}</DashboardLayout>
+  <DashboardLayout title="Data User">{page}</DashboardLayout>
 );
 
 export default Users;

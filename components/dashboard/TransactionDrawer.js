@@ -2,7 +2,7 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { FaCalendarAlt, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp, FaExchangeAlt } from 'react-icons/fa';
+import { FaCalendarAlt, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp, FaExchangeAlt, FaTimes, FaRegSave } from 'react-icons/fa';
 import { AiOutlineLoading } from "react-icons/ai";
 import axios from 'axios';
 import Autocomplete from '../Autocomplete';
@@ -11,7 +11,6 @@ import Select from 'react-select';
 import { selectStyles } from '@/utils/selectStyles';
 import moment from 'moment';
 import id from "date-fns/locale/id";
-import { useRequireAuth } from '@/utils/authUtils';
 import Drawer from '../ui/Drawer';
 import FormField from '../ui/FormField';
 
@@ -34,8 +33,6 @@ const optionsStatus = [
 ];
 
 const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transactionToEdit }) => {
-  const { useAuthRedirectDashboard } = useRequireAuth(['admin', 'editor', 'superadmin']);
-  useAuthRedirectDashboard();
 
   const [houseId, setHouseId] = useState('');
   const [houseName, setHouseName] = useState('');
@@ -60,6 +57,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
   const [zoomedFile, setZoomedFile] = useState(null);
   const [alertMessage, setAlertMessage] = useState('');
   const [filePreviewUrls, setFilePreviewUrls] = useState([]);
+  const [attachmentsToDelete, setAttachmentsToDelete] = useState([]);
 
   useEffect(() => {
     const urls = selectedFiles.map(f => URL.createObjectURL(f));
@@ -241,6 +239,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
       reason_cancellation,
       transaction_category: trxCategory.value,
       whatsapp_notification: noWa,
+      removed_attachments: attachmentsToDelete,
     };
 
     onSubmit(newTransaction);
@@ -307,6 +306,17 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     setStatus('');
     setTrxCategory('');
     setNowa('');
+    setAttachmentsToDelete([]);
+  };
+
+  const handleDeleteExistingAttachment = (urlToDelete) => {
+    setAttachmentsToDelete(prev => [...prev, urlToDelete]);
+    setUploadUrl(prev => {
+      if (Array.isArray(prev)) {
+        return prev.filter(url => url !== urlToDelete);
+      }
+      return prev === urlToDelete ? '' : prev;
+    });
   };
 
   const toDisplayUrl = (url) => {
@@ -386,7 +396,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               {/* Deskripsi */}
               <FormField label="Deskripsi" error={errors.description}>
                 <textarea
-                  className="textarea textarea-bordered textarea-sm w-full"
+                  className="app-input w-full min-h-[100px] resize-y"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Masukkan deskripsi"
@@ -411,7 +421,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               <FormField label="Jumlah" error={errors.amount}>
                 <input
                   type="number"
-                  className="input input-bordered input-sm w-full"
+                  className="app-input w-full"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Masukkan jumlah"
@@ -473,7 +483,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                           )}
                           <button
                             onClick={removeFile}
-                            className="absolute -top-1 -right-1 btn btn-error btn-xs btn-circle text-xs"
+                            className="absolute -top-1 -right-1 btn btn-error btn-xs btn-circle text-xs shadow-md hover:shadow-lg hover:scale-110 transition-all"
+                            title="Hapus file"
                           >×</button>
                         </div>
                       );
@@ -485,23 +496,32 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                     {(Array.isArray(uploadUrl) ? uploadUrl : uploadUrl.split(/,(?=https?:\/\/)/).map(u => u.trim())).map((url, i) => {
                       const isPdf = url.toLowerCase().includes('.pdf');
                       const displayUrl = toDisplayUrl(url);
-                      return isPdf ? (
-                        <div
-                          key={i}
-                          onClick={() => setZoomedFile({ src: url, isPdf: true })}
-                          className="w-[100px] h-[100px] flex flex-col items-center justify-center border rounded-lg cursor-pointer bg-base-200 text-base-content/60 text-xs gap-1"
-                        >
-                          <svg className="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                          <span className="text-center px-1">PDF</span>
+                      return (
+                        <div key={i} className="relative group">
+                          {isPdf ? (
+                            <div
+                              onClick={() => setZoomedFile({ src: url, isPdf: true })}
+                              className="w-[100px] h-[100px] flex flex-col items-center justify-center border rounded-lg cursor-pointer bg-base-200 text-base-content/60 text-xs gap-1"
+                            >
+                              <svg className="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                              <span className="text-center px-1">PDF</span>
+                            </div>
+                          ) : (
+                            <img
+                              src={displayUrl}
+                              alt={`image ${i + 1}`}
+                              className="w-[100px] h-[100px] object-cover rounded-lg border cursor-zoom-in"
+                              onClick={() => setZoomedFile({ src: displayUrl, isPdf: false })}
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteExistingAttachment(url)}
+                            className="absolute -top-1 -right-1 btn btn-error btn-xs btn-circle text-xs opacity-0 group-hover:opacity-100 transition-all shadow-md hover:shadow-lg hover:scale-110"
+                            title="Hapus lampiran"
+                            aria-label="Hapus lampiran"
+                          >×</button>
                         </div>
-                      ) : (
-                        <img
-                          key={i}
-                          src={displayUrl}
-                          alt={`image ${i + 1}`}
-                          className="w-[100px] h-[100px] object-cover rounded-lg border cursor-zoom-in"
-                          onClick={() => setZoomedFile({ src: displayUrl, isPdf: false })}
-                        />
                       );
                     })}
                   </div>
@@ -510,7 +530,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
 
               {/* Tanggal Pembayaran */}
               <FormField label="Tanggal Pembayaran" error={errors.paymentDate}>
-                <div className="relative flex items-center input input-bordered w-full px-3 py-0">
+                <div className="relative flex items-center app-input w-full px-3 py-0">
                   <FaCalendarAlt className="text-base-content/40 mr-2 shrink-0" />
                   <DatePicker
                     locale={id}
@@ -519,6 +539,10 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                     dateFormat="dd MMMM yyyy"
                     placeholderText="Pilih tanggal"
                     className="bg-transparent w-full text-sm py-[0.6rem] focus:outline-none"
+                    popperClassName="datepicker-zindex-fix"
+                    popperProps={{
+                      strategy: 'fixed',
+                    }}
                   />
                 </div>
               </FormField>
@@ -526,7 +550,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               {/* Catatan */}
               <FormField label="Catatan">
                 <textarea
-                  className="textarea textarea-bordered textarea-sm w-full"
+                  className="app-input w-full min-h-[80px] resize-y"
                   value={additional_note_mutasi_bca}
                   onChange={(e) => setAdditional_note_mutasi_bca(e.target.value)}
                   placeholder="Catatan tambahan"
@@ -550,7 +574,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               {noteCancel && status?.value === 'gagal' && (
                 <FormField label="Alasan Pembatalan">
                   <textarea
-                    className="textarea textarea-bordered textarea-sm w-full"
+                    className="app-input w-full min-h-[80px] resize-y"
                     value={reason_cancellation}
                     onChange={(e) => setReason_cancellation(e.target.value)}
                     placeholder="Alasan pembatalan"
@@ -566,7 +590,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                   <FormField label="Judul Dokumen">
                     <input
                       type="text"
-                      className="input input-bordered input-sm w-full"
+                      className="app-input w-full"
                       value={attachmentTitle}
                       onChange={(e) => setAttachmentTitle(e.target.value)}
                       placeholder="Judul"
@@ -575,7 +599,7 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
                   <FormField label="URL Dokumen">
                     <input
                       type="text"
-                      className="input input-bordered input-sm w-full"
+                      className="app-input w-full"
                       value={attachmentUrl}
                       onChange={(e) => setAttachmentUrl(e.target.value)}
                       placeholder="Link URL"
@@ -585,27 +609,25 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 pb-10 pt-2">
+              <div className="flex gap-3 mt-4 pt-4 border-t border-base-200">
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className={`btn flex-1 ${
-                    transactionType === 'ipl' ? 'btn-success' :
-                    transactionType === 'income' ? 'btn-primary' :
-                    'btn-error'
-                  }`}
+                  className="btn btn-primary btn-sm flex-1 gap-2 touch-target-sm shadow-md hover:shadow-lg transition-all"
                 >
-                  {isProcessing && <AiOutlineLoading className="h-4 w-4 animate-spin" />}
-                  {transactionType === 'ipl' && <FaExchangeAlt className="h-4 w-4" />}
-                  {transactionType === 'income' && <FaRegArrowAltCircleDown className="h-4 w-4" />}
-                  {transactionType === 'expense' && <FaRegArrowAltCircleUp className="h-4 w-4" />}
+                  {isProcessing ? (
+                    <AiOutlineLoading className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <FaRegSave className="h-4 w-4" />
+                  )}
                   Simpan
                 </button>
                 <button
                   type="button"
-                  className="btn btn-ghost"
+                  className="btn btn-ghost btn-sm touch-target-sm px-4 gap-2"
                   onClick={() => { resetForm(); onClose(); }}
                 >
+                  <FaTimes className="h-4 w-4" />
                   Batal
                 </button>
               </div>
