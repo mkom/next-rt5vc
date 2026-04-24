@@ -1,6 +1,6 @@
 import { useSession } from 'next-auth/react';
 import { useState, useCallback } from 'react';
-import axios from 'axios';
+import { createAuthenticatedClient } from '../../lib/api/client';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
 import 'moment/locale/id';
@@ -56,12 +56,10 @@ const FilterTransactions = ({
           const endDateAdjusted = new Date(newEndDate);
           endDateAdjusted.setDate(endDateAdjusted.getDate() + 1);
 
-          const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/transactions/filter`,
+          const client = createAuthenticatedClient(session?.accessToken);
+          const response = await client.get(
+            '/transactions/filter',
             {
-              headers: {
-                Authorization: `Bearer ${session?.accessToken}`,
-              },
               params: {
                 startDate: startDateAdjusted.toISOString(),
                 endDate: endDateAdjusted.toISOString(),

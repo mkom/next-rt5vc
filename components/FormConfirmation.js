@@ -8,7 +8,7 @@ import { FaCalendarAlt, FaCamera, FaWhatsapp, FaHome, FaCheckCircle, FaMoneyBill
 import { MdDelete } from "react-icons/md";
 import { GrFormNextLink } from "react-icons/gr";
 import { AiOutlineLoading } from "react-icons/ai";
-import axios from 'axios';
+import { createAuthenticatedClient } from '../lib/api/client';
 import Autocomplete from './Autocomplete';
 import DatePicker from 'react-datepicker';
 import moment from 'moment';
@@ -54,9 +54,8 @@ const Confirmation = () => {
       if (session) {
         const fetchUser = async () => {
           try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-              headers: { Authorization: `Bearer ${session.accessToken}` },
-            });
+            const client = createAuthenticatedClient(session.accessToken);
+            const res = await client.get('/users/me');
             const dataRes = res.data.data;
             setUser (dataRes);
             setLoading(false);
@@ -80,9 +79,8 @@ const Confirmation = () => {
       if (session) {
         const fetchHouses = async () => {
           try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
-              headers: { Authorization: `Bearer ${session.accessToken}` },
-            });
+            const client = createAuthenticatedClient(session.accessToken);
+            const res = await client.get('/houses/all');
             const dataRes = res.data;
             setHouses(dataRes.data.map(house => ({
               value: house.house_id,
@@ -130,10 +128,10 @@ const Confirmation = () => {
             const formData = new FormData();
             formData.append('file', file);
             try {
-                const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
+                const client = createAuthenticatedClient(session.accessToken);
+                const response = await client.post('/upload', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data',
-                        Authorization: `Bearer ${session.accessToken}`,
                     },
                 });
                 uploadedUrls.push(response.data.fileUrl);
@@ -192,15 +190,10 @@ const Confirmation = () => {
       setLoading(true);
       setShowForm(false);
       try {
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/transactions/create`,
-          transactionData,
-          {
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-              'Content-Type': 'application/json',
-            },
-          }
+        const client = createAuthenticatedClient(session.accessToken);
+        const response = await client.post(
+          '/transactions/create',
+          transactionData
         );
         setLoading(false);
         setNotification(true);
@@ -236,9 +229,8 @@ const Confirmation = () => {
 
     const fetchLastTransactionWhatsapp = async (currentHouseId) => {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/transactions/all`, {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
-        });
+        const client = createAuthenticatedClient(session.accessToken);
+        const res = await client.get('/transactions/all');
         const allTransactions = res.data?.data?.transactions || [];
         const houseTransactions = allTransactions
           .filter(t => {
@@ -271,7 +263,8 @@ const Confirmation = () => {
 
     const fetchIPlStatus = useCallback(async (currentHouseId) => {
         try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`);
+            const client = createAuthenticatedClient(session?.accessToken);
+            const res = await client.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`);
             const dataMonthlyFees = res.data.data.monthly_fees;
             const paidMonths = dataMonthlyFees.filter(item => item.status === "Lunas" || item.status === "TBD");
             const sortedPaidMonths = paidMonths.sort((a, b) => new Date(b.month) - new Date(a.month));

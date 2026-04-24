@@ -1,6 +1,6 @@
 import { getSession, useSession } from 'next-auth/react';
 import { useState, useMemo } from 'react';
-import axios from 'axios';
+import { createAuthenticatedClient } from '../../lib/api/client';
 
 // Layout & Components
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -88,14 +88,10 @@ const Users = ({ initialUsers }) => {
   // Handle save changes
   const handleSaveChanges = async (editData) => {
     try {
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/users/update/${editData._id}`,
-        editData,
-        {
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
+      const client = createAuthenticatedClient(session.accessToken);
+      await client.put(
+        `/users/update/${editData._id}`,
+        editData
       );
       // Refresh data after save
       await refresh();
@@ -210,11 +206,8 @@ export const getServerSideProps = async (context) => {
   }
 
   try {
-    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/list`, {
-      headers: {
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-    });
+    const client = createAuthenticatedClient(session.accessToken);
+    const res = await client.get('/users/list');
     return {
       props: {
         initialUsers: res.data.data,
@@ -222,6 +215,14 @@ export const getServerSideProps = async (context) => {
     };
   } catch (error) {
     console.error('Error fetching users data:', error);
+    if (error.response?.status === 401) {
+      return {
+        redirect: {
+          destination: '/?expired=true',
+          permanent: false,
+        },
+      };
+    }
     return {
       props: {
         initialUsers: [],

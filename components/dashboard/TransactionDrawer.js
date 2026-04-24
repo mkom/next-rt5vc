@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { FaCalendarAlt, FaRegArrowAltCircleDown, FaRegArrowAltCircleUp, FaExchangeAlt, FaTimes, FaRegSave } from 'react-icons/fa';
 import { AiOutlineLoading } from "react-icons/ai";
-import axios from 'axios';
+import { createAuthenticatedClient } from '../../lib/api/client';
 import Autocomplete from '../Autocomplete';
 import DatePicker from 'react-datepicker';
 import Select from 'react-select';
@@ -90,9 +90,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
 
   const fetchIPlStatus = useCallback(async (currentHouseId) => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`, {
-        headers: { Authorization: `Bearer ${session?.accessToken}` },
-      });
+      const client = createAuthenticatedClient(session?.accessToken);
+      const res = await client.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${currentHouseId.toUpperCase()}`);
       const dataMonthlyFees = res.data.data.monthly_fees;
       const paidMonths = dataMonthlyFees
         .filter(item => item.status === "Lunas" || item.status === "TBD")
@@ -129,9 +128,8 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     if (session) {
       const fetchHouses = async () => {
         try {
-          const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
-            headers: { Authorization: `Bearer ${session.accessToken}` },
-          });
+          const client = createAuthenticatedClient(session.accessToken);
+          const res = await client.get('/houses/all');
           setHouses(res.data.data.map(house => ({
             value: house.house_id,
             label: house.house_id,
@@ -177,8 +175,9 @@ const TransactionDrawer = ({ isOpen, onClose, onSubmit, transactionType, transac
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${session?.accessToken}` },
+      const client = createAuthenticatedClient(session?.accessToken);
+      const response = await client.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       setUploadUrl(response.data.fileUrl);
       return response.data.fileUrl;

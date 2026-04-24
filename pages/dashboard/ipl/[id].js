@@ -1,7 +1,7 @@
 import { useSession, getSession } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import axios from 'axios';
+import { createAuthenticatedClient } from '../../../lib/api/client';
 import { FaCalendarCheck } from 'react-icons/fa';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
 
@@ -23,9 +23,8 @@ const IplDetail = () => {
   const fetchHouses = useCallback(async () => {
     if (session) {
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${id.toUpperCase()}`, {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
-        });
+        const client = createAuthenticatedClient(session.accessToken);
+        await client.get(`${process.env.NEXT_PUBLIC_API_URL_V2}/ipl/${id.toUpperCase()}`);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching houses data:', error);

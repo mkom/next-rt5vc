@@ -1,6 +1,6 @@
 import { getSession, useSession } from 'next-auth/react';
 import { useState, useCallback, useMemo } from 'react';
-import axios from 'axios';
+import { createAuthenticatedClient } from '../../lib/api/client';
 import moment from 'moment';
 import 'moment-timezone';
 
@@ -419,12 +419,8 @@ export const getServerSideProps = async (context) => {
   }
 
   try {
-    const res = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/transactions/all`,
-      {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      }
-    );
+    const client = createAuthenticatedClient(session.accessToken);
+    const res = await client.get('/transactions/all');
     const transactions = res.data.data.transactions.sort(
       (a, b) => new Date(b.date) - new Date(a.date)
     );
@@ -436,6 +432,14 @@ export const getServerSideProps = async (context) => {
     };
   } catch (error) {
     console.error('Error fetching initial transactions:', error);
+    if (error.response?.status === 401) {
+      return {
+        redirect: {
+          destination: '/?expired=true',
+          permanent: false,
+        },
+      };
+    }
     return {
       props: {
         initialTransactions: [],

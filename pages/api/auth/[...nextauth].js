@@ -11,7 +11,7 @@ export default NextAuth({
     }),
   ],
   session: {
-    maxAge: 7 * 24 * 60 * 60, // 7 hari (1 minggu) — Remember Me
+    maxAge: 1 * 24 * 60 * 60, // 1 hari — sesuai backend JWT expiry
     updateAge: 24 * 60 * 60, // Update session setiap 24 jam
   },
   callbacks: {

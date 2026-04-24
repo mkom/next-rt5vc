@@ -5,7 +5,7 @@ import { useState, useEffect} from 'react';
 import Image from "next/image";
 import { GrFormNextLink } from "react-icons/gr";
 import { FaExternalLinkAlt, FaHistory, FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
-import axios from 'axios';
+import { createAuthenticatedClient } from '../lib/api/client';
 import moment from 'moment';
 import Link from 'next/link';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -37,9 +37,8 @@ const History = () => {
       if (session) {
         const fetchUser = async () => {
           try {
-            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-              headers: { Authorization: `Bearer ${session.accessToken}` },
-            });
+            const client = createAuthenticatedClient(session.accessToken);
+            const res = await client.get('/users/me');
             const dataRes = res.data.data;
             setUser(dataRes);
             setUserID(dataRes._id);
@@ -57,9 +56,8 @@ const History = () => {
     const fetchTransactions =  async (userID, session) => {
         if (userID) {
             try {
-                const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/transaction/${userID}`, {
-                    headers: { Authorization: `Bearer ${session.accessToken}` },
-                });
+                const client = createAuthenticatedClient(session.accessToken);
+                const res = await client.get(`/users/transaction/${userID}`);
                 const dataRes = res.data;
                 const transactionsData =  dataRes.data.sort((a, b) => new Date(b.date) - new Date(a.date));
                 setTransactions(transactionsData);

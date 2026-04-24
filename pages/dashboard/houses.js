@@ -1,6 +1,6 @@
 import { getSession, useSession } from 'next-auth/react';
 import { useState, useMemo } from 'react';
-import axios from 'axios';
+import { createAuthenticatedClient } from '../../lib/api/client';
 import moment from 'moment';
 
 // Layout & Components
@@ -94,13 +94,11 @@ const Houses = ({ initialHouses }) => {
     console.log('editData to save:', editData);
     console.log('monthly_status:', editData.monthly_status?.find(s => s.month === filters.period));
     
-    const res = await axios.put(
-      `${process.env.NEXT_PUBLIC_API_URL}/houses/update/${editData._id}`,
+    const client = createAuthenticatedClient(session.accessToken);
+    const res = await client.put(
+      `/houses/update/${editData._id}`,
       editData,
       {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-        },
         params: {
           period: filters.period,
           zona: filters.group,
@@ -220,11 +218,8 @@ export const getServerSideProps = async (context) => {
   }
 
   try {
-    const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/houses/all`, {
-      headers: {
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-    });
+    const client = createAuthenticatedClient(session.accessToken);
+    const res = await client.get('/houses/all');
     return {
       props: {
         initialHouses: res.data.data,
@@ -232,6 +227,14 @@ export const getServerSideProps = async (context) => {
     };
   } catch (error) {
     console.error('Error fetching houses data:', error);
+    if (error.response?.status === 401) {
+      return {
+        redirect: {
+          destination: '/?expired=true',
+          permanent: false,
+        },
+      };
+    }
     return {
       props: {
         initialHouses: [],
