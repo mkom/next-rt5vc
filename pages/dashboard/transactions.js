@@ -1,5 +1,6 @@
 import { getSession, useSession } from 'next-auth/react';
 import { useState, useCallback, useMemo } from 'react';
+import axios from 'axios';
 import { createAuthenticatedClient } from '../../lib/api/client';
 import moment from 'moment';
 import 'moment-timezone';
@@ -192,7 +193,7 @@ const Transactions = ({ initialTransactions, error: serverError }) => {
         try {
           const bodyMessage = buildIPLSuccessMessage(result.data, baseUrl);
           await axios.post(
-            `${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`,
+            '/api/notify',
             { number: data.whatsapp_notification, bodyMessage },
             { headers: { 'Content-Type': 'application/json' } }
           );
@@ -230,7 +231,7 @@ const Transactions = ({ initialTransactions, error: serverError }) => {
         if (bodyMessage) {
           try {
             await axios.post(
-              `${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`,
+              '/api/notify',
               { number: waNumber, bodyMessage },
               { headers: { 'Content-Type': 'application/json' } }
             );

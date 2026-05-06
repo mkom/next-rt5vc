@@ -1,6 +1,7 @@
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
+import axios from 'axios';
 import Spinner from './Spinner';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from "next/image";
@@ -199,21 +200,23 @@ const Confirmation = () => {
         setNotification(true);
         setAlertMessage('Laporan pembayaran Anda telah diterima! Admin akan segera melakukan verifikasi.');
 
-        const bodyMessage = `*Konfirmasi Transfer IPL baru!*\n\n`
-            + `*Detail:*\n`
-            + `*ID Transaksi:* ${response.data.transaction_id}\n`
-            + `*Oleh:* ${response.data.created_by}\n`
-            + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
-            + `*Tanggal Pembayaran:* ${moment(response.data.date).format('DD MMM YYYY')}\n`
-            + `*Status:* Perlu dicek`;
-        const number = '6281717889797';
+        if (whatsapp) {
+          const bodyMessage = `*Konfirmasi Transfer IPL baru!*\n\n`
+              + `*Detail:*\n`
+              + `*ID Transaksi:* ${response.data.transaction_id}\n`
+              + `*Oleh:* ${response.data.created_by}\n`
+              + `*Jumlah:* ${formatCurrency(response.data.amount)}\n`
+              + `*Tanggal Pembayaran:* ${moment(response.data.date).format('DD MMM YYYY')}\n`
+              + `*Status:* Perlu dicek`;
+          const number = process.env.NEXT_PUBLIC_WA_ADMIN;
 
-        try {
-          await axios.post(`${process.env.NEXT_PUBLIC_WABOTAPI_URL}notify`, {number, bodyMessage}, {
-              headers: { 'Content-Type': 'application/json' },
-          });
-        } catch (error) {
-           console.error("WA notify error", error);
+          try {
+            await axios.post('/api/notify', {number, bodyMessage}, {
+                headers: { 'Content-Type': 'application/json' },
+            });
+          } catch (error) {
+             console.error("WA notify error", error);
+          }
         }
 
       } catch (error) {
